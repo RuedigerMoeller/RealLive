@@ -1,0 +1,12 @@
+OK - throttle depending on type (add/rem/upd)
+OK - reuse mem not only slots
+- gc after huge remove
+- fast cast: access violation when node is lost and reappears
+- Select so nicht haltbar (serialisiert kacka mit, Idea: @NonTransient invertierung)
+- queries paralell zu updates
+- free unsafe mem
+- dropped by client => drop back
+- clean up filtered change source
+- remote class loading lambdas
+- muessten mehr reinpassen, check allocator
+- error report via callabck
