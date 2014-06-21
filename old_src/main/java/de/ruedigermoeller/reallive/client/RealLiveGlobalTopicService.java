@@ -48,7 +48,7 @@ public class RealLiveGlobalTopicService extends FCTopicService {
     public void receiveGlobalAdd(long version, RLRow row ) {
         debugAdd++;
 //        if ( debugAdd % 10000 == 0 ) {
-//            System.out.println("global add msg "+debugAdd);
+//            System.out.println("global $add msg "+debugAdd);
 //        }
         List<SubscriptionEntry> li = tableId2Subs.get(row.getTableId());
         if ( li != null ) {

@@ -110,7 +110,7 @@ public class RealLiveTopicService extends FCTopicService {
         col.setListener(new RLChangeTarget() {
             @Override
             public void added(long version, RLRow added) {
-//                System.out.println("send add "+version);
+//                System.out.println("send $add "+version);
                 globals.receiveGlobalAdd(version,added); // FIXME: could reduce to change against default
             }
 

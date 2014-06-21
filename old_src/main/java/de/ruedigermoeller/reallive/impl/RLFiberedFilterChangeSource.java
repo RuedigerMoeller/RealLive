@@ -91,7 +91,7 @@ public class RLFiberedFilterChangeSource<T extends RLRow> implements RLChangeSou
     public RLSubscription subscribe(RLRowMatcher<T> matcher, RLChangeTarget<T> listener) {
 //        ListenerEntry<T> en = new ListenerEntry<>(matcher, listener);
 //        select(matcher,listener);
-//        listenerList.add(en);
+//        listenerList.$add(en);
 //        return en;
         throw new RuntimeException("not implemented");
     }

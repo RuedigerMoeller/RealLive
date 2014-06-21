@@ -166,7 +166,7 @@ public class RealLiveNode {
 //                defUser.getPassword().setString("a");
 //                defUser.setCreated(System.currentTimeMillis());
 //                defUser.setId(i);
-//                rlService.getDb().getTableMutator(SystemSchema.User.class).add((SystemSchema.User) defUser.toOffHeap());
+//                rlService.getDb().getTableMutator(SystemSchema.User.class).$add((SystemSchema.User) defUser.toOffHeap());
 //            }
         }
     }

@@ -82,9 +82,9 @@ public class InProcessRealLive extends RLTableRegistry implements RealLive {
 //                            res.set(changeSource.subscribe(matcher, listener));
 //                        }
 //                    });
-//                    while(res.get()==null)
+//                    while(res.$get()==null)
 //                        ;
-//                    return res.get();
+//                    return res.$get();
                 }
 
                 @Override

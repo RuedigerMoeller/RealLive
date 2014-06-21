@@ -131,7 +131,7 @@ public class SubscriptionEntry {
             if ( matcher.matches(row) )
                 listener.added(version, row);
         } else {
-            System.out.println("lower version in add "+version+" curr "+pss.currentVersion);
+            System.out.println("lower version in $add "+version+" curr "+pss.currentVersion);
         }
     }
 
@@ -142,7 +142,7 @@ public class SubscriptionEntry {
             if ( matcher.matches(row) )
                 listener.removed(version, row);
         } else {
-            System.out.println("lower version in remove");
+            System.out.println("lower version in $remove");
         }
     }
 

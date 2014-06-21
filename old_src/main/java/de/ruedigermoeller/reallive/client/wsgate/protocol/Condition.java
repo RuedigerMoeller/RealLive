@@ -44,7 +44,7 @@ public class Condition extends Expression implements Serializable {
         if ( get == null ) {
             String mName = null;
             try {
-                mName = "get"+Character.toUpperCase(field.charAt(0)) + field.substring(1);
+                mName = "$get"+Character.toUpperCase(field.charAt(0)) + field.substring(1);
                 get = row.getClass().getMethod(mName);
             } catch (NoSuchMethodException e) {
                 get = notFound;

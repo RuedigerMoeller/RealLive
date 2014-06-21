@@ -111,7 +111,7 @@ public class RealLiveClient extends RLTableRegistry implements RealLive {
         remoting.startReceiving("rlglobal", globalService);
         proxy = (RealLiveTopicService) remoting.startSending("rlserver", RealLiveTopicService.class);
 
-        // retarget add node each X seconds
+        // retarget $add node each X seconds
         new Thread( "data node watch") {
             public void run() {
                 while(true) {
@@ -356,7 +356,7 @@ public class RealLiveClient extends RLTableRegistry implements RealLive {
                     throw new RuntimeException("must allocate using allocateInstanceForAdd()");
                 }
                 if ( t.getId() != 0 ) {
-                    throw new RuntimeException("id is assigned by system. Access the generated unqique row id after calling add.");
+                    throw new RuntimeException("id is assigned by system. Access the generated unqique row id after calling $add.");
                 }
                 checkSync();
                 long id = getUniqueId();
