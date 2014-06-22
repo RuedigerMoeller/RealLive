@@ -7,8 +7,8 @@ import java.util.Iterator;
  */
 public interface BinaryStorage<K,V> {
 
-    public void put(K key, byte value[],  int off, int len );
-    public byte[] get(K key);
+    public void put(K key, V toWrite );
+    public V get(K key);
     public Iterator<K> keys();
     public Iterator<V> values();
 

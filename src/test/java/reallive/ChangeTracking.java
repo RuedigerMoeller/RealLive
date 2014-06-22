@@ -2,6 +2,7 @@ package reallive;
 
 import org.junit.Test;
 import org.nustaq.model.*;
+import org.nustaq.serialization.FSTConfiguration;
 
 /**
  * Created by ruedi on 21.06.14.

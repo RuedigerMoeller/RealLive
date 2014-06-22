@@ -20,7 +20,7 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
 
     String tableId;
     IdGenerator<String> idgen;
-    BinaryStorage<String,byte[]> storage;
+    BinaryStorage<String,Record> storage;
 
     Schema schema; // shared
 
@@ -80,28 +80,33 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
 
     @Override
     public void $filter(Predicate<T> doProcess, Predicate<T> terminate, Callback<T> resultReceiver) {
-        Iterator<byte[]> vals = storage.values();
+        Iterator<Record> vals = storage.values();
         while( vals.hasNext() ) {
-            T t = (T) schema.fromByte(vals.next());
-            if ( doProcess == null || doProcess.test(t) ) {
-                resultReceiver.receiveResult(t,null);
+            try {
+                T t = (T) vals.next();
+                t._setSchema(schema);
+                if (doProcess == null || doProcess.test(t)) {
+                    resultReceiver.receiveResult(t, null);
+                }
+                if (terminate != null && terminate.test(t))
+                    break;
+            } catch (Exception e ) {
+                resultReceiver.receiveResult(null,e);
             }
-            if ( terminate != null && terminate.test(t) )
-                break;
         }
-        resultReceiver.receiveResult(null,"FIN");
+        resultReceiver.receiveResult(null,FIN);
     }
 
     private T get(String key) {
-        byte[] bytes = storage.get(key);
-        if ( bytes == null )
+        T res = (T) storage.get(key);
+        if ( res == null )
             return null;
-        return (T) schema.fromByte(bytes);
+        res._setSchema(schema);
+        return res;
     }
 
     private void put(String key, T object) {
-        byte[] bytes = schema.toByte(object);
-        storage.put(key,bytes, 0, bytes.length);
+        storage.put(key, object);
     }
 
 }

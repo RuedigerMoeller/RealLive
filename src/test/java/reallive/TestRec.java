@@ -11,8 +11,15 @@ import java.util.Arrays;
 class TestRec extends Record {
 
     String name = "Bla";
+    String other = "Bla1";
+    String another = "Bla3";
+
     int x = 13;
     int arr[] = {1,2,3,4,5};
+
+    public TestRec() {
+        super();
+    }
 
     public TestRec(Record originalRecord) {
         super(originalRecord);
@@ -47,12 +54,31 @@ class TestRec extends Record {
         this.arr = arr;
     }
 
+    public String getOther() {
+        return other;
+    }
+
+    public void setOther(String other) {
+        this.other = other;
+    }
+
+    public String getAnother() {
+        return another;
+    }
+
+    public void setAnother(String another) {
+        this.another = another;
+    }
+
     @Override
     public String toString() {
         return "TestRec{" +
-                "name='" + name + '\'' +
-                ", x=" + x +
-                ", arr=" + Arrays.toString(arr) +
-                '}';
+                   "name='" + name + '\'' +
+                   ", other='" + other + '\'' +
+                   ", another='" + another + '\'' +
+                   ", x=" + x +
+                   ", arr=" + Arrays.toString(arr) +
+                   '}';
     }
+
 }

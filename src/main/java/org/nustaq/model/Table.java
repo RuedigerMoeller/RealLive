@@ -9,6 +9,7 @@ import java.util.function.Predicate;
  * Created by ruedi on 21.06.14.
  */
 public interface Table<T extends Record> extends Heap<String,T> {
+    public final String FIN = "FIN";
     public String getTableId();
     public void $update(Change<String,T> change);
     public Future $sync();

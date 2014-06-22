@@ -7,7 +7,7 @@ import org.nustaq.serialization.FSTConfiguration;
  */
 public class Schema {
 
-    FSTConfiguration conf = FSTConfiguration.getDefaultConfiguration();
+    protected FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
 
     public FSTConfiguration getConf() {
         return conf;

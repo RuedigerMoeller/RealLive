@@ -69,30 +69,95 @@ public class TableTest {
         schema.createTable( "test", TestRec.class );
         Table<TestRec> test = schema.getTable("test");
 
-        TestRec newRec = new TestRec(new TestRec(null,schema));
-
-        newRec.setX(18);
-        RecordChange recordChange = newRec.computeDiff();
 
         CountDownLatch latch = new CountDownLatch(1);
         long tim = System.currentTimeMillis();
 //        int MAX = 1*1000000;
-        int MAX = 1000;
+        int MAX = 1000000;
         int count[] = {0};
         test.$filter(
             (rec) -> true,
-            (rec) -> count[0]++ < MAX,
+            (rec) -> count[0]++ >= MAX,
             (r,e) -> {
-                recordChange._setRecordId(r.getId());
-                test.$update(recordChange);
+                if ( e != Table.FIN ) {
+//                    if ( r.getX() != 18 )
+//                        System.out.println("POK");
+                    TestRec org = new TestRec();
+                    r.copyTo(org);
+                    r._setOriginalRecord(org);
+                    r.setX(30);
+                    test.$update(r.computeDiff());
+                } else {
+                    latch.countDown();
+                }
             }
         );
-        test.$sync().then( (r,e) -> {
-            latch.countDown();
-        });
         latch.await();
         long dur = System.currentTimeMillis() - tim;
-        System.out.println("need "+ dur +" for "+MAX+" recs. "+(MAX/dur)+" per ms ");
+        System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
+        Thread.sleep(100000);
+    }
+
+    @Test
+    public void query() throws InterruptedException {
+        InMemSchema schema = new InMemSchema();
+        schema.createTable( "test", TestRec.class );
+        Table<TestRec> test = schema.getTable("test");
+
+        while( true )
+            oneQLoop(test);
+//        Thread.sleep(100000);
+    }
+
+    private void oneQLoop(Table<TestRec> test) throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        long tim = System.currentTimeMillis();
+//        int MAX = 1*1000000;
+        int MAX = 10000;
+        int count[] = {0};
+        test.$filter(
+            (rec) -> true,
+            (rec) -> count[0]++ >= MAX,
+            (r,e) -> {
+                if ( e == Table.FIN )
+                    latch.countDown();
+                if ( e instanceof Exception ) {
+                    System.out.println("count "+count[0]);
+                    ((Exception) e).printStackTrace();
+                }
+            }
+        );
+        latch.await();
+        long dur = System.currentTimeMillis() - tim;
+        System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
+    }
+
+    @Test
+    public void queryNoMatch() throws InterruptedException {
+        InMemSchema schema = new InMemSchema();
+        schema.createTable( "test", TestRec.class );
+        Table<TestRec> test = schema.getTable("test");
+
+//        Thread.sleep(20000);
+        System.out.println("start");
+
+        CountDownLatch latch = new CountDownLatch(1);
+        long tim = System.currentTimeMillis();
+//        int MAX = 1*1000000;
+        int MAX = 1000000;
+        int count[] = {0};
+        test.$filter(
+            (rec) -> false,
+            (rec) -> count[0]++ >= MAX,
+            (r,e) -> {
+                if ( e == Table.FIN )
+                    latch.countDown();
+            }
+        );
+        latch.await();
+        long dur = System.currentTimeMillis() - tim;
+        System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
+        Thread.sleep(100000);
     }
 
     @Test
