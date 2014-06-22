@@ -21,10 +21,12 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
     String tableId;
     IdGenerator<String> idgen;
     BinaryStorage<String,Record> storage;
+    volatile Class clazz;
 
     Schema schema; // shared
 
-    public void $init(String tableId, Schema schema ) {
+    public void $init( String tableId, Schema schema, Class<T> clz ) {
+        this.clazz = clz;
         this.tableId = tableId;
         this.schema = schema;
         idgen = new StringIdGen(tableId+":");
@@ -37,7 +39,54 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
 
     @Override @CallerSideMethod
     public String getTableId() {
-        return tableId;
+        return getActor().tableId;
+    }
+
+    @Override @CallerSideMethod
+    public Schema getSchema() {
+        return getActor().schema;
+    }
+
+    @Override @CallerSideMethod
+    public T createForAdd() {
+        try {
+            T res = (T) getActor().clazz.newInstance();
+            res._setTable(this);
+            res._setMode(Record.Mode.ADD);
+            return res;
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override @CallerSideMethod
+    public T getForUpdate(String key,boolean addIfNotPresent) {
+        T res = createForAdd();
+        res._setMode(addIfNotPresent ? Record.Mode.UPDATE_OR_ADD : Record.Mode.UPDATE);
+        res._setId(key);
+        T org = createForAdd();
+        org._setId(key);
+        res._setOriginalRecord(org);
+        return res;
+    }
+
+    @Override @CallerSideMethod
+    public void prepareForUpdate(T record) {
+        T res = null;
+        try {
+            res = (T) record.getClass().newInstance();
+            res._setTable(this);
+            record._setMode(Record.Mode.UPDATE);
+            record.copyTo(res);
+            record._setOriginalRecord(res);
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -64,12 +113,16 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
     }
 
     @Override
-    public void $update(Change<String,T> change) {
+    public void $update(Change<String,T> change, boolean addIfNotPresent ) {
         T t = get(change.getId());
         if ( t != null ) {
             RecordChange appliedChange = change.apply(t);
             put(t.getId(), t);
 //            broadCast(appliedChange);
+        } else if (addIfNotPresent) {
+            t = createForAdd();
+            RecordChange appliedChange = change.apply(t);
+            put(t.getId(), t);
         }
     }
 
@@ -84,7 +137,7 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
         while( vals.hasNext() ) {
             try {
                 T t = (T) vals.next();
-                t._setSchema(schema);
+                t._setTable(this);
                 if (doProcess == null || doProcess.test(t)) {
                     resultReceiver.receiveResult(t, null);
                 }
@@ -101,7 +154,7 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
         T res = (T) storage.get(key);
         if ( res == null )
             return null;
-        res._setSchema(schema);
+        res._setTable(this);
         return res;
     }
 

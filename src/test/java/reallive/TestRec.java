@@ -2,13 +2,14 @@ package reallive;
 
 import org.nustaq.model.Record;
 import org.nustaq.model.Schema;
+import org.nustaq.model.Table;
 
 import java.util.Arrays;
 
 /**
 * Created by ruedi on 21.06.14.
 */
-class TestRec extends Record {
+public class TestRec extends Record {
 
     String name = "Bla";
     String other = "Bla1";
@@ -25,10 +26,9 @@ class TestRec extends Record {
         super(originalRecord);
     }
 
-    public TestRec(String id, Schema schema) {
-        super(id, schema);
+    public TestRec(String id, Table table) {
+        super(id, table);
     }
-
 
     public String getName() {
         return name;

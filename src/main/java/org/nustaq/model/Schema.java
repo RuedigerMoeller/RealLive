@@ -20,4 +20,5 @@ public class Schema {
     public Object fromByte( byte b[] ) {
         return conf.asObject(b);
     }
+
 }

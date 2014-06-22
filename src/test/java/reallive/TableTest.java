@@ -1,14 +1,10 @@
 package reallive;
 
-import junit.framework.Assert;
 import org.junit.Test;
 import org.nustaq.impl.InMemSchema;
 import org.nustaq.impl.TableImpl;
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Future;
-import org.nustaq.model.Record;
-import org.nustaq.model.RecordChange;
-import org.nustaq.model.Schema;
 import org.nustaq.model.Table;
 
 import java.util.concurrent.CountDownLatch;
@@ -18,12 +14,17 @@ import java.util.concurrent.CountDownLatch;
  */
 public class TableTest {
 
+    private String longString = "pasodkapsodkapsdokapsdoka aspdok aspdoak dpask dlfdknlfgnj " +
+                                "pasodkapsodkapsdokapsdoka aspdok aspdoak dpask dlfdknlfgnj " +
+                                "pasodkapsodkapsdokapsdoka aspdok aspdoak dpask dlfdknlfgnj " +
+                                "eiruhpefo psdfsko fpsodkf psdokf ldskf ld";
+
     @Test
     public void machVollSync() throws InterruptedException {
         InMemSchema schema = new InMemSchema();
         TableImpl<TestRec> test = new TableImpl<>();
-        test.$init("test",schema);
-        TestRec newRec = new TestRec(null, schema);
+        test.$init("test",schema, TestRec.class);
+        TestRec newRec = new TestRec(null, test);
         long tim = System.currentTimeMillis();
         int MAX = 5*1000000;
         for ( int i = 0; i < MAX; i++ ) {
@@ -42,15 +43,16 @@ public class TableTest {
     public void machVoll() throws InterruptedException {
         InMemSchema schema = new InMemSchema();
         schema.createTable( "test", TestRec.class );
-        Table<TestRec> test = schema.getTable("test");
-        TestRec newRec = new TestRec(null, schema);
+        Table<TestRec> table = schema.getTable("test");
         CountDownLatch latch = new CountDownLatch(1);
+
         long tim = System.currentTimeMillis();
         int MAX = 5*1000000;
         for ( int i = 0; i < MAX; i++ ) {
+            TestRec newRec = table.createForAdd();
             newRec.setX(i);
             int finalI = i;
-            test.$add(newRec).then( (r,e) -> {
+            table.$add(newRec).then( (r,e) -> {
                 if ( (finalI%1000) == 0 ) {
                     System.out.println("adding .. "+finalI );
                 }
@@ -59,6 +61,7 @@ public class TableTest {
             });
         }
         latch.await();
+
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+MAX+" recs. "+(MAX/dur)+" per ms ");
     }
@@ -68,25 +71,26 @@ public class TableTest {
         InMemSchema schema = new InMemSchema();
         schema.createTable( "test", TestRec.class );
         Table<TestRec> test = schema.getTable("test");
+        while( true )
+            mutateOnce(test);
+    }
 
-
+    private void mutateOnce(Table<TestRec> table) throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         long tim = System.currentTimeMillis();
 //        int MAX = 1*1000000;
-        int MAX = 1000000;
+        int MAX = 100000;
         int count[] = {0};
-        test.$filter(
+        table.$filter(
             (rec) -> true,
             (rec) -> count[0]++ >= MAX,
-            (r,e) -> {
-                if ( e != Table.FIN ) {
-//                    if ( r.getX() != 18 )
-//                        System.out.println("POK");
-                    TestRec org = new TestRec();
-                    r.copyTo(org);
-                    r._setOriginalRecord(org);
-                    r.setX(30);
-                    test.$update(r.computeDiff());
+            (r, e) -> {
+                if (e != Table.FIN) {
+
+                    table.prepareForUpdate(r);
+                    r.setName(longString.substring((int) (longString.length() * Math.random())));
+                    r.$apply();
+
                 } else {
                     latch.countDown();
                 }
@@ -95,7 +99,6 @@ public class TableTest {
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
-        Thread.sleep(100000);
     }
 
     @Test
@@ -113,7 +116,7 @@ public class TableTest {
         CountDownLatch latch = new CountDownLatch(1);
         long tim = System.currentTimeMillis();
 //        int MAX = 1*1000000;
-        int MAX = 10000;
+        int MAX = 100000;
         int count[] = {0};
         test.$filter(
             (rec) -> true,
@@ -165,7 +168,7 @@ public class TableTest {
         InMemSchema schema = new InMemSchema();
         schema.createTable( "test", TestRec.class );
         Table<TestRec> test = schema.getTable("test");
-        TestRec newRec = new TestRec(null, schema);
+        TestRec newRec = new TestRec(null, test);
         Future<String> res[] = new Future[10];
         CountDownLatch latch = new CountDownLatch(1);
         for ( int i = 0; i < 10; i++ ) {

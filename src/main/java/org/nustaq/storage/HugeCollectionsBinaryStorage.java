@@ -17,9 +17,10 @@ import java.util.Map;
  */
 public class HugeCollectionsBinaryStorage implements BinaryStorage<String,Record> {
 
-    public static FSTConfiguration conf = FSTConfiguration.getDefaultConfiguration();
+    public static FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
 
     static {
+//        conf.setShareReferences(false);
         VanillaBytesMarshallerFactory.defaultOSFactory = new ObjectStreamFactory() {
             @Override
             public ObjectOutput getObjectOutput(OutputStream out) throws IOException {

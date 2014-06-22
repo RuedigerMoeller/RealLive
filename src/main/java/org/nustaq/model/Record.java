@@ -1,6 +1,8 @@
 package org.nustaq.model;
 
+import org.nustaq.kontraktor.Future;
 import org.nustaq.serialization.FSTClazzInfo;
+import org.nustaq.serialization.FSTObjectInput;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -10,9 +12,16 @@ import java.util.ArrayList;
  */
 public class Record implements Serializable {
 
+    public static enum Mode {
+        ADD,
+        UPDATE,
+        NONE, UPDATE_OR_ADD,
+    }
+    transient Mode mode = Mode.NONE;
+
     String id;
     transient Record originalRecord;
-    transient Schema schema;
+    transient Table table;
 
     public Record() {
 
@@ -21,16 +30,16 @@ public class Record implements Serializable {
     public Record(Record originalRecord) {
         this.originalRecord = originalRecord;
         this.id = originalRecord.getId();
-        this.schema = originalRecord.schema;
+        this.table = originalRecord.table;
     }
 
-    public Record(String id, Schema schema) {
+    public Record(String id, Table schema) {
         this.id = id;
-        this.schema = schema;
+        this.table = schema;
     }
 
-    public void _setSchema(Schema schema) {
-        this.schema = schema;
+    public void _setTable(Table table) {
+        this.table = table;
     }
 
     public void _setId(String id) {
@@ -39,6 +48,14 @@ public class Record implements Serializable {
 
     public void _setOriginalRecord(Record org) {
         originalRecord = org;
+    }
+
+    public void _setMode(Mode newMode) {
+        mode = newMode;
+    }
+
+    public Mode getMode() {
+        return mode;
     }
 
     public String getId()
@@ -51,7 +68,7 @@ public class Record implements Serializable {
             throw new RuntimeException("other record must be of same type");
         FSTClazzInfo classInfo = getClassInfo();
         FSTClazzInfo.FSTFieldInfo[] fieldInfo = classInfo.getFieldInfo();
-        other.schema = schema;
+        other.table = table;
 
         for (int i = 0; i < fieldInfo.length; i++) {
             FSTClazzInfo.FSTFieldInfo fi = fieldInfo[i];
@@ -90,6 +107,25 @@ public class Record implements Serializable {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * persist an add or update of a record
+     */
+    public Future<String> $apply() {
+        if ( mode == Mode.ADD ) {
+            return table.$add(this);
+        } else
+        if ( mode == Mode.UPDATE || mode == Mode.UPDATE_OR_ADD ) {
+            if ( originalRecord == null )
+                throw new RuntimeException("original record must not be null for update");
+            if ( id == null )
+                throw new RuntimeException("id must not be null on update");
+            RecordChange recordChange = computeDiff();
+            table.$update(recordChange, mode == Mode.UPDATE_OR_ADD);
+            return null;
+        } else
+            throw new RuntimeException("wrong mode. Use table.create* and table.prepare* methods.");
     }
 
     public RecordChange computeDiff() {
@@ -148,7 +184,11 @@ public class Record implements Serializable {
     }
 
     public FSTClazzInfo getClassInfo() {
-        return schema.getConf().getClassInfo(getClass());
+        return getSchema().getConf().getClassInfo(getClass());
+    }
+
+    public Schema getSchema() {
+        return table.getSchema();
     }
 
     public Object getField( int indexId ) {

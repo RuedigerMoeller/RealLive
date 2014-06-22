@@ -8,6 +8,7 @@ import org.nustaq.model.Table;
 import org.nustaq.serialization.FSTConfiguration;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by ruedi on 21.06.14.
@@ -23,7 +24,14 @@ public class InMemSchema extends Schema {
 
     public void createTable(String name, Class<? extends Record> clazz) {
         TableImpl table = Actors.AsActor(TableImpl.class, Q_SIZE);
-        table.$init(name,this);
+        table.$init(name, this, clazz);
+        CountDownLatch latch = new CountDownLatch(1);
+        table.$sync().then( (r,e) -> latch.countDown() );
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         tables.put( name, table );
     }
 

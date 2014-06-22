@@ -12,8 +12,7 @@ public class ChangeTracking {
 
     @Test
     public void testChange() {
-        Schema schema = new Schema();
-        TestRec org = new TestRec("pok", schema);
+        TestRec org = new TestRec("pok", null);
 
         TestRec toChange = new TestRec(org);
 
