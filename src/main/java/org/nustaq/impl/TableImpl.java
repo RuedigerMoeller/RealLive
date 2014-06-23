@@ -1,5 +1,7 @@
 package org.nustaq.impl;
 
+import net.openhft.collections.ByteEntryIterator;
+import net.openhft.lang.io.NativeBytes;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.Future;
@@ -138,6 +140,26 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
             try {
                 T t = (T) vals.next();
                 t._setTable(this);
+                if (doProcess == null || doProcess.test(t)) {
+                    resultReceiver.receiveResult(t, null);
+                }
+                if (terminate != null && terminate.test(t))
+                    break;
+            } catch (Exception e ) {
+                resultReceiver.receiveResult(null,e);
+            }
+        }
+        resultReceiver.receiveResult(null,FIN);
+    }
+
+    @Override
+    public void $filterBinary(Predicate<NativeBytes> doProcess, Predicate<NativeBytes> terminate, Callback resultReceiver) {
+        ByteEntryIterator entries = ((HugeCollectionsBinaryStorage)storage).entryIterator();
+        while( entries.hasNext() ) {
+            try {
+                NativeBytes t = (NativeBytes) entries.next();
+                String key = entries.getCurrentKey()+" => ";
+                Object val = entries.getCurrentValue();
                 if (doProcess == null || doProcess.test(t)) {
                     resultReceiver.receiveResult(t, null);
                 }

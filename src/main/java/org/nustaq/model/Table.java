@@ -1,5 +1,6 @@
 package org.nustaq.model;
 
+import net.openhft.lang.io.NativeBytes;
 import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.Future;
 import org.nustaq.serialization.FSTObjectInput;
@@ -27,6 +28,6 @@ public interface Table<T extends Record> {
     public Future<T> $get(String key);
     public void $update(Change<String,T> change, boolean addIfNotPresent );
     public void $filter(Predicate<T> matches, Predicate<T> terminateQuery, Callback<T> resultReceiver);
+    public void $filterBinary(Predicate<NativeBytes> doProcess, Predicate<NativeBytes> terminate, Callback resultReceiver);
     public Future $sync();
-
 }

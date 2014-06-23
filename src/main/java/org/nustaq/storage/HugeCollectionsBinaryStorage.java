@@ -1,6 +1,7 @@
 package org.nustaq.storage;
 
 import net.openhft.collections.*;
+import net.openhft.lang.io.NativeBytes;
 import net.openhft.lang.io.serialization.impl.ObjectStreamFactory;
 import net.openhft.lang.io.serialization.impl.VanillaBytesMarshallerFactory;
 import org.nustaq.model.Record;
@@ -33,7 +34,7 @@ public class HugeCollectionsBinaryStorage implements BinaryStorage<String,Record
             }
         };
     }
-    Map map;
+    SharedHashMap map;
 
     public HugeCollectionsBinaryStorage(String finam) throws IOException {
 //        map = new SharedHashMapBuilder().entrySize(32).actualSegments(1).actualEntriesPerSegment(50*1000*1000).create(new File(finam), String.class, byte[].class);
@@ -45,6 +46,9 @@ public class HugeCollectionsBinaryStorage implements BinaryStorage<String,Record
 //        map = new HugeHashMap<String, byte[]>( config, String.class, byte[].class );
     }
 
+    public ByteEntryIterator entryIterator() {
+        return map.getByteEntryIterator();
+    }
     @Override
     public void put(String key, Record value) {
         map.put(key, value);

@@ -8,6 +8,7 @@ import org.nustaq.kontraktor.Future;
 import org.nustaq.model.Table;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Created by ruedi on 21.06.14.
@@ -50,13 +51,16 @@ public class TableTest {
         int MAX = 5*1000000;
         for ( int i = 0; i < MAX; i++ ) {
             TestRec newRec = table.createForAdd();
+            while ( ((TableImpl)table).__mailbox.size() > 10000 ) {
+                LockSupport.parkNanos(1);
+            }
             newRec.setX(i);
             int finalI = i;
-            table.$add(newRec).then( (r,e) -> {
-                if ( (finalI%1000) == 0 ) {
-                    System.out.println("adding .. "+finalI );
+            table.$add(newRec).then((r, e) -> {
+                if ((finalI % 1000) == 0) {
+                    System.out.println("adding .. " + finalI);
                 }
-                if ( finalI == MAX-1 )
+                if (finalI == MAX - 1)
                     latch.countDown();
             });
         }
@@ -129,6 +133,43 @@ public class TableTest {
                     ((Exception) e).printStackTrace();
                 }
             }
+        );
+        latch.await();
+        long dur = System.currentTimeMillis() - tim;
+        System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
+    }
+
+    @Test
+    public void queryBinary() throws InterruptedException {
+        InMemSchema schema = new InMemSchema();
+        schema.createTable( "test", TestRec.class );
+        Table<TestRec> test = schema.getTable("test");
+
+        while( true )
+            oneQBinaryLoop(test);
+//        Thread.sleep(100000);
+    }
+
+    private void oneQBinaryLoop(Table<TestRec> test) throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        long tim = System.currentTimeMillis();
+//        int MAX = 1*1000000;
+        int MAX = 100000;
+        int count[] = {0};
+        test.$filterBinary(
+                        (rec) -> {
+//                            System.out.println(rec);
+                            return true;
+                        },
+                        (rec) -> count[0]++ >= MAX,
+                        (r,e) -> {
+                            if ( e == Table.FIN )
+                                latch.countDown();
+                            if ( e instanceof Exception ) {
+                                System.out.println("count "+count[0]);
+                                ((Exception) e).printStackTrace();
+                            }
+                        }
         );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
