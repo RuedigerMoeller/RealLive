@@ -48,7 +48,8 @@ public class TableTest {
         CountDownLatch latch = new CountDownLatch(1);
 
         long tim = System.currentTimeMillis();
-        int MAX = 5*1000000;
+//        int MAX = 5*1000000;
+        int MAX = 200000;
         for ( int i = 0; i < MAX; i++ ) {
             TestRec newRec = table.createForAdd();
             while ( ((TableImpl)table).__mailbox.size() > 10000 ) {
