@@ -6,6 +6,7 @@ import org.nustaq.impl.TableImpl;
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Future;
 import org.nustaq.model.Table;
+import org.nustaq.serialization.FSTConfiguration;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
@@ -47,9 +48,12 @@ public class TableTest {
         Table<TestRec> table = schema.getTable("test");
         CountDownLatch latch = new CountDownLatch(1);
 
+        System.out.println("record size:"+ FSTConfiguration.getDefaultConfiguration().asByteArray(table.createForAdd()).length);
+
+
         long tim = System.currentTimeMillis();
-//        int MAX = 5*1000000;
-        int MAX = 200000;
+        int MAX = 5*1000000;
+//        int MAX = 200000;
         for ( int i = 0; i < MAX; i++ ) {
             TestRec newRec = table.createForAdd();
             while ( ((TableImpl)table).__mailbox.size() > 10000 ) {
@@ -158,19 +162,18 @@ public class TableTest {
         int MAX = 100000;
         int count[] = {0};
         test.$filterBinary(
-                        (rec) -> {
-//                            System.out.println(rec);
-                            return true;
-                        },
-                        (rec) -> count[0]++ >= MAX,
-                        (r,e) -> {
-                            if ( e == Table.FIN )
-                                latch.countDown();
-                            if ( e instanceof Exception ) {
-                                System.out.println("count "+count[0]);
-                                ((Exception) e).printStackTrace();
-                            }
-                        }
+            (rec) -> {
+                return true;
+            },
+            (rec) -> count[0]++ >= MAX,
+            (r,e) -> {
+                if ( e == Table.FIN )
+                    latch.countDown();
+                if ( e instanceof Exception ) {
+                    System.out.println("count "+count[0]);
+                    ((Exception) e).printStackTrace();
+                }
+            }
         );
         latch.await();
         long dur = System.currentTimeMillis() - tim;

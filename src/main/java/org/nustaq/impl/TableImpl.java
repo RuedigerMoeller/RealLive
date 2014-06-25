@@ -155,6 +155,7 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
     @Override
     public void $filterBinary(Predicate<NativeBytes> doProcess, Predicate<NativeBytes> terminate, Callback resultReceiver) {
         ByteEntryIterator entries = ((HugeCollectionsBinaryStorage)storage).entryIterator();
+
         while( entries.hasNext() ) {
             try {
                 NativeBytes t = (NativeBytes) entries.next();
