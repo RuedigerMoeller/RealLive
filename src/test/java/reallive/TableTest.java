@@ -7,6 +7,7 @@ import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Future;
 import org.nustaq.model.Table;
 import org.nustaq.serialization.FSTConfiguration;
+import org.nustaq.storage.TestRec;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
