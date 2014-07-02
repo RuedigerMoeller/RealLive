@@ -1,7 +1,6 @@
 package org.nustaq.impl;
 
-import net.openhft.collections.ByteEntryIterator;
-import net.openhft.lang.io.NativeBytes;
+import org.nustaq.heapoff.bytez.ByteSource;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.Future;
@@ -9,7 +8,7 @@ import org.nustaq.kontraktor.Promise;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.model.*;
 import org.nustaq.storage.BinaryStorage;
-import org.nustaq.storage.HugeCollectionsBinaryStorage;
+import org.nustaq.storage.FSTBinaryStorage;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -33,8 +32,10 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
         this.schema = schema;
         idgen = new StringIdGen(tableId+":");
         try {
-            storage = new HugeCollectionsBinaryStorage("/tmp/storage.bin");
-        } catch (IOException e) {
+            FSTBinaryStorage<Record> recordFSTBinaryStorage = new FSTBinaryStorage<>();
+            storage = recordFSTBinaryStorage;
+            recordFSTBinaryStorage.init(clz);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -153,14 +154,12 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
     }
 
     @Override
-    public void $filterBinary(Predicate<NativeBytes> doProcess, Predicate<NativeBytes> terminate, Callback resultReceiver) {
-        ByteEntryIterator entries = ((HugeCollectionsBinaryStorage)storage).entryIterator();
+    public void $filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback resultReceiver) {
+        Iterator<ByteSource> entries = storage.binaryValues();
 
         while( entries.hasNext() ) {
             try {
-                NativeBytes t = (NativeBytes) entries.next();
-                String key = entries.getCurrentKey()+" => ";
-                Object val = entries.getCurrentValue();
+                ByteSource t = entries.next();
                 if (doProcess == null || doProcess.test(t)) {
                     resultReceiver.receiveResult(t, null);
                 }

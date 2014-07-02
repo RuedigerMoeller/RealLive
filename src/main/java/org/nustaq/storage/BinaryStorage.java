@@ -1,5 +1,7 @@
 package org.nustaq.storage;
 
+import org.nustaq.heapoff.bytez.ByteSource;
+
 import java.util.Iterator;
 
 /**
@@ -9,8 +11,10 @@ public interface BinaryStorage<K,V> {
 
     public void put(K key, V toWrite );
     public V get(K key);
-    public Iterator<K> keys();
+    public Iterator<ByteSource> binaryValues();
     public Iterator<V> values();
+
+    public V decodeValue(ByteSource value);
 
     public void remove(K key);
 }
