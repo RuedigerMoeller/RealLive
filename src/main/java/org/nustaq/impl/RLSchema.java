@@ -7,18 +7,19 @@ import org.nustaq.model.Schema;
 import org.nustaq.model.Table;
 import org.nustaq.serialization.FSTConfiguration;
 
+import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by ruedi on 21.06.14.
  */
-public class InMemSchema extends Schema {
+public class RLSchema extends Schema {
 
-    public static final int Q_SIZE = 1000000;
+    public static final int Q_SIZE = 100000;
     ConcurrentHashMap<String, Table> tables = new ConcurrentHashMap<>();
 
-    public InMemSchema() {
+    public RLSchema() {
         // configure conf
     }
 

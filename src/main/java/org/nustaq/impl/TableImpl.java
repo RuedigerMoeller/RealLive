@@ -10,7 +10,7 @@ import org.nustaq.model.*;
 import org.nustaq.storage.BinaryStorage;
 import org.nustaq.storage.FSTBinaryStorage;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.Iterator;
 import java.util.function.Predicate;
 
@@ -30,11 +30,17 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
         this.clazz = clz;
         this.tableId = tableId;
         this.schema = schema;
+        new File(schema.getDataDirectory()).mkdirs();
         idgen = new StringIdGen(tableId+":");
         try {
             FSTBinaryStorage<Record> recordFSTBinaryStorage = new FSTBinaryStorage<>();
             storage = recordFSTBinaryStorage;
-            recordFSTBinaryStorage.init(clz);
+            recordFSTBinaryStorage.init(
+                schema.getDataDirectory() + File.separator + tableId+".mmf",
+                4000, // 4 GB init size
+                100000, // num records
+                20, // keylen
+                clz);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -51,7 +57,7 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
     }
 
     @Override @CallerSideMethod
-    public T createForAdd() {
+    public T createRecordForAdd() {
         try {
             T res = (T) getActor().clazz.newInstance();
             res._setTable(this);
@@ -66,18 +72,18 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
     }
 
     @Override @CallerSideMethod
-    public T getForUpdate(String key,boolean addIfNotPresent) {
-        T res = createForAdd();
+    public T createRecordForUpdate(String key, boolean addIfNotPresent) {
+        T res = createRecordForAdd();
         res._setMode(addIfNotPresent ? Record.Mode.UPDATE_OR_ADD : Record.Mode.UPDATE);
         res._setId(key);
-        T org = createForAdd();
+        T org = createRecordForAdd();
         org._setId(key);
         res._setOriginalRecord(org);
         return res;
     }
 
     @Override @CallerSideMethod
-    public void prepareForUpdate(T record) {
+    public void prepareRecordForUpdate(T record) {
         T res = null;
         try {
             res = (T) record.getClass().newInstance();
@@ -123,7 +129,7 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
             put(t.getId(), t);
 //            broadCast(appliedChange);
         } else if (addIfNotPresent) {
-            t = createForAdd();
+            t = createRecordForAdd();
             RecordChange appliedChange = change.apply(t);
             put(t.getId(), t);
         }

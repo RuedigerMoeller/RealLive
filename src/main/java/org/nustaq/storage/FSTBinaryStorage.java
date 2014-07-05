@@ -3,8 +3,10 @@ package org.nustaq.storage;
 import org.nustaq.heapoff.FSTAsciiStringOffheapMap;
 import org.nustaq.heapoff.FSTBinaryOffheapMap;
 import org.nustaq.heapoff.bytez.ByteSource;
+import org.nustaq.model.Schema;
 import org.nustaq.serialization.FSTConfiguration;
 
+import java.io.File;
 import java.util.Iterator;
 
 /**
@@ -15,10 +17,13 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
     FSTAsciiStringOffheapMap<V> store;
     FSTConfiguration conf;
 
-    public void init(Class ... toReg) {
+    public FSTBinaryStorage() {
+    }
+
+    public void init(String tableFile, int sizeMB, int estimatedNumRecords, int keyLen, Class ... toReg) throws Exception {
         conf = FSTConfiguration.createDefaultConfiguration();
         conf.registerClass(toReg);
-        store = new FSTAsciiStringOffheapMap<>(20, FSTBinaryOffheapMap.GB*4,100000,conf);
+        store = new FSTAsciiStringOffheapMap<>(tableFile, keyLen, FSTBinaryOffheapMap.MB*sizeMB,estimatedNumRecords,conf);
     }
 
     @Override
@@ -43,7 +48,7 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
 
     @Override
     public V decodeValue(ByteSource value) {
-        return null;//store.de;
+        return store.decodeValue((org.nustaq.heapoff.bytez.bytesource.BytezByteSource) value);
     }
 
     @Override

@@ -16,9 +16,9 @@ public interface Table<T extends Record> {
     public String getTableId();
     Schema getSchema();
 
-    public T createForAdd();
-    public T getForUpdate(String key, boolean addIfNotPresent);
-    public void prepareForUpdate(T original);
+    public T createRecordForAdd();
+    public T createRecordForUpdate(String key, boolean addIfNotPresent);
+    public void prepareRecordForUpdate(T original);
 
     // async methods
     public Future<String> $add(T object);

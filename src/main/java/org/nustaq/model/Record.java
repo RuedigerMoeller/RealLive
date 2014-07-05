@@ -1,6 +1,7 @@
 package org.nustaq.model;
 
 import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.Promise;
 import org.nustaq.serialization.FSTClazzInfo;
 import org.nustaq.serialization.FSTObjectInput;
 
@@ -123,7 +124,8 @@ public class Record implements Serializable {
                 throw new RuntimeException("id must not be null on update");
             RecordChange recordChange = computeDiff();
             table.$update(recordChange, mode == Mode.UPDATE_OR_ADD);
-            return null;
+            copyTo(originalRecord);
+            return new Promise<>(id);
         } else
             throw new RuntimeException("wrong mode. Use table.create* and table.prepare* methods.");
     }
