@@ -1,8 +1,7 @@
 package org.nustaq.storage;
 
+import org.nustaq.model.RLTable;
 import org.nustaq.model.Record;
-import org.nustaq.model.Schema;
-import org.nustaq.model.Table;
 
 import java.util.Arrays;
 
@@ -26,7 +25,7 @@ public class TestRec extends Record {
         super(originalRecord);
     }
 
-    public TestRec(String id, Table table) {
+    public TestRec(String id, RLTable table) {
         super(id, table);
     }
 

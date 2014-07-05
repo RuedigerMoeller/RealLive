@@ -3,7 +3,6 @@ package org.nustaq.model;
 import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.serialization.FSTClazzInfo;
-import org.nustaq.serialization.FSTObjectInput;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -21,8 +20,10 @@ public class Record implements Serializable {
     transient Mode mode = Mode.NONE;
 
     String id;
+    int version;
+
     transient Record originalRecord;
-    transient Table table;
+    transient RLTable table;
 
     public Record() {
 
@@ -34,12 +35,12 @@ public class Record implements Serializable {
         this.table = originalRecord.table;
     }
 
-    public Record(String id, Table schema) {
+    public Record(String id, RLTable schema) {
         this.id = id;
         this.table = schema;
     }
 
-    public void _setTable(Table table) {
+    public void _setTable(RLTable table) {
         this.table = table;
     }
 
@@ -115,7 +116,7 @@ public class Record implements Serializable {
      */
     public Future<String> $apply() {
         if ( mode == Mode.ADD ) {
-            return table.$add(this);
+            return table.$addGetId(this);
         } else
         if ( mode == Mode.UPDATE || mode == Mode.UPDATE_OR_ADD ) {
             if ( originalRecord == null )
@@ -212,4 +213,7 @@ public class Record implements Serializable {
         }
     }
 
+    public int getVersion() {
+        return version;
+    }
 }

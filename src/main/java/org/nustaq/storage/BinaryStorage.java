@@ -17,4 +17,6 @@ public interface BinaryStorage<K,V> {
     public V decodeValue(ByteSource value);
 
     public void remove(K key);
+    public V removeAndGet(K key);
+
 }

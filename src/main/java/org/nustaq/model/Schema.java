@@ -16,19 +16,20 @@ public class Schema {
         return conf;
     }
 
-    public byte[] toByte( Object o ) {
-        return conf.asByteArray((java.io.Serializable) o);
-    }
-
-    public Object fromByte( byte b[] ) {
-        return conf.asObject(b);
-    }
+//    public byte[] toByte( Object o ) {
+//        return conf.asByteArray((java.io.Serializable) o);
+//    }
+//
+//    public Object fromByte( byte b[] ) {
+//        return conf.asObject(b);
+//    }
 
     public String getDataDirectory() {
         return dataDirectory;
     }
-
     public void setDataDirectory(String dataDirectory) {
         this.dataDirectory = dataDirectory;
     }
+
+
 }

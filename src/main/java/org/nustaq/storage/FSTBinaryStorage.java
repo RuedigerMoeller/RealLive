@@ -55,4 +55,12 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
     public void remove(String key) {
         store.remove(key);
     }
+
+    @Override
+    public V removeAndGet(String key) {
+        V res = store.get(key);
+        if ( res != null )
+            store.remove(key);
+        return res;
+    }
 }

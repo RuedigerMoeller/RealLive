@@ -58,6 +58,11 @@ public class RecordChange<K, T extends Record> implements Change<K,T> {
         return recordId;
     }
 
+    /**
+     * apply change to a record thereby collecting original values to the oldVal array
+     * @param rec
+     * @return
+     */
     @Override
     public RecordChange<K,T> apply(T rec) {
         RecordChange<K,T> res = new RecordChange<>(this);
@@ -70,6 +75,32 @@ public class RecordChange<K, T extends Record> implements Change<K,T> {
         }
         res.oldVals = oldValues;
         return res;
+    }
+
+    /**
+     * revert record original by applying old values
+     * @param rec
+     * @return
+     */
+    public void setOld(T rec) {
+        for (int i = 0; i < oldVals.length; i++) {
+            Object val = oldVals[i];
+            int id = fieldIndex[i];
+            rec.setField(id,val);
+        }
+    }
+
+    /**
+     * apply new values to record
+     * @param rec
+     * @return
+     */
+    public void setNew(T rec) {
+        for (int i = 0; i < newVal.length; i++) {
+            Object val = newVal[i];
+            int id = fieldIndex[i];
+            rec.setField(id,val);
+        }
     }
 
     /**

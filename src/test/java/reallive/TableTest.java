@@ -2,10 +2,11 @@ package reallive;
 
 import org.junit.Test;
 import org.nustaq.impl.RLSchema;
-import org.nustaq.impl.TableImpl;
+import org.nustaq.impl.RLTableImpl;
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Future;
-import org.nustaq.model.Table;
+import org.nustaq.model.RLStream;
+import org.nustaq.model.RLTable;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.storage.TestRec;
 
@@ -26,15 +27,15 @@ public class TableTest {
     @Test
     public void machVollSync() throws InterruptedException {
         RLSchema schema = new RLSchema();
-        TableImpl<TestRec> test = new TableImpl<>();
-        test.$init("test",schema, TestRec.class);
+        RLTableImpl<TestRec> test = new RLTableImpl<>();
+        test.$init("test",schema, TestRec.class, null);
         TestRec newRec = new TestRec(null, test);
         long tim = System.currentTimeMillis();
         int MAX = 5*1000000;
         for ( int i = 0; i < MAX; i++ ) {
             newRec.setX(i);
             int finalI = i;
-            test.$add(newRec);
+            test.$addGetId(newRec);
             if ( (finalI%1000) == 0 ) {
                 System.out.println("adding .. "+finalI );
             }
@@ -49,19 +50,46 @@ public class TableTest {
         new File("/tmp/reallive/test1.mmf").delete();
         RLSchema schema = new RLSchema();
         schema.createTable( "test1", TestRec.class );
-        Table<TestRec> table = schema.getTable("test1");
-        TestRec forAdd = table.createRecordForAdd();
-        table.$add(forAdd).then((key,e) -> {
+        RLTable<TestRec> table = schema.getTable("test1");
+        RLStream<TestRec> stream = table.getStream();
 
-            TestRec forUpdate = table.createRecordForUpdate(key, false);
+        TestRec add0 = table.createRecordForAdd();
+        TestRec add1 = table.createRecordForAdd();
+
+        Future<String> k1 = table.$addGetId(add1);
+        Future<String> k0 = table.$addGetId(add0);
+
+        Actors.yield(k0, k1).then( (_r,e) -> {
+
+            TestRec forUpdate1 = table.createRecordForUpdate(k1.getResult(), false);
+            forUpdate1.setAnother("sodi");
+            forUpdate1.$apply();
+
+            forUpdate1.setAnother("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            forUpdate1.$apply();
+
+            forUpdate1.setAnother("asd");
+            forUpdate1.$apply();
+
+            forUpdate1.setAnother("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab");
+            forUpdate1.$apply();
+
+            TestRec forUpdate = table.createRecordForUpdate(k0.getResult(), false);
             forUpdate.setAnother("sodifjsodifjsodifjsodifjsodifjsodijfsodifjsoidfjsoidfjsoidfjsofijdsodijfsodfijsoijfd");
             forUpdate.$apply();
 
             forUpdate.setAnother("sod");
+            forUpdate.$apply();
+
+            forUpdate.setAnother("sodaosidjaosidjaosidjaosdijweofdfkgjdkfgjhdkfghjdfkgjdfkvbjdvksdvkdscbnkscdnksdbjcsdf");
+            forUpdate.$apply();
+
+            forUpdate.setAnother("pok");
+
             forUpdate.$apply().then( (key1,e1) -> {
-                System.out.println("org " + key + " applied " + key1);
-                table.$filter(null, null, (r, e2) -> {
-                    if (e2 == Table.FIN) {
+                System.out.println("org " + k0 + " applied " + key1);
+                stream.$each((r, e2) -> {
+                    if (e2 == RLTable.FIN) {
                         testLatch.countDown();
                     } else if ( e2 != null ) {
                         ((Throwable)e2).printStackTrace();
@@ -77,7 +105,7 @@ public class TableTest {
     public void machVoll() throws InterruptedException {
         RLSchema schema = new RLSchema();
         schema.createTable( "test", TestRec.class );
-        Table<TestRec> table = schema.getTable("test");
+        RLTable<TestRec> table = schema.getTable("test");
         CountDownLatch latch = new CountDownLatch(1);
 
         System.out.println("record size:"+ FSTConfiguration.getDefaultConfiguration().asByteArray(table.createRecordForAdd()).length);
@@ -88,12 +116,12 @@ public class TableTest {
 //        int MAX = 200000;
         for ( int i = 0; i < MAX; i++ ) {
             TestRec newRec = table.createRecordForAdd();
-            while ( ((TableImpl)table).__mailbox.size() > 10000 ) {
+            while ( ((RLTableImpl)table).__mailbox.size() > 10000 ) {
                 LockSupport.parkNanos(1);
             }
             newRec.setX(i);
             int finalI = i;
-            table.$add(newRec).then((r, e) -> {
+            table.$addGetId(newRec).then((r, e) -> {
                 if ((finalI % 1000) == 0) {
                     System.out.println("adding .. " + finalI);
                 }
@@ -111,22 +139,22 @@ public class TableTest {
     public void update() throws InterruptedException {
         RLSchema schema = new RLSchema();
         schema.createTable( "test", TestRec.class );
-        Table<TestRec> test = schema.getTable("test");
-//        while( true )
+        RLTable<TestRec> test = schema.getTable("test");
+        while( true )
             mutateOnce(test);
     }
 
-    private void mutateOnce(Table<TestRec> table) throws InterruptedException {
+    private void mutateOnce(RLTable<TestRec> table) throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         long tim = System.currentTimeMillis();
         int MAX = 100000;
 //        int MAX = 1000;
         int count[] = {0};
-        table.$filter(
+        table.getStream().$filterUntil(
             (rec) -> true,
             (rec) -> count[0]++ >= MAX,
             (r, e) -> {
-                if (e != Table.FIN) {
+                if (e != RLTable.FIN) {
                     if ( r == null ) {
                         if ( e instanceof Throwable )
                             ((Throwable) e).printStackTrace();
@@ -151,24 +179,24 @@ public class TableTest {
     public void query() throws InterruptedException {
         RLSchema schema = new RLSchema();
         schema.createTable( "test", TestRec.class );
-        Table<TestRec> test = schema.getTable("test");
+        RLTable<TestRec> test = schema.getTable("test");
 
 //        while( true )
             oneQLoop(test);
 //        Thread.sleep(100000);
     }
 
-    private void oneQLoop(Table<TestRec> test) throws InterruptedException {
+    private void oneQLoop(RLTable<TestRec> test) throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         long tim = System.currentTimeMillis();
 //        int MAX = 1*1000000;
         int MAX = 100000;
         int count[] = {0};
-        test.$filter(
+        test.getStream().$filterUntil(
             (rec) -> true,
             (rec) -> count[0]++ >= MAX,
             (r,e) -> {
-                if ( e == Table.FIN )
+                if ( e == RLTable.FIN )
                     latch.countDown();
                 if ( e instanceof Exception ) {
                     System.out.println("count "+count[0]);
@@ -185,26 +213,26 @@ public class TableTest {
     public void queryBinary() throws InterruptedException {
         RLSchema schema = new RLSchema();
         schema.createTable( "test", TestRec.class );
-        Table<TestRec> test = schema.getTable("test");
+        RLTable<TestRec> test = schema.getTable("test");
 
 //        while( true )
             oneQBinaryLoop(test);
 //        Thread.sleep(100000);
     }
 
-    private void oneQBinaryLoop(Table<TestRec> test) throws InterruptedException {
+    private void oneQBinaryLoop(RLTable<TestRec> test) throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         long tim = System.currentTimeMillis();
 //        int MAX = 1*1000000;
         int MAX = 100000;
         int count[] = {0};
-        test.$filterBinary(
+        test.getStream().$filterBinary(
             (rec) -> {
                 return true;
             },
             (rec) -> count[0]++ >= MAX,
             (r,e) -> {
-                if ( e == Table.FIN )
+                if ( e == RLTable.FIN )
                     latch.countDown();
                 if ( e instanceof Exception ) {
                     System.out.println("count "+count[0]);
@@ -221,7 +249,7 @@ public class TableTest {
     public void queryNoMatch() throws InterruptedException {
         RLSchema schema = new RLSchema();
         schema.createTable( "test", TestRec.class );
-        Table<TestRec> test = schema.getTable("test");
+        RLTable<TestRec> test = schema.getTable("test");
 
 //        Thread.sleep(20000);
         System.out.println("start");
@@ -231,11 +259,11 @@ public class TableTest {
 //        int MAX = 1*1000000;
         int MAX = 1000000;
         int count[] = {0};
-        test.$filter(
+        test.getStream().$filterUntil(
             (rec) -> false,
             (rec) -> count[0]++ >= MAX,
             (r,e) -> {
-                if ( e == Table.FIN )
+                if ( e == RLTable.FIN )
                     latch.countDown();
             }
         );
@@ -249,13 +277,13 @@ public class TableTest {
     public void testBasics() throws InterruptedException {
         RLSchema schema = new RLSchema();
         schema.createTable( "test", TestRec.class );
-        Table<TestRec> test = schema.getTable("test");
+        RLTable<TestRec> test = schema.getTable("test");
         TestRec newRec = new TestRec(null, test);
         Future<String> res[] = new Future[10];
         CountDownLatch latch = new CountDownLatch(1);
         for ( int i = 0; i < 10; i++ ) {
             newRec.setX(i);
-            res[i] = test.$add(newRec);
+            res[i] = test.$addGetId(newRec);
         }
         Actors.yield(res).then( (r, e) -> {
             for (int i = 0; i < r.length; i++) {
@@ -273,7 +301,7 @@ public class TableTest {
     public void testRepeatedRead() throws InterruptedException {
         RLSchema schema = new RLSchema();
         schema.createTable( "test", TestRec.class );
-        Table<TestRec> test = schema.getTable("test");
+        RLTable<TestRec> test = schema.getTable("test");
         CountDownLatch latch = new CountDownLatch(1);
 
         test.$get("test:a")

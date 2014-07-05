@@ -9,6 +9,7 @@ import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.model.*;
 import org.nustaq.storage.BinaryStorage;
 import org.nustaq.storage.FSTBinaryStorage;
+import org.nustaq.storage.TestRec;
 
 import java.io.File;
 import java.util.Iterator;
@@ -17,7 +18,7 @@ import java.util.function.Predicate;
 /**
  * Created by ruedi on 21.06.14.
  */
-public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements Table<T> {
+public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> implements RLTable<T> {
 
     String tableId;
     IdGenerator<String> idgen;
@@ -25,13 +26,15 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
     volatile Class clazz;
 
     Schema schema; // shared
+    private RLStream streamActor;
 
-    public void $init( String tableId, Schema schema, Class<T> clz ) {
+    public void $init( String tableId, Schema schema, Class<T> clz, SingleNodeStream streamActor ) {
         this.clazz = clz;
         this.tableId = tableId;
         this.schema = schema;
         new File(schema.getDataDirectory()).mkdirs();
         idgen = new StringIdGen(tableId+":");
+        this.streamActor = streamActor;
         try {
             FSTBinaryStorage<Record> recordFSTBinaryStorage = new FSTBinaryStorage<>();
             storage = recordFSTBinaryStorage;
@@ -98,27 +101,26 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
         }
     }
 
+    //////////////////////////////////////////////////////////////////////
+    //
+    // mutation
+    //
+
     @Override
-    public Future<String> $add(T object) {
+    public Future<String> $addGetId(T object) {
         String nextKey = idgen.nextid();
         object._setId(nextKey);
         put(nextKey, object);
+        broadCastAdd(object);
         return new Promise<>(nextKey);
     }
 
     @Override
-    public Future<String> $nextKey() {
-        return new Promise<>(idgen.nextid());
-    }
-
-    @Override
-    public void $remove(String key) {
-        storage.remove(key);
-    }
-
-    @Override
-    public Future<T> $get(String key) {
-        return new Promise<>(get(key));
+    public void $add(T object) {
+        String nextKey = idgen.nextid();
+        object._setId(nextKey);
+        put(nextKey, object);
+        broadCastAdd(object);
     }
 
     @Override
@@ -127,20 +129,59 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
         if ( t != null ) {
             RecordChange appliedChange = change.apply(t);
             put(t.getId(), t);
-//            broadCast(appliedChange);
+            broadCastUpdate(appliedChange, t);
         } else if (addIfNotPresent) {
             t = createRecordForAdd();
             RecordChange appliedChange = change.apply(t);
             put(t.getId(), t);
+            broadCastAdd(t);
         }
     }
+
+    @Override
+    public void $remove(String key) {
+        Record record = storage.removeAndGet(key);
+        broadCastRemove(record);
+    }
+
+    //
+    // mutation
+    //
+    //////////////////////////////////////////////////////////////////////
+
+    private void broadCastRemove(Record rec) {
+        if ( streamActor != null )
+            streamActor.onChangeReceived(new ChangeBroadcast<>(ChangeBroadcast.REMOVE, tableId, rec.getId(), rec, null));
+    }
+
+    private void broadCastAdd(T t) {
+        if ( streamActor != null )
+            streamActor.onChangeReceived(new ChangeBroadcast(ChangeBroadcast.ADD, tableId, t.getId(), t, null));
+    }
+
+    private void broadCastUpdate(RecordChange appliedChange, T t) {
+        if ( streamActor != null )
+            streamActor.onChangeReceived(new ChangeBroadcast(ChangeBroadcast.UPDATE, tableId, t.getId(), t, appliedChange));
+    }
+
+
+    @Override
+    public Future<String> $nextKey() {
+        return new Promise<>(idgen.nextid());
+    }
+
+    @Override
+    public Future<T> $get(String key) {
+        return new Promise<>(get(key));
+    }
+
 
     @Override
     public Future $sync() {
         return new Promise("void");
     }
 
-    @Override
+
     public void $filter(Predicate<T> doProcess, Predicate<T> terminate, Callback<T> resultReceiver) {
         Iterator<Record> vals = storage.values();
         while( vals.hasNext() ) {
@@ -159,7 +200,6 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
         resultReceiver.receiveResult(null,FIN);
     }
 
-    @Override
     public void $filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback resultReceiver) {
         Iterator<ByteSource> entries = storage.binaryValues();
 
@@ -190,4 +230,10 @@ public class TableImpl<T extends Record> extends Actor<TableImpl<T>> implements 
         storage.put(key, object);
     }
 
+    @CallerSideMethod
+    public RLStream<T> getStream() {
+        if ( isProxy() )
+            return getActor().getStream();
+        return streamActor;
+    }
 }
