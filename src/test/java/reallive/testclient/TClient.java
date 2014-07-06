@@ -93,7 +93,7 @@ public class TClient {
             set.onFinished( ()-> System.out.println("** Set size: "+set.getSize()) );
 
             for ( int i = 0; i < 100; i++) {
-                TCRecord recordForAdd = table.createRecordForAdd();
+                TCRecord recordForAdd = table.createForAdd();
                 recordForAdd.setAskPrc(1+Math.random());
                 recordForAdd.setBidPrc(0+Math.random());
                 recordForAdd.setBidQty(100);
@@ -111,7 +111,7 @@ public class TClient {
         public void $run(RLTable<TCRecord> table) {
             for (int i = 0; i < recids.size(); i++) {
                 Future<String> stringFuture = recids.get(i);
-                TCRecord recordForUpdate = table.createRecordForUpdate(stringFuture.getResult(), false);
+                TCRecord recordForUpdate = table.createForUpdate(stringFuture.getResult(), false);
                 recordForUpdate.setAskPrc(1+Math.random());
                 recordForUpdate.setBidPrc(0+Math.random());
                 recordForUpdate.$apply();

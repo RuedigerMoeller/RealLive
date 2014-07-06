@@ -53,15 +53,15 @@ public class TableTest {
         RLTable<TestRec> table = schema.getTable("test1");
         RLStream<TestRec> stream = table.getStream();
 
-        TestRec add0 = table.createRecordForAdd();
-        TestRec add1 = table.createRecordForAdd();
+        TestRec add0 = table.createForAdd();
+        TestRec add1 = table.createForAdd();
 
         Future<String> k1 = table.$addGetId(add1);
         Future<String> k0 = table.$addGetId(add0);
 
         Actors.yield(k0, k1).then( (_r,e) -> {
 
-            TestRec forUpdate1 = table.createRecordForUpdate(k1.getResult(), false);
+            TestRec forUpdate1 = table.createForUpdate(k1.getResult(), false);
             forUpdate1.setAnother("sodi");
             forUpdate1.$apply();
 
@@ -74,7 +74,7 @@ public class TableTest {
             forUpdate1.setAnother("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab");
             forUpdate1.$apply();
 
-            TestRec forUpdate = table.createRecordForUpdate(k0.getResult(), false);
+            TestRec forUpdate = table.createForUpdate(k0.getResult(), false);
             forUpdate.setAnother("sodifjsodifjsodifjsodifjsodifjsodijfsodifjsoidfjsoidfjsoidfjsofijdsodijfsodfijsoijfd");
             forUpdate.$apply();
 
@@ -108,14 +108,14 @@ public class TableTest {
         RLTable<TestRec> table = schema.getTable("test");
         CountDownLatch latch = new CountDownLatch(1);
 
-        System.out.println("record size:"+ FSTConfiguration.getDefaultConfiguration().asByteArray(table.createRecordForAdd()).length);
+        System.out.println("record size:"+ FSTConfiguration.getDefaultConfiguration().asByteArray(table.createForAdd()).length);
 
 
         long tim = System.currentTimeMillis();
         int MAX = 1000000;
 //        int MAX = 200000;
         for ( int i = 0; i < MAX; i++ ) {
-            TestRec newRec = table.createRecordForAdd();
+            TestRec newRec = table.createForAdd();
             while ( ((RLTableImpl)table).__mailbox.size() > 10000 ) {
                 LockSupport.parkNanos(1);
             }

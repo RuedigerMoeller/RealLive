@@ -65,9 +65,9 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override @CallerSideMethod
-    public T createRecordForAdd() {
+    public T createForAddWith(Class<? extends Record> clazz) {
         try {
-            T res = (T) getActor().clazz.newInstance();
+            T res = (T) clazz.newInstance();
             res._setTable(this);
             res._setMode(Record.Mode.ADD);
             return res;
@@ -80,14 +80,24 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override @CallerSideMethod
-    public T createRecordForUpdate(String key, boolean addIfNotPresent) {
-        T res = createRecordForAdd();
+    public T createForAdd() {
+        return createForAddWith((Class<T>) getActor().clazz);
+    }
+
+    @Override @CallerSideMethod
+    public T createForUpdateWith(Class<? extends Record> clazz, String key, boolean addIfNotPresent) {
+        T res = createForAddWith(clazz);
         res._setMode(addIfNotPresent ? Record.Mode.UPDATE_OR_ADD : Record.Mode.UPDATE);
         res._setId(key);
-        T org = createRecordForAdd();
+        T org = createForAdd();
         org._setId(key);
         res._setOriginalRecord(org);
         return res;
+    }
+
+    @Override @CallerSideMethod
+    public T createForUpdate(String key, boolean addIfNotPresent) {
+        return createForUpdateWith((Class<T>) getActor().clazz, key, addIfNotPresent);
     }
 
     @Override @CallerSideMethod
@@ -137,7 +147,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             put(t.getId(), t);
             broadCastUpdate(appliedChange, t);
         } else if (addIfNotPresent) {
-            t = createRecordForAdd();
+            t = createForAdd();
             RecordChange appliedChange = change.apply(t);
             put(t.getId(), t);
             broadCastAdd(t);

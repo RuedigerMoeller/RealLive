@@ -15,8 +15,10 @@ public interface RLTable<T extends Record> {
     public String getTableId();
     Schema getSchema();
 
-    public T createRecordForAdd();
-    public T createRecordForUpdate(String key, boolean addIfNotPresent);
+    public T createForAddWith(Class<? extends Record> clazz);
+    public T createForAdd();
+    public T createForUpdateWith(Class<? extends Record> clazz, String key, boolean addIfNotPresent);
+    public T createForUpdate(String key, boolean addIfNotPresent);
     public void prepareRecordForUpdate(T original);
     public RLStream<T> getStream();
 
