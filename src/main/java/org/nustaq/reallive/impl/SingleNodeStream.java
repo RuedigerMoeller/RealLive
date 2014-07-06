@@ -4,6 +4,7 @@ import org.nustaq.heapoff.bytez.ByteSource;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;
+import org.nustaq.kontraktor.annotations.InThread;
 import org.nustaq.reallive.*;
 
 import java.util.ArrayList;
@@ -25,22 +26,30 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     @Override
-    public void $each(Callback<T> resultReceiver) {
-        tableActor.$filter(null,null,resultReceiver);
+    public void each(@InThread ChangeBroadcastReceiver<T> resultReceiver) {
+        filterUntil(null,null,resultReceiver);
     }
 
     @Override
-    public void $filter(Predicate<T> matches, Callback<T> resultReceiver) {
-        tableActor.$filter(matches,null,resultReceiver);
+    public void filter(Predicate<T> matches, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
+        filterUntil(matches,null,resultReceiver);
     }
 
     @Override
-    public void $filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, Callback<T> resultReceiver) {
-        tableActor.$filter(matches,terminateQuery,resultReceiver);
+    public void filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
+        tableActor.$filter(matches,terminateQuery, (r,e) -> {
+            if ( e == RLTable.FIN ) {
+                resultReceiver.onChangeReceived( ChangeBroadcast.NewSnapFin(tableActor.getTableId()));
+            } else if ( e == null ) {
+                resultReceiver.onChangeReceived( ChangeBroadcast.NewAdd(tableActor.getTableId(),r));
+            } else {
+                resultReceiver.onChangeReceived( ChangeBroadcast.NewError(tableActor.getTableId(), e));
+            }
+        });
     }
 
     @Override
-    public void $filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback resultReceiver) {
+    public void filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback<ByteSource> resultReceiver) {
         tableActor.$filterBinary(doProcess, terminate, resultReceiver);
     }
 
@@ -62,11 +71,11 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
         subscribers.add(subs);
         tableActor.$filter(subs.getFilter(),null, (r,e) -> {
             if ( e == null ) {
-                subs.getChangeReceiver().onChangeReceived(new ChangeBroadcast(ChangeBroadcast.ADD, tableActor.getTableId(), r.getId(), r, null));
+                subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewAdd(tableActor.getTableId(), r));
             } else if ( e == RLTable.FIN ) {
-                subs.getChangeReceiver().onChangeReceived(new ChangeBroadcast(ChangeBroadcast.SNAPSHOT_DONE, tableActor.getTableId(), null, null, null));
+                subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewSnapFin(tableActor.getTableId()));
             } else {
-                subs.getChangeReceiver().onChangeReceived(new ChangeBroadcast(ChangeBroadcast.ERROR, tableActor.getTableId(), null, null, null));
+                subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewError(tableActor.getTableId(), e));
             }
         });
     }
@@ -86,7 +95,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
             case ChangeBroadcast.ADD:
                 for (int i = 0; i < subscribers.size(); i++) {
                     Subscription<T> subs = subscribers.get(i);
-                    if (subs.getFilter().test(changeBC.getNewRecord())) {
+                    if (subs.getFilter().test(changeBC.getRecord())) {
                         subs.getChangeReceiver().onChangeReceived(changeBC);
                     }
                 }
@@ -94,7 +103,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
             case ChangeBroadcast.REMOVE:
                 for (int i = 0; i < subscribers.size(); i++) {
                     Subscription<T> subs = subscribers.get(i);
-                    if ( subs.getFilter().test(changeBC.getNewRecord()) ) {
+                    if ( subs.getFilter().test(changeBC.getRecord()) ) {
                         subs.getChangeReceiver().onChangeReceived(changeBC);
                     }
                 }
@@ -103,33 +112,27 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
                 changeBC.toOld();
                 for (int i = 0; i < subscribers.size(); i++) {
                     Subscription<T> subs = subscribers.get(i);
-                    subs.__matched = subs.getFilter().test(changeBC.getNewRecord());
+                    subs.__matched = subs.getFilter().test(changeBC.getRecord());
                 }
                 changeBC.toNew();
                 for (int i = 0; i < subscribers.size(); i++) {
                     Subscription<T> subs = subscribers.get(i);
                     boolean matchesOld = subs.__matched;
-                    boolean matchesNew = subs.getFilter().test(changeBC.getNewRecord());
+                    boolean matchesNew = subs.getFilter().test(changeBC.getRecord());
                     if ( matchesOld && matchesNew ) {
-                        subs.onChangeReceived(changeBC);
+                        subs.onChangeReceived(changeBC); // directly forward change
                     } else if ( matchesOld && ! matchesNew ) {
                         subs.onChangeReceived(
-                            new ChangeBroadcast<T>(
-                                ChangeBroadcast.REMOVE,
+                            ChangeBroadcast.NewRemove(
                                 changeBC.getTableId(),
-                                changeBC.getRecordKey(),
-                                changeBC.getNewRecord(),
-                                null
+                                changeBC.getRecord()
                             ));
                     } else if ( ! matchesOld && matchesNew ) {
                         subs.onChangeReceived(
-                            new ChangeBroadcast<T>(
-                                ChangeBroadcast.ADD,
+                            ChangeBroadcast.NewAdd(
                                 changeBC.getTableId(),
-                                changeBC.getRecordKey(),
-                                changeBC.getNewRecord(),
-                                null
-                            ));
+                                changeBC.getRecord()
+                                                  ));
                     } // else did not match and does not match
                 }
                 break;

@@ -238,4 +238,7 @@ public class Record implements Serializable {
     public int getVersion() {
         return version;
     }
+    public void incVersion() {
+        version++;
+    }
 }

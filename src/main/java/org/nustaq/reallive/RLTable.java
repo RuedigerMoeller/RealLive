@@ -8,15 +8,21 @@ import org.nustaq.kontraktor.Future;
 public interface RLTable<T extends Record> {
     public final String FIN = "FIN";
 
+    ////////////////////////////////////////////////////////////////////////////////////////
     // sync methods
+    //
+
     public String getTableId();
     Schema getSchema();
 
     public T createRecordForAdd();
     public T createRecordForUpdate(String key, boolean addIfNotPresent);
     public void prepareRecordForUpdate(T original);
+    public RLStream<T> getStream();
 
+    ////////////////////////////////////////////////////////////////////////////////////////
     // async methods
+    //
 
     /**
      * add the given record and assign it a new unique id. The new record id is returned with the resulting future.
@@ -66,5 +72,4 @@ public interface RLTable<T extends Record> {
      */
     public Future $sync();
 
-    public RLStream<T> getStream();
 }

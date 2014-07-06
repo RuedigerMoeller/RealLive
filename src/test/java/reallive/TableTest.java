@@ -88,13 +88,13 @@ public class TableTest {
 
             forUpdate.$apply().then( (key1,e1) -> {
                 System.out.println("org " + k0 + " applied " + key1);
-                stream.$each((r, e2) -> {
-                    if (e2 == RLTable.FIN) {
+                stream.each( (change) -> {
+                    if (change.isSnapshotDone()) {
                         testLatch.countDown();
-                    } else if ( e2 != null ) {
-                        ((Throwable)e2).printStackTrace();
+                    } else if (change.isError()) {
+                        System.out.println("ERROR");
                     } else
-                        System.out.println(r);
+                        System.out.println(change.getRecord());
                 });
             });
         });
@@ -150,26 +150,23 @@ public class TableTest {
         int MAX = 100000;
 //        int MAX = 1000;
         int count[] = {0};
-        table.getStream().$filterUntil(
+        table.getStream().filterUntil(
             (rec) -> true,
             (rec) -> count[0]++ >= MAX,
-            (r, e) -> {
-                if (e != RLTable.FIN) {
-                    if (r == null) {
-                        if (e instanceof Throwable)
-                            ((Throwable) e).printStackTrace();
-                        System.out.println("error");
-                    }
-                    table.prepareRecordForUpdate(r);
-                    r.setName(longString.substring((int) (longString.length() * Math.random())));
-//                    r.setName(longString.substring(0,(int) (20 * Math.random())));
-                    r.$apply();
-
-                } else {
+            (r) -> {
+                if (r.isSnapshotDone()) {
                     latch.countDown();
+                } else if (r.isError()) {
+                    System.out.println("ERROR---------------");
+                } else {
+                    TestRec record = r.getRecord();// fixme: should clone
+                    table.prepareRecordForUpdate(record);
+                    record.setName(longString.substring((int) (longString.length() * Math.random())));
+//                    r.setName(longString.substring(0,(int) (20 * Math.random())));
+                    record.$apply();
                 }
             }
-                                      );
+                                     );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
@@ -192,18 +189,18 @@ public class TableTest {
 //        int MAX = 1*1000000;
         int MAX = 100000;
         int count[] = {0};
-        test.getStream().$filterUntil(
+        test.getStream().filterUntil(
             (rec) -> true,
             (rec) -> count[0]++ >= MAX,
-            (r, e) -> {
-                if (e == RLTable.FIN)
+            (r) -> {
+                if (r.isSnapshotDone())
                     latch.countDown();
-                if (e instanceof Exception) {
+                if (r.isError()) {
+                    System.out.println("ERROR");
                     System.out.println("count " + count[0]);
-                    ((Exception) e).printStackTrace();
                 }
             }
-                                     );
+                                    );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
@@ -226,7 +223,7 @@ public class TableTest {
 //        int MAX = 1*1000000;
         int MAX = 100000;
         int count[] = {0};
-        test.getStream().$filterBinary(
+        test.getStream().filterBinary(
             (rec) -> {
                 return true;
             },
@@ -239,7 +236,7 @@ public class TableTest {
                     ((Exception) e).printStackTrace();
                 }
             }
-                                      );
+                                     );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
@@ -259,14 +256,14 @@ public class TableTest {
 //        int MAX = 1*1000000;
         int MAX = 1000000;
         int count[] = {0};
-        test.getStream().$filterUntil(
+        test.getStream().filterUntil(
             (rec) -> false,
             (rec) -> count[0]++ >= MAX,
-            (r, e) -> {
-                if (e == RLTable.FIN)
+            (r) -> {
+                if (r.isSnapshotDone())
                     latch.countDown();
             }
-                                     );
+        );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");

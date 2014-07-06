@@ -16,6 +16,9 @@ import java.util.function.Predicate;
 
 /**
  * Created by ruedi on 21.06.14.
+ *
+ * add CAS
+ * add Client Object to be able to correlate changes and broadcasts
  */
 public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> implements RLTable<T> {
 
@@ -26,6 +29,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     Schema schema; // shared
     private RLStream streamActor;
+    private ChangeBroadcastReceiver receiver;
 
     public void $init( String tableId, Schema schema, Class<T> clz, SingleNodeStream streamActor ) {
         this.clazz = clz;
@@ -34,6 +38,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         new File(schema.getDataDirectory()).mkdirs();
         idgen = new StringIdGen(tableId+":");
         this.streamActor = streamActor;
+        this.receiver = streamActor;
         try {
             FSTBinaryStorage<Record> recordFSTBinaryStorage = new FSTBinaryStorage<>();
             storage = recordFSTBinaryStorage;
@@ -127,6 +132,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         T t = get(change.getId());
         if ( t != null ) {
             RecordChange appliedChange = change.apply(t);
+            t.incVersion();
             put(t.getId(), t);
             broadCastUpdate(appliedChange, t);
         } else if (addIfNotPresent) {
@@ -149,18 +155,18 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     //////////////////////////////////////////////////////////////////////
 
     private void broadCastRemove(Record rec) {
-        if ( streamActor != null )
-            streamActor.onChangeReceived(new ChangeBroadcast<>(ChangeBroadcast.REMOVE, tableId, rec.getId(), rec, null));
+        if ( receiver != null )
+            receiver.onChangeReceived(ChangeBroadcast.NewRemove(tableId, rec));
     }
 
     private void broadCastAdd(T t) {
-        if ( streamActor != null )
-            streamActor.onChangeReceived(new ChangeBroadcast(ChangeBroadcast.ADD, tableId, t.getId(), t, null));
+        if ( receiver != null )
+            receiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId, t));
     }
 
     private void broadCastUpdate(RecordChange appliedChange, T t) {
-        if ( streamActor != null )
-            streamActor.onChangeReceived(new ChangeBroadcast(ChangeBroadcast.UPDATE, tableId, t.getId(), t, appliedChange));
+        if ( receiver != null )
+            receiver.onChangeReceived(ChangeBroadcast.NewUpdate(tableId, t, appliedChange));
     }
 
 

@@ -4,9 +4,7 @@ import org.nustaq.reallive.ChangeBroadcast;
 import org.nustaq.reallive.ChangeBroadcastReceiver;
 import org.nustaq.reallive.Record;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 
 /**
  * Created by ruedi on 06.07.14.
@@ -17,7 +15,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
 
     @Override
     public void onChangeReceived(ChangeBroadcast<T> changeBC) {
-        T newRec = changeBC.getNewRecord();
+        T newRec = changeBC.getRecord();
         switch (changeBC.getType()) {
             case ChangeBroadcast.ADD:
                 map.put(newRec.getId(),newRec);
@@ -28,7 +26,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
             case ChangeBroadcast.UPDATE:
                 T t = map.get(changeBC.getRecordKey());
                 if ( t == null ) {
-                    System.out.println("replication error: unknown record updated"+changeBC.getRecordKey());
+                    System.out.println("replication error: unknown record updated: "+changeBC.getRecordKey()+" "+changeBC.getRecord());
                 } else {
                     changeBC.getAppliedChange().apply(t);
                 }

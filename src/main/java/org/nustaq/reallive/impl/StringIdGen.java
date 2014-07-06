@@ -1,7 +1,5 @@
 package org.nustaq.reallive.impl;
 
-import org.nustaq.reallive.IdGenerator;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 /**

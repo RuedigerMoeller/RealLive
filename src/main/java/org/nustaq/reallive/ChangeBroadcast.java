@@ -14,8 +14,27 @@ public class ChangeBroadcast<T extends Record> {
     public static final int SNAPSHOT_DONE = 4;
     public static final int ERROR = 5;
 
+    public static <T extends Record> ChangeBroadcast<T> NewSnapFin(String tableId) {
+        return new ChangeBroadcast(ChangeBroadcast.SNAPSHOT_DONE, tableId, null, null, null);
+    }
 
-    public ChangeBroadcast(int type, String tableId, String recordKey, T newRecord, RecordChange<String, T> appliedChange) {
+    public static <T extends Record> ChangeBroadcast NewUpdate(String tableId, T t, RecordChange appliedChange) {
+        return new ChangeBroadcast(UPDATE,tableId,t.getId(),t,appliedChange);
+    }
+
+    public static <T extends Record> ChangeBroadcast<T> NewAdd(String tableId, T record) {
+        return new ChangeBroadcast<>(ADD,tableId,record.getId(),record,null);
+    }
+
+    public static <T extends Record> ChangeBroadcast<T> NewError(String tableId, Object e) {
+        return new ChangeBroadcast<>(ERROR,tableId,null,null,null);
+    }
+
+    public static <T extends Record> ChangeBroadcast<T> NewRemove(String tableId, T record) {
+        return new ChangeBroadcast<>(REMOVE,tableId,record.getId(),record,null);
+    }
+
+    private ChangeBroadcast(int type, String tableId, String recordKey, T newRecord, RecordChange<String, T> appliedChange) {
         this.type = type;
         this.tableId = tableId;
         this.newRecord = newRecord;
@@ -30,6 +49,10 @@ public class ChangeBroadcast<T extends Record> {
     T newRecord; // state of record after update
     RecordChange<String,T> appliedChange; // in case of update contains old values of updated fields
 
+    public boolean isSnapshotDone() {
+        return getType() == SNAPSHOT_DONE;
+    }
+
     public String getRecordKey() {
         return recordKey;
     }
@@ -42,7 +65,7 @@ public class ChangeBroadcast<T extends Record> {
         return tableId;
     }
 
-    public T getNewRecord() {
+    public T getRecord() {
         return newRecord;
     }
 
@@ -73,5 +96,9 @@ public class ChangeBroadcast<T extends Record> {
             default:
                 return super.toString();
         }
+    }
+
+    public boolean isError() {
+        return getType() == ERROR;
     }
 }
