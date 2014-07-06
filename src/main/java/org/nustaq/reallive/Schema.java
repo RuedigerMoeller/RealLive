@@ -1,4 +1,4 @@
-package org.nustaq.model;
+package org.nustaq.reallive;
 
 import org.nustaq.serialization.FSTConfiguration;
 

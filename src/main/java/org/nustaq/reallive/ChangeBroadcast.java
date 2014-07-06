@@ -1,4 +1,6 @@
-package org.nustaq.model;
+package org.nustaq.reallive;
+
+import java.util.Arrays;
 
 /**
  * Created by ruedi on 05.07.14.
@@ -9,6 +11,8 @@ public class ChangeBroadcast<T extends Record> {
     public static final int ADD       = 1;
     public static final int REMOVE    = 2;
     public static final int OPERATION = 3;
+    public static final int SNAPSHOT_DONE = 4;
+    public static final int ERROR = 5;
 
 
     public ChangeBroadcast(int type, String tableId, String recordKey, T newRecord, RecordChange<String, T> appliedChange) {
@@ -54,4 +58,20 @@ public class ChangeBroadcast<T extends Record> {
         appliedChange.setNew(newRecord);
     }
 
+    public String toString() {
+        switch (type) {
+            case ADD:
+                return "ChangeBC ADD on " + recordKey + " " + newRecord;
+            case REMOVE:
+                return "ChangeBC REMOVE on " + recordKey + " " + newRecord;
+            case UPDATE:
+                return "ChangeBC UPDATE on " + recordKey + " " + Arrays.toString(newRecord.toFieldNames(appliedChange.getChangedFields()));
+            case SNAPSHOT_DONE:
+                return "ChangeBC SNAPSHOT_DONE on " + tableId;
+            case ERROR:
+                return "ChangeBC ERROR on " + tableId;
+            default:
+                return super.toString();
+        }
+    }
 }

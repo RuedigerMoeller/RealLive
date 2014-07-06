@@ -1,12 +1,10 @@
-package org.nustaq.storage;
+package org.nustaq.reallive.impl.storage;
 
 import org.nustaq.heapoff.FSTAsciiStringOffheapMap;
 import org.nustaq.heapoff.FSTBinaryOffheapMap;
 import org.nustaq.heapoff.bytez.ByteSource;
-import org.nustaq.model.Schema;
 import org.nustaq.serialization.FSTConfiguration;
 
-import java.io.File;
 import java.util.Iterator;
 
 /**

@@ -1,4 +1,4 @@
-package org.nustaq.model;
+package org.nustaq.reallive;
 
 /**
  * Created by ruedi on 05.07.14.

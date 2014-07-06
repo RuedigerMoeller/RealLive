@@ -1,12 +1,10 @@
-package org.nustaq.impl;
+package org.nustaq.reallive.impl;
 
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
-import org.nustaq.model.RLStream;
-import org.nustaq.model.RLTable;
-import org.nustaq.model.Record;
-import org.nustaq.model.Schema;
-import org.nustaq.storage.TestRec;
+import org.nustaq.reallive.RLTable;
+import org.nustaq.reallive.Record;
+import org.nustaq.reallive.Schema;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;

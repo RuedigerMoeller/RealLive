@@ -1,4 +1,4 @@
-package org.nustaq.model;
+package org.nustaq.reallive;
 
 import org.nustaq.heapoff.bytez.ByteSource;
 import org.nustaq.kontraktor.Callback;
@@ -15,8 +15,8 @@ public interface RLStream<T extends Record> extends ChangeBroadcastReceiver<T>{
     public void $filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, Callback<T> resultReceiver);
     public void $filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback resultReceiver);
 
-    public Subscription subscribe( Predicate<T> matches, Callback<ChangeBroadcast<T>> resultReceiver);
-    public Subscription listen( Predicate<T> matches, Callback<ChangeBroadcast<T>> resultReceiver);
+    public Subscription subscribe( Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver);
+    public Subscription listen( Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver);
     public void unsubscribe( Subscription subs );
 
 }

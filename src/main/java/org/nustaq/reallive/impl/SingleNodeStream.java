@@ -1,13 +1,12 @@
-package org.nustaq.impl;
+package org.nustaq.reallive.impl;
 
 import org.nustaq.heapoff.bytez.ByteSource;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;
-import org.nustaq.model.*;
+import org.nustaq.reallive.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.function.Predicate;
 
 /**
@@ -46,14 +45,14 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     @Override @CallerSideMethod
-    public Subscription subscribe(Predicate<T> matches, Callback<ChangeBroadcast<T>> resultReceiver) {
+    public Subscription subscribe(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
         Subscription<T> subs = new Subscription<>(resultReceiver,matches);
         self().$subscribe(subs);
         return subs;
     }
 
     @Override @CallerSideMethod
-    public Subscription listen(Predicate<T> matches, Callback<ChangeBroadcast<T>> resultReceiver) {
+    public Subscription listen(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
         Subscription<T> subs = new Subscription<>(resultReceiver,matches);
         self().$listen(subs);
         return subs;
@@ -61,9 +60,14 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
 
     public void $subscribe(Subscription subs) {
         subscribers.add(subs);
-        tableActor.$filter(subs.getFilter(),null,(r,e) -> {
-            Callback callback = subs.getCallback();
-            callback.receiveResult(r,e);
+        tableActor.$filter(subs.getFilter(),null, (r,e) -> {
+            if ( e == null ) {
+                subs.getChangeReceiver().onChangeReceived(new ChangeBroadcast(ChangeBroadcast.ADD, tableActor.getTableId(), r.getId(), r, null));
+            } else if ( e == RLTable.FIN ) {
+                subs.getChangeReceiver().onChangeReceived(new ChangeBroadcast(ChangeBroadcast.SNAPSHOT_DONE, tableActor.getTableId(), null, null, null));
+            } else {
+                subs.getChangeReceiver().onChangeReceived(new ChangeBroadcast(ChangeBroadcast.ERROR, tableActor.getTableId(), null, null, null));
+            }
         });
     }
 
@@ -83,7 +87,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
                 for (int i = 0; i < subscribers.size(); i++) {
                     Subscription<T> subs = subscribers.get(i);
                     if (subs.getFilter().test(changeBC.getNewRecord())) {
-                        subs.getCallback().receiveResult(changeBC, null);
+                        subs.getChangeReceiver().onChangeReceived(changeBC);
                     }
                 }
                 break;
@@ -91,7 +95,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
                 for (int i = 0; i < subscribers.size(); i++) {
                     Subscription<T> subs = subscribers.get(i);
                     if ( subs.getFilter().test(changeBC.getNewRecord()) ) {
-                        subs.getCallback().receiveResult(changeBC,null);
+                        subs.getChangeReceiver().onChangeReceived(changeBC);
                     }
                 }
                 break;

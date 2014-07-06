@@ -1,6 +1,4 @@
-package org.nustaq.model;
-
-import org.nustaq.kontraktor.Callback;
+package org.nustaq.reallive;
 
 import java.util.function.Predicate;
 
@@ -8,27 +6,32 @@ import java.util.function.Predicate;
  * Created by ruedi on 05.07.14.
  */
 public class Subscription<T extends Record> implements ChangeBroadcastReceiver<T> {
-    Callback cb;
+
+    Predicate<T> TRUE = (x) -> true;
+
+    ChangeBroadcastReceiver<T> cb;
     Predicate<T> filter;
 
     public boolean __matched; // for internal use
 
-    public Subscription(Callback<ChangeBroadcast<T>> cb, Predicate<T> filter) {
+    public Subscription(ChangeBroadcastReceiver<T> cb, Predicate<T> filter) {
         this.cb = cb;
         this.filter = filter;
     }
 
-    public Callback getCallback() {
+    public ChangeBroadcastReceiver<T> getChangeReceiver() {
         return cb;
     }
 
     public Predicate<T> getFilter() {
+        if ( filter == null )
+            return TRUE;
         return filter;
     }
 
     @Override
     public void onChangeReceived(ChangeBroadcast<T> changeBC) {
-        cb.receiveResult(changeBC, null);
+        cb.onChangeReceived(changeBC);
     }
 
 }

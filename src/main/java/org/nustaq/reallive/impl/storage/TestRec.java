@@ -1,7 +1,7 @@
-package org.nustaq.storage;
+package org.nustaq.reallive.impl.storage;
 
-import org.nustaq.model.RLTable;
-import org.nustaq.model.Record;
+import org.nustaq.reallive.RLTable;
+import org.nustaq.reallive.Record;
 
 import java.util.Arrays;
 

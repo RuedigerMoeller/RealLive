@@ -1,4 +1,4 @@
-package org.nustaq.impl;
+package org.nustaq.reallive.impl;
 
 import org.nustaq.heapoff.bytez.ByteSource;
 import org.nustaq.kontraktor.Actor;
@@ -6,10 +6,9 @@ import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;
-import org.nustaq.model.*;
-import org.nustaq.storage.BinaryStorage;
-import org.nustaq.storage.FSTBinaryStorage;
-import org.nustaq.storage.TestRec;
+import org.nustaq.reallive.*;
+import org.nustaq.reallive.impl.storage.BinaryStorage;
+import org.nustaq.reallive.impl.storage.FSTBinaryStorage;
 
 import java.io.File;
 import java.util.Iterator;
@@ -124,7 +123,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override
-    public void $update(Change<String,T> change, boolean addIfNotPresent ) {
+    public void $update(RecordChange<String,T> change, boolean addIfNotPresent ) {
         T t = get(change.getId());
         if ( t != null ) {
             RecordChange appliedChange = change.apply(t);

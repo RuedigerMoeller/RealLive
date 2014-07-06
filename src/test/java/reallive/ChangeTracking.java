@@ -1,8 +1,8 @@
 package reallive;
 
 import org.junit.Test;
-import org.nustaq.model.*;
-import org.nustaq.storage.TestRec;
+import org.nustaq.reallive.RecordChange;
+import org.nustaq.reallive.impl.storage.TestRec;
 
 /**
  * Created by ruedi on 21.06.14.

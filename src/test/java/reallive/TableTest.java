@@ -1,14 +1,14 @@
 package reallive;
 
 import org.junit.Test;
-import org.nustaq.impl.RLSchema;
-import org.nustaq.impl.RLTableImpl;
+import org.nustaq.reallive.impl.RLSchema;
+import org.nustaq.reallive.impl.RLTableImpl;
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Future;
-import org.nustaq.model.RLStream;
-import org.nustaq.model.RLTable;
+import org.nustaq.reallive.RLStream;
+import org.nustaq.reallive.RLTable;
 import org.nustaq.serialization.FSTConfiguration;
-import org.nustaq.storage.TestRec;
+import org.nustaq.reallive.impl.storage.TestRec;
 
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
@@ -155,8 +155,8 @@ public class TableTest {
             (rec) -> count[0]++ >= MAX,
             (r, e) -> {
                 if (e != RLTable.FIN) {
-                    if ( r == null ) {
-                        if ( e instanceof Throwable )
+                    if (r == null) {
+                        if (e instanceof Throwable)
                             ((Throwable) e).printStackTrace();
                         System.out.println("error");
                     }
@@ -169,7 +169,7 @@ public class TableTest {
                     latch.countDown();
                 }
             }
-        );
+                                      );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
@@ -195,15 +195,15 @@ public class TableTest {
         test.getStream().$filterUntil(
             (rec) -> true,
             (rec) -> count[0]++ >= MAX,
-            (r,e) -> {
-                if ( e == RLTable.FIN )
+            (r, e) -> {
+                if (e == RLTable.FIN)
                     latch.countDown();
-                if ( e instanceof Exception ) {
-                    System.out.println("count "+count[0]);
+                if (e instanceof Exception) {
+                    System.out.println("count " + count[0]);
                     ((Exception) e).printStackTrace();
                 }
             }
-        );
+                                     );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
@@ -231,15 +231,15 @@ public class TableTest {
                 return true;
             },
             (rec) -> count[0]++ >= MAX,
-            (r,e) -> {
-                if ( e == RLTable.FIN )
+            (r, e) -> {
+                if (e == RLTable.FIN)
                     latch.countDown();
-                if ( e instanceof Exception ) {
-                    System.out.println("count "+count[0]);
+                if (e instanceof Exception) {
+                    System.out.println("count " + count[0]);
                     ((Exception) e).printStackTrace();
                 }
             }
-        );
+                                      );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
@@ -262,11 +262,11 @@ public class TableTest {
         test.getStream().$filterUntil(
             (rec) -> false,
             (rec) -> count[0]++ >= MAX,
-            (r,e) -> {
-                if ( e == RLTable.FIN )
+            (r, e) -> {
+                if (e == RLTable.FIN)
                     latch.countDown();
             }
-        );
+                                     );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");

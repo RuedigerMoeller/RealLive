@@ -1,4 +1,4 @@
-package org.nustaq.model;
+package org.nustaq.reallive;
 
 import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
@@ -192,6 +192,28 @@ public class Record implements Serializable {
 
     public Schema getSchema() {
         return table.getSchema();
+    }
+
+    public String toString() {
+        String res = "["+getClass().getSimpleName()+" ";
+        FSTClazzInfo.FSTFieldInfo[] fieldInfo = getClassInfo().getFieldInfo();
+        for (int i = 0; i < fieldInfo.length; i++) {
+            FSTClazzInfo.FSTFieldInfo fstFieldInfo = fieldInfo[i];
+            try {
+                res += fstFieldInfo.getField().get(this) + "\t ";
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return res+" ]";
+    }
+
+    public String[] toFieldNames(int fieldIndex[]) {
+        String res[] = new String[fieldIndex.length];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = getClassInfo().getFieldInfo()[fieldIndex[i]].getField().getName();
+        }
+        return res;
     }
 
     public Object getField( int indexId ) {

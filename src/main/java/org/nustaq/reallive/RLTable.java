@@ -1,11 +1,6 @@
-package org.nustaq.model;
+package org.nustaq.reallive;
 
-import org.nustaq.heapoff.bytez.ByteSource;
-import org.nustaq.impl.RLTableImpl;
-import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.Future;
-
-import java.util.function.Predicate;
 
 /**
  * Created by ruedi on 21.06.14.
@@ -61,7 +56,7 @@ public interface RLTable<T extends Record> {
      * @param change
      * @param addIfNotPresent
      */
-    public void $update(Change<String,T> change, boolean addIfNotPresent );
+    public void $update(RecordChange<String,T> change, boolean addIfNotPresent );
 
     /**
      * when the resulting future is triggered, all operations that have been sent before are guaranteed to

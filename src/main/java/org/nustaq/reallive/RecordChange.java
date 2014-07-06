@@ -1,4 +1,4 @@
-package org.nustaq.model;
+package org.nustaq.reallive;
 
 import org.nustaq.serialization.FSTClazzInfo;
 
@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by ruedi on 21.06.14.
  */
-public class RecordChange<K, T extends Record> implements Change<K,T> {
+public class RecordChange<K, T extends Record> {
 
     K recordId;
     String tableId;
@@ -48,12 +48,10 @@ public class RecordChange<K, T extends Record> implements Change<K,T> {
                 '}';
     }
 
-    @Override
     public String getTableId() {
         return tableId;
     }
 
-    @Override
     public K getId() {
         return recordId;
     }
@@ -63,7 +61,6 @@ public class RecordChange<K, T extends Record> implements Change<K,T> {
      * @param rec
      * @return
      */
-    @Override
     public RecordChange<K,T> apply(T rec) {
         RecordChange<K,T> res = new RecordChange<>(this);
         Object oldValues[] = new Object[newVal.length];
@@ -109,5 +106,9 @@ public class RecordChange<K, T extends Record> implements Change<K,T> {
      */
     public void _setRecordId(K recordId) {
         this.recordId = recordId;
+    }
+
+    public int[] getChangedFields() {
+        return fieldIndex;
     }
 }
