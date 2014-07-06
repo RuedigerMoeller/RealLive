@@ -3,6 +3,9 @@ package org.nustaq.reallive.impl.storage;
 import org.nustaq.heapoff.FSTAsciiStringOffheapMap;
 import org.nustaq.heapoff.FSTBinaryOffheapMap;
 import org.nustaq.heapoff.bytez.ByteSource;
+import org.nustaq.heapoff.bytez.Bytez;
+import org.nustaq.heapoff.bytez.bytesource.ByteArrayByteSource;
+import org.nustaq.heapoff.bytez.bytesource.BytezByteSource;
 import org.nustaq.serialization.FSTConfiguration;
 
 import java.util.Iterator;
@@ -61,4 +64,10 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
             store.remove(key);
         return res;
     }
+
+    @Override
+    public Bytez getCustomStorage() {
+        return store.getCustomFileHeader();
+    }
+
 }

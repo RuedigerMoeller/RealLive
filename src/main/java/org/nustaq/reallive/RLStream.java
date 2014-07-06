@@ -2,6 +2,7 @@ package org.nustaq.reallive;
 
 import org.nustaq.heapoff.bytez.ByteSource;
 import org.nustaq.kontraktor.Callback;
+import org.nustaq.kontraktor.Future;
 
 import java.util.function.Predicate;
 

@@ -48,6 +48,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
                 100000, // num records
                 20, // keylen
                 clz);
+            idgen.setState(storage.getCustomStorage());
         } catch (Exception e) {
             e.printStackTrace();
         }

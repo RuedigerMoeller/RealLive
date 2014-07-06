@@ -87,6 +87,11 @@ public class TClient {
         ArrayList<Future<String>> recids = new ArrayList();
 
         public Future $init(RLTable<TCRecord> table ) {
+
+            ReplicatedSet<TCRecord> set = new ReplicatedSet<>();
+            table.getStream().each(set);
+            set.onFinished( ()-> System.out.println("** Set size: "+set.getSize()) );
+
             for ( int i = 0; i < 100; i++) {
                 TCRecord recordForAdd = table.createRecordForAdd();
                 recordForAdd.setAskPrc(1+Math.random());
@@ -119,6 +124,7 @@ public class TClient {
     public static void main( String arg[] ) {
         RLSchema schema = new RLSchema();
         schema.createTable( "mkt", TCRecord.class );
+
         RLTable<TCRecord> table = schema.getTable("mkt");
 
         TCMutator mutator = Actors.AsActor(TCMutator.class);

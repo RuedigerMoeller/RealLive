@@ -1,6 +1,7 @@
 package org.nustaq.reallive.impl.storage;
 
 import org.nustaq.heapoff.bytez.ByteSource;
+import org.nustaq.heapoff.bytez.Bytez;
 
 import java.util.Iterator;
 
@@ -19,4 +20,5 @@ public interface BinaryStorage<K,V> {
     public void remove(K key);
     public V removeAndGet(K key);
 
+    public Bytez getCustomStorage();
 }

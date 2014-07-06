@@ -1,5 +1,6 @@
 package org.nustaq.reallive.client;
 
+import org.nustaq.kontraktor.Promise;
 import org.nustaq.reallive.ChangeBroadcast;
 import org.nustaq.reallive.ChangeBroadcastReceiver;
 import org.nustaq.reallive.Record;
@@ -12,6 +13,11 @@ import java.util.HashMap;
 public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<T> {
 
     HashMap<String,T> map = new HashMap<>();
+    Promise snapFin;
+
+    public ReplicatedSet() {
+        snapFin = new Promise();
+    }
 
     @Override
     public void onChangeReceived(ChangeBroadcast<T> changeBC) {
@@ -32,11 +38,20 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
                 }
                 break;
             case ChangeBroadcast.SNAPSHOT_DONE:
+                snapFin.receiveResult("void",null);
                 break;
             case ChangeBroadcast.ERROR:
             default:
         }
 
+    }
+
+    /**
+     * can only be used once. Fires upon SNAPSHOT_DONE
+     * @param r
+     */
+    public void onFinished( Runnable r ) {
+        snapFin.then((res, err) -> r.run());
     }
 
     public void dump() {
@@ -45,4 +60,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
         });
     }
 
+    public int getSize() {
+        return map.size();
+    }
 }

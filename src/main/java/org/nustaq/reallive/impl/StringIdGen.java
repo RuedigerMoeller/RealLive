@@ -1,5 +1,7 @@
 package org.nustaq.reallive.impl;
 
+import org.nustaq.heapoff.bytez.Bytez;
+
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -8,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class StringIdGen implements IdGenerator<String> {
 
     String prefix;
-    AtomicLong count = new AtomicLong(1);
+    Bytez state;
 
     public StringIdGen(String prefix) {
         this.prefix = prefix;
@@ -16,6 +18,19 @@ public class StringIdGen implements IdGenerator<String> {
 
     @Override
     public String nextid() {
-        return prefix+Long.toHexString(count.incrementAndGet());
+        long count = state.getLong(0);
+        while( ! state.compareAndSwapLong(0, count, count +1) ) {
+            count = state.getLong(0);
+        }
+        return prefix+Long.toHexString(count);
+    }
+
+    @Override
+    public int setState(Bytez bytes) {
+        long aLong = bytes.getLong(0);
+        if ( aLong == 0 ) // new file
+            bytes.putLong(0,1);
+        state = bytes;
+        return 8;
     }
 }
