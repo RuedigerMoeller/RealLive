@@ -5,7 +5,11 @@ import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.Record;
 import org.nustaq.reallive.Schema;
+import org.nustaq.reallive.sys.ClusterClients;
+import org.nustaq.reallive.sys.SysMeta;
+import org.nustaq.reallive.sys.SysTable;
 
+import static java.util.Arrays.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
@@ -20,9 +24,30 @@ public class RLSchema extends Schema {
 
     public RLSchema() {
         // configure conf
+        initSystemTables();
+    }
+
+    protected void initSystemTables() {
+        stream( new Class[] { SysTable.class, ClusterClients.class } ).forEach(
+            (clz) -> createTable(clz.getSimpleName(), clz)
+        );
     }
 
     public void createTable(String name, Class<? extends Record> clazz) {
+        pureCreateTable(name,clazz);
+        addToSysTable(name);
+    }
+
+    private void addToSysTable(String name) {
+        RLTable<SysTable> sysTables = getTable("SysTable");
+        SysTable sysTab = sysTables.createForUpdate("name", true);
+        sysTab.setTableName(name);
+        sysTab.setDescription("Sample");
+        sysTab._setId(name);
+        sysTab.$apply();
+    }
+
+    protected void pureCreateTable(String name, Class<? extends Record> clazz) {
         RLTableImpl table = Actors.AsActor( RLTableImpl.class, new ElasticScheduler(1), CHANGE_Q_SIZE );
         SingleNodeStream stream = Actors.AsActor(SingleNodeStream.class,new ElasticScheduler(1), FILTER_Q_SIZE);
         stream.$init(table);

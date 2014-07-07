@@ -21,4 +21,9 @@ public interface BinaryStorage<K,V> {
     public V removeAndGet(K key);
 
     public Bytez getCustomStorage();
+
+    int size();
+
+    int getFreeMB();
+    int getSizeMB();
 }

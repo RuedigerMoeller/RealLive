@@ -70,4 +70,19 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
         return store.getCustomFileHeader();
     }
 
+    @Override
+    public int size() {
+        return store.getSize();
+    }
+
+    @Override
+    public int getFreeMB() {
+        return (int) (store.getUsedMem()/1024/1024);
+    }
+
+    @Override
+    public int getSizeMB() {
+        return store.getCapacityMB();
+    }
+
 }

@@ -1,5 +1,6 @@
 package org.nustaq.machnetz;
 
+import de.ruedigermoeller.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.annotations.*;
 import io.netty.channel.ChannelHandlerContext;

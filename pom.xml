@@ -28,7 +28,6 @@
             <!--<artifactId>fastutil</artifactId>-->
             <!--<version>6.5.15</version>-->
         <!--</dependency>-->
-
         <dependency>
             <groupId>de.ruedigermoeller</groupId>
             <artifactId>kontraktor</artifactId>
@@ -39,6 +38,12 @@
             <groupId>de.ruedigermoeller</groupId>
             <artifactId>fst</artifactId>
             <version>2.00</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.ruedigermoeller</groupId>
+            <artifactId>minbin-generate</artifactId>
+            <version>1.0</version>
         </dependency>
 
     </dependencies>

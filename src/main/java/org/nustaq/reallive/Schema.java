@@ -7,7 +7,7 @@ import java.io.File;
 /**
  * Created by ruedi on 21.06.14.
  */
-public class Schema {
+public abstract class Schema {
 
     protected FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
     protected String dataDirectory = "/tmp/reallive";
@@ -27,9 +27,11 @@ public class Schema {
     public String getDataDirectory() {
         return dataDirectory;
     }
+
     public void setDataDirectory(String dataDirectory) {
         this.dataDirectory = dataDirectory;
     }
 
+    public abstract RLTable getTable(String tableId);
 
 }

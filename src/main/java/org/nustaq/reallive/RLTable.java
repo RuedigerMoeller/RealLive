@@ -20,28 +20,38 @@ public interface RLTable<T extends Record> {
     public T createForUpdateWith(Class<? extends Record> clazz, String key, boolean addIfNotPresent);
     public T createForUpdate(String key, boolean addIfNotPresent);
     public void prepareRecordForUpdate(T original);
-    public RLStream<T> getStream();
+    public RLStream<T> stream();
 
     ////////////////////////////////////////////////////////////////////////////////////////
     // async methods
     //
 
     /**
-     * add the given record and assign it a new unique id. The new record id is returned with the resulting future.
+     * add the given record and assign it a new unique key. The new record key is returned with the resulting future.
      * @param object
      * @return
      */
     public Future<String> $addGetId(T object);
 
     /**
-     * add the given record and assign it a new unique id. The new id is not returned.
+     * add the given record and assign it a new unique key. The new key is not returned.
      * @param object
      * @return
      */
     public void $add(T object);
 
+
     /**
-     * create a new unique record id and return a future to it
+     * puts the given object at key. Note its faster to use 'createForUpdate(.., true)' as this will
+     * submit differences to default values only and work exactly like a put operation.
+     *
+     * @param key
+     * @param object
+     */
+    public void $put(String key, T object);
+
+    /**
+     * create a new unique record key and return a future to it
      * @return
      */
     public Future<String> $nextKey();

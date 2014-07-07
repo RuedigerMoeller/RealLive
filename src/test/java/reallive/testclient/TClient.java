@@ -70,9 +70,9 @@ public class TClient {
         int changeCount = 0;
 
         public void $run(RLTable<TCRecord> table ) {
-            table.getStream().subscribe((r) -> r.getAskPrc() > 1.8, (change) -> {
+            table.stream().subscribe((r) -> r.getAskPrc() > 1.8, (change) -> {
 //                System.out.println(change);
-                if ( (changeCount++%5000) == 0 ) {
+                if ((changeCount++ % 5000) == 0) {
                     System.out.println("-------------------------------------------");
                     replica.dump();
                     System.out.println("-------------------------------------------");
@@ -89,7 +89,7 @@ public class TClient {
         public Future $init(RLTable<TCRecord> table ) {
 
             ReplicatedSet<TCRecord> set = new ReplicatedSet<>();
-            table.getStream().each(set);
+            table.stream().each(set);
             set.onFinished( ()-> System.out.println("** Set size: "+set.getSize()) );
 
             for ( int i = 0; i < 100; i++) {
@@ -116,14 +116,26 @@ public class TClient {
                 recordForUpdate.setBidPrc(0+Math.random());
                 recordForUpdate.$apply();
             }
+
             delayed(10, () -> self().$run(table));
+        }
+
+        public void $dumpTables() {
+            schema.getTable("SysTable").stream().each(
+                (change) -> System.out.println(change.getRecord()));
+            delayed(3000, () -> self().$dumpTables() );
         }
 
     }
 
+    static RLSchema schema;
     public static void main( String arg[] ) {
-        RLSchema schema = new RLSchema();
+        schema = new RLSchema();
         schema.createTable( "mkt", TCRecord.class );
+
+        schema.getTable("SysTable").stream().each(
+            (change) -> System.out.println(change.getRecord())
+        );
 
         RLTable<TCRecord> table = schema.getTable("mkt");
 
@@ -133,6 +145,7 @@ public class TClient {
         mutator.$init(table).then( (r,e) -> {
             client.$run(table);
             mutator.$run(table);
+            mutator.$dumpTables();
         });
 
 

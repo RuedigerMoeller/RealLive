@@ -51,7 +51,7 @@ public class TableTest {
         RLSchema schema = new RLSchema();
         schema.createTable( "test1", TestRec.class );
         RLTable<TestRec> table = schema.getTable("test1");
-        RLStream<TestRec> stream = table.getStream();
+        RLStream<TestRec> stream = table.stream();
 
         TestRec add0 = table.createForAdd();
         TestRec add1 = table.createForAdd();
@@ -150,7 +150,7 @@ public class TableTest {
         int MAX = 100000;
 //        int MAX = 1000;
         int count[] = {0};
-        table.getStream().filterUntil(
+        table.stream().filterUntil(
             (rec) -> true,
             (rec) -> count[0]++ >= MAX,
             (r) -> {
@@ -189,7 +189,7 @@ public class TableTest {
 //        int MAX = 1*1000000;
         int MAX = 100000;
         int count[] = {0};
-        test.getStream().filterUntil(
+        test.stream().filterUntil(
             (rec) -> true,
             (rec) -> count[0]++ >= MAX,
             (r) -> {
@@ -223,7 +223,7 @@ public class TableTest {
 //        int MAX = 1*1000000;
         int MAX = 100000;
         int count[] = {0};
-        test.getStream().filterBinary(
+        test.stream().filterBinary(
             (rec) -> {
                 return true;
             },
@@ -256,7 +256,7 @@ public class TableTest {
 //        int MAX = 1*1000000;
         int MAX = 1000000;
         int count[] = {0};
-        test.getStream().filterUntil(
+        test.stream().filterUntil(
             (rec) -> false,
             (rec) -> count[0]++ >= MAX,
             (r) -> {

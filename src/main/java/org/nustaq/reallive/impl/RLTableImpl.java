@@ -9,6 +9,7 @@ import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.reallive.*;
 import org.nustaq.reallive.impl.storage.BinaryStorage;
 import org.nustaq.reallive.impl.storage.FSTBinaryStorage;
+import org.nustaq.reallive.sys.SysTable;
 
 import java.io.File;
 import java.util.Iterator;
@@ -21,6 +22,8 @@ import java.util.function.Predicate;
  * add Client Object to be able to correlate changes and broadcasts
  */
 public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> implements RLTable<T> {
+
+    public static int DEFAULT_TABLE_MEM_MB = 1000;
 
     String tableId;
     IdGenerator<String> idgen;
@@ -44,7 +47,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             storage = recordFSTBinaryStorage;
             recordFSTBinaryStorage.init(
                 schema.getDataDirectory() + File.separator + tableId+".mmf",
-                4000, // 4 GB init size
+                DEFAULT_TABLE_MEM_MB, // 1 GB init size
                 100000, // num records
                 20, // keylen
                 clz);
@@ -52,6 +55,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         } catch (Exception e) {
             e.printStackTrace();
         }
+        delayed( 3000, ()-> self().$reportStats() );
     }
 
     @Override @CallerSideMethod
@@ -139,17 +143,22 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override
+    public void $put(String key, T object) {
+        storage.put(key,object);
+    }
+
+    @Override
     public void $update(RecordChange<String,T> change, boolean addIfNotPresent ) {
         T t = get(change.getId());
         if ( t != null ) {
             RecordChange appliedChange = change.apply(t);
             t.incVersion();
-            put(t.getId(), t);
+            put(t.getKey(), t);
             broadCastUpdate(appliedChange, t);
         } else if (addIfNotPresent) {
             t = createForAdd();
             RecordChange appliedChange = change.apply(t);
-            put(t.getId(), t);
+            put(t.getKey(), t);
             broadCastAdd(t);
         }
     }
@@ -158,6 +167,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     public void $remove(String key) {
         Record record = storage.removeAndGet(key);
         broadCastRemove(record);
+    }
+
+    public void $reportStats() {
+        SysTable sysTable = (SysTable) getSchema().getTable("SysTable").createForUpdate(tableId, true);
+        sysTable.setNumElems(storage.size());
+        sysTable.setSizeMB(storage.getSizeMB());
+        sysTable.setFreeMB(storage.getFreeMB());
+        sysTable.$apply();
+        delayed( 3000, () -> self().$reportStats() );
     }
 
     //
@@ -247,9 +265,9 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @CallerSideMethod
-    public RLStream<T> getStream() {
+    public RLStream<T> stream() {
         if ( isProxy() )
-            return getActor().getStream();
+            return getActor().stream();
         return streamActor;
     }
 }
