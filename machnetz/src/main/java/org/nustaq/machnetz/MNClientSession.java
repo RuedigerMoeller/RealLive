@@ -1,22 +1,35 @@
 package org.nustaq.machnetz;
 
-import de.ruedigermoeller.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.annotations.*;
 import io.netty.channel.ChannelHandlerContext;
+import org.nustaq.reallive.sys.SysMeta;
+import org.nustaq.reallive.sys.messages.Invocation;
+import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.webserver.ClientSession;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 /**
  * Created by ruedi on 25.05.14.
  */
 public class MNClientSession<T extends MNClientSession> extends Actor<T> implements ClientSession {
 
+    static FSTConfiguration conf = FSTConfiguration.createCrossPlatformConfiguration();
+    static {
+        conf.registerCrossPlatformClassMappingUseSimpleName(new SysMeta().getClasses());
+    }
+
     protected MachNetz server; // FIXME: iface
 
     int sessionId;
+    MethodHandles.Lookup lookup;
 
     public void $init(MachNetz machNetz, int sessionId) {
         server = machNetz;
+        lookup = MethodHandles.lookup();
     }
 
     @CallerSideMethod
@@ -31,9 +44,27 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     }
 
     public void $onTextMessage(ChannelHandlerContext ctx, String text) {
+        System.out.println("textmsg");
     }
 
+    final MethodType rpctype = MethodType.methodType(void.class,Invocation.class);
     public void $onBinaryMessage(ChannelHandlerContext ctx, byte[] buffer) {
+        System.out.println("minmsg");
+        final Object msg = conf.asObject(buffer);
+        if (msg instanceof Invocation) {
+            final Invocation inv = (Invocation) msg;
+            try {
+                final MethodHandle method = lookup.findVirtual(getClass(), inv.getName(), rpctype);
+                method.invoke(this,inv);
+            } catch (Throwable e) {
+                e.printStackTrace();
+                System.out.printf("unable to find method " + inv.getName() + "( " + inv.getClass() + " )");
+            }
+        }
+    }
+
+    public void initModel(Invocation inv) {
+        System.out.println("Called method initModel !!!");
     }
 
 }

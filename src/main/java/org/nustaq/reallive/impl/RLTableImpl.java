@@ -30,15 +30,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     BinaryStorage<String,Record> storage;
     volatile Class clazz;
 
-    Schema schema; // shared
+    RealLive realLive; // shared
     private RLStream streamActor;
     private ChangeBroadcastReceiver receiver;
 
-    public void $init( String tableId, Schema schema, Class<T> clz, SingleNodeStream streamActor ) {
+    public void $init( String tableId, RealLive realLive, Class<T> clz, SingleNodeStream streamActor ) {
         this.clazz = clz;
         this.tableId = tableId;
-        this.schema = schema;
-        new File(schema.getDataDirectory()).mkdirs();
+        this.realLive = realLive;
+        new File(realLive.getDataDirectory()).mkdirs();
         idgen = new StringIdGen(tableId+":");
         this.streamActor = streamActor;
         this.receiver = streamActor;
@@ -46,7 +46,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             FSTBinaryStorage<Record> recordFSTBinaryStorage = new FSTBinaryStorage<>();
             storage = recordFSTBinaryStorage;
             recordFSTBinaryStorage.init(
-                schema.getDataDirectory() + File.separator + tableId+".mmf",
+                realLive.getDataDirectory() + File.separator + tableId+".mmf",
                 DEFAULT_TABLE_MEM_MB, // 1 GB init size
                 100000, // num records
                 20, // keylen
@@ -64,8 +64,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override @CallerSideMethod
-    public Schema getSchema() {
-        return getActor().schema;
+    public RealLive getRealLive() {
+        return getActor().realLive;
     }
 
     @Override @CallerSideMethod
@@ -170,7 +170,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     public void $reportStats() {
-        SysTable sysTable = (SysTable) getSchema().getTable("SysTable").createForUpdate(tableId, true);
+        SysTable sysTable = (SysTable) getRealLive().getTable("SysTable").createForUpdate(tableId, true);
         sysTable.setNumElems(storage.size());
         sysTable.setSizeMB(storage.getSizeMB());
         sysTable.setFreeMB(storage.getFreeMB());

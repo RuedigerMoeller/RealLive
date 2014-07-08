@@ -13,7 +13,7 @@ public interface RLTable<T extends Record> {
     //
 
     public String getTableId();
-    Schema getSchema();
+    RealLive getRealLive();
 
     public T createForAddWith(Class<? extends Record> clazz);
     public T createForAdd();

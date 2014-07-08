@@ -4,9 +4,8 @@ import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.Record;
-import org.nustaq.reallive.Schema;
+import org.nustaq.reallive.RealLive;
 import org.nustaq.reallive.sys.ClusterClients;
-import org.nustaq.reallive.sys.SysMeta;
 import org.nustaq.reallive.sys.SysTable;
 
 import static java.util.Arrays.*;
@@ -16,13 +15,13 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Created by ruedi on 21.06.14.
  */
-public class RLSchema extends Schema {
+public class RLImpl extends RealLive {
 
     public static int CHANGE_Q_SIZE = 10000;
     public static int FILTER_Q_SIZE = 100000;
     ConcurrentHashMap<String, RLTable> tables = new ConcurrentHashMap<>();
 
-    public RLSchema() {
+    public RLImpl() {
         // configure conf
         initSystemTables();
     }
@@ -34,6 +33,9 @@ public class RLSchema extends Schema {
     }
 
     public void createTable(String name, Class<? extends Record> clazz) {
+        if (tables.get(name) != null ) {
+            throw new RuntimeException("table already created");
+        }
         pureCreateTable(name,clazz);
         addToSysTable(name);
     }

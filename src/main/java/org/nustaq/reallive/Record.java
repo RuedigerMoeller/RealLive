@@ -190,8 +190,8 @@ public class Record implements Serializable {
         return getSchema().getConf().getClassInfo(getClass());
     }
 
-    public Schema getSchema() {
-        return table.getSchema();
+    public RealLive getSchema() {
+        return table.getRealLive();
     }
 
     public String toString() {

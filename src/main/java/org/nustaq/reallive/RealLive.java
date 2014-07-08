@@ -7,7 +7,7 @@ import java.io.File;
 /**
  * Created by ruedi on 21.06.14.
  */
-public abstract class Schema {
+public abstract class RealLive {
 
     protected FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
     protected String dataDirectory = "/tmp/reallive";

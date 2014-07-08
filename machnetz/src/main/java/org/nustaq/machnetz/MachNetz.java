@@ -90,7 +90,7 @@ public class MachNetz extends WebSocketHttpServer {
         @Parameter(names = {"-port", "-p"}, description = "port to listen")
         Integer port = 8887;
 
-        @Parameter(names = {"-cr", "-contentRoot"}, description = "directory to serve files from")
+        @Parameter(names = {"-cr"}, description = "directory to serve files from")
         String contentRoot = ".";
     }
 

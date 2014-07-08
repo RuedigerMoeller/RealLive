@@ -1,7 +1,7 @@
 package reallive.testclient;
 
 import org.nustaq.reallive.client.ReplicatedSet;
-import org.nustaq.reallive.impl.RLSchema;
+import org.nustaq.reallive.impl.RLImpl;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Future;
@@ -128,9 +128,9 @@ public class TClient {
 
     }
 
-    static RLSchema schema;
+    static RLImpl schema;
     public static void main( String arg[] ) {
-        schema = new RLSchema();
+        schema = new RLImpl();
         schema.createTable( "mkt", TCRecord.class );
 
         schema.getTable("SysTable").stream().each(
@@ -147,7 +147,6 @@ public class TClient {
             mutator.$run(table);
             mutator.$dumpTables();
         });
-
 
     }
 }
