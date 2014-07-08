@@ -5,9 +5,11 @@ import org.nustaq.kontraktor.annotations.*;
 import io.netty.channel.ChannelHandlerContext;
 import org.nustaq.reallive.sys.SysMeta;
 import org.nustaq.reallive.sys.messages.Invocation;
+import org.nustaq.reallive.sys.messages.InvocationCallback;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.webserver.ClientSession;
 
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -47,7 +49,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         System.out.println("textmsg");
     }
 
-    final MethodType rpctype = MethodType.methodType(void.class,Invocation.class);
+    final MethodType rpctype = MethodType.methodType(Object.class,Invocation.class);
     public void $onBinaryMessage(ChannelHandlerContext ctx, byte[] buffer) {
         System.out.println("minmsg");
         final Object msg = conf.asObject(buffer);
@@ -55,7 +57,11 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
             final Invocation inv = (Invocation) msg;
             try {
                 final MethodHandle method = lookup.findVirtual(getClass(), inv.getName(), rpctype);
-                method.invoke(this,inv);
+                Object invoke = method.invoke(this, inv);
+                if ( ! "0".equals(inv.getCbId()) ) {
+                    InvocationCallback cb = new InvocationCallback(invoke,inv.getCbId());
+                    server.sendWSBinaryMessage(ctx,conf.asByteArray(cb));
+                }
             } catch (Throwable e) {
                 e.printStackTrace();
                 System.out.printf("unable to find method " + inv.getName() + "( " + inv.getClass() + " )");
@@ -63,8 +69,9 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         }
     }
 
-    public void initModel(Invocation inv) {
+    Object initModel(Invocation inv) {
         System.out.println("Called method initModel !!!");
+        return "Yep";
     }
 
 }

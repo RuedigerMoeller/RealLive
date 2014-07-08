@@ -43,6 +43,25 @@ var JInvocation = function(obj) {
 };
 
 
+var JInvocationCallback = function(obj) {
+    this.__typeInfo = 'InvocationCallback';
+    this.setResult = function(val) { this.result = val; };
+    this.setCbId = function(val) { this.cbId = val; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            if ( this.hasOwnProperty(setter) ) {
+                this[setter](obj[key]);
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
 var JAuthRequest = function(obj) {
     this.__typeInfo = 'AuthRequest';
     this.setMisc = function(val) { this.misc = val; };
@@ -109,6 +128,7 @@ var mbfactory = function(clzname) {
     switch (clzname) {
         case 'SysTable': return new JSysTable();
         case 'Invocation': return new JInvocation();
+        case 'InvocationCallback': return new JInvocationCallback();
         case 'AuthRequest': return new JAuthRequest();
         case 'AuthResponse': return new JAuthResponse();
         case 'ClusterClients': return new JClusterClients();

@@ -1,5 +1,6 @@
 package org.nustaq.reallive.sys;
 
+import org.nustaq.reallive.sys.messages.InvocationCallback;
 import org.nustaq.serialization.minbin.GenMeta;
 import org.nustaq.reallive.sys.messages.AuthRequest;
 import org.nustaq.reallive.sys.messages.AuthResponse;
@@ -17,6 +18,7 @@ public class SysMeta implements GenMeta {
             AuthRequest.class,
             AuthResponse.class,
             ClusterClients.class,
+            InvocationCallback.class,
         };
     }
 }
