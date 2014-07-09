@@ -8,6 +8,8 @@ import org.nustaq.kontraktor.impl.DispatcherThread;
 import io.netty.channel.ChannelHandlerContext;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.netty2go.NettyWSHttpServer;
+import org.nustaq.reallive.RealLive;
+import org.nustaq.reallive.impl.RLImpl;
 import org.nustaq.webserver.ClientSession;
 import org.nustaq.webserver.WebSocketHttpServer;
 
@@ -26,9 +28,20 @@ public class MachNetz extends WebSocketHttpServer {
     public static int MAX_THREADS = 8;
 
     Scheduler clientScheduler = new ElasticScheduler(MAX_THREADS, CLIENTQ_SIZE);
+    private RealLive realLive;
 
     public MachNetz(File contentRoot) {
         super(contentRoot);
+        initServer();
+    }
+
+    public RealLive getRealLive() {
+        return realLive;
+    }
+
+    protected void initServer() {
+        realLive = new RLImpl();
+//        schema.createTable( "mkt", TCRecord.class );
     }
 
 

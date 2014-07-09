@@ -10,6 +10,8 @@ public class Invocation implements Serializable {
     Object argument;
     String cbId;
 
+    transient Object currentContext;
+
     public String getCbId() {
         return cbId;
     }
@@ -32,5 +34,13 @@ public class Invocation implements Serializable {
 
     public void setArgument(Object argument) {
         this.argument = argument;
+    }
+
+    public Object getCurrentContext() {
+        return currentContext;
+    }
+
+    public void setCurrentContext(Object currentContext) {
+        this.currentContext = currentContext;
     }
 }

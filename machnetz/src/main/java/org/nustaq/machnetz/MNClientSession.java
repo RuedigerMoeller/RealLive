@@ -3,6 +3,7 @@ package org.nustaq.machnetz;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.annotations.*;
 import io.netty.channel.ChannelHandlerContext;
+import org.nustaq.reallive.RealLive;
 import org.nustaq.reallive.sys.SysMeta;
 import org.nustaq.reallive.sys.messages.Invocation;
 import org.nustaq.reallive.sys.messages.InvocationCallback;
@@ -19,6 +20,7 @@ import java.lang.invoke.MethodType;
  */
 public class MNClientSession<T extends MNClientSession> extends Actor<T> implements ClientSession {
 
+    private static final Object NO_RESULT = "NO_RESULT";
     static FSTConfiguration conf = FSTConfiguration.createCrossPlatformConfiguration();
     static {
         conf.registerCrossPlatformClassMappingUseSimpleName(new SysMeta().getClasses());
@@ -32,6 +34,10 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     public void $init(MachNetz machNetz, int sessionId) {
         server = machNetz;
         lookup = MethodHandles.lookup();
+    }
+
+    protected RealLive getRLDB() {
+        return server.getRealLive();
     }
 
     @CallerSideMethod
@@ -55,12 +61,13 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         final Object msg = conf.asObject(buffer);
         if (msg instanceof Invocation) {
             final Invocation inv = (Invocation) msg;
+            inv.setCurrentContext(ctx);
             try {
                 final MethodHandle method = lookup.findVirtual(getClass(), inv.getName(), rpctype);
-                Object invoke = method.invoke(this, inv);
-                if ( ! "0".equals(inv.getCbId()) ) {
-                    InvocationCallback cb = new InvocationCallback(invoke,inv.getCbId());
-                    server.sendWSBinaryMessage(ctx,conf.asByteArray(cb));
+                Object result = method.invoke(this, inv);
+                if ( ! "0".equals(inv.getCbId()) && result != NO_RESULT ) {
+                    String cbId = inv.getCbId();
+                    sendReply(inv, result);
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -69,9 +76,20 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         }
     }
 
+    protected void sendReply(Invocation inv, Object msg) {
+        String cbId = inv.getCbId();
+        ChannelHandlerContext ctx = (ChannelHandlerContext) inv.getCurrentContext();
+        InvocationCallback cb = new InvocationCallback(msg, cbId);
+        server.sendWSBinaryMessage(ctx,conf.asByteArray(cb));
+    }
+
     Object initModel(Invocation inv) {
         System.out.println("Called method initModel !!!");
         return "Yep";
     }
 
+    Object streamTables(Invocation inv) {
+        getRLDB().getTable("SysTable").stream().each( (change) -> sendReply(inv,change) );
+        return NO_RESULT;
+    }
 }

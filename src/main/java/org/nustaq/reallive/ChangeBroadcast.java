@@ -1,11 +1,12 @@
 package org.nustaq.reallive;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
  * Created by ruedi on 05.07.14.
  */
-public class ChangeBroadcast<T extends Record> {
+public class ChangeBroadcast<T extends Record> implements Serializable {
 
     public static final int UPDATE    = 0;
     public static final int ADD       = 1;

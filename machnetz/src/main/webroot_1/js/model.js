@@ -101,6 +101,28 @@ var JAuthResponse = function(obj) {
 };
 
 
+var JChangeBroadcast = function(obj) {
+    this.__typeInfo = 'ChangeBroadcast';
+    this.setType = function(val) { this.type = val; };
+    this.setNewRecord = function(val) { this.newRecord = val; };
+    this.setAppliedChange = function(val) { this.appliedChange = val; };
+    this.setRecordKey = function(val) { this.recordKey = val; };
+    this.setTableId = function(val) { this.tableId = val; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            if ( this.hasOwnProperty(setter) ) {
+                this[setter](obj[key]);
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
 var JClusterClients = function(obj) {
     this.__typeInfo = 'ClusterClients';
     this.setInstanceNum = function(val) { this.instanceNum = val; };
@@ -131,6 +153,7 @@ var mbfactory = function(clzname) {
         case 'InvocationCallback': return new JInvocationCallback();
         case 'AuthRequest': return new JAuthRequest();
         case 'AuthResponse': return new JAuthResponse();
+        case 'ChangeBroadcast': return new JChangeBroadcast();
         case 'ClusterClients': return new JClusterClients();
         default: return { __typeInfo: clzname };
     }
