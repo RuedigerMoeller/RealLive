@@ -37,6 +37,16 @@ app.controller('RLAdmin', function ($scope) {
         $scope.ws.send(msg);
     };
 
+    $scope.visibleColumns = function( columns ) {
+        var result = {};
+        angular.forEach(columns, function(value, key) {
+            if ( ! value['hidden'] ) {
+                result[key] = value;
+            }
+        });
+        return result;
+    };
+
     $scope.doConnect = function () {
         var ws = new WebSocket("ws://".concat($scope.host).concat(":").concat($scope.port).concat("/").concat($scope.websocketDir));
         ws.cbId = 1;
@@ -47,7 +57,10 @@ app.controller('RLAdmin', function ($scope) {
                 $scope.socketConnected = true;
                 $scope.call("initModel", 0, function(retVal) {
                     console.log("model:"+retVal);
-                    $scope.model = retVal;
+                    retVal.tables.SysTable.columns.meta.hidden = true;
+                    $scope.$apply(function () {
+                        $scope.model = retVal;
+                    });
                 });
                 $scope.subscribe("streamTables", "", function(msg) {
                     console.log(msg);
@@ -56,6 +69,9 @@ app.controller('RLAdmin', function ($scope) {
                         $scope.systables.push(msg.newRecord);
                     }
                     else if ( msg.type == 4 ) { // snap fin FIXME: add constant
+                        $scope.$apply(function () {
+//                            $scope.model = retVal;
+                        });
                         return true;
                     }
                     return false;
@@ -78,9 +94,9 @@ app.controller('RLAdmin', function ($scope) {
         ws.onmessage = function (message) {
             var fr = new FileReader();
             if ( typeof message.data == 'string' ) {
-                $scope.$apply(function () {
+//                $scope.$apply(function () {
 //                    $scope.resptext = message.data;
-                });
+//                });
             } else {
 //                this.receiveQueue.push(message);
                 fr.onloadend = function (event) {
@@ -98,9 +114,9 @@ app.controller('RLAdmin', function ($scope) {
                             }
                         }
 //                    var strMsg = MinBin.prettyPrint(msg);
-                        $scope.$apply(function () {
-                            // handle message
-                        });
+//                        $scope.$apply(function () {
+//                            // handle message
+//                        });
                     } catch (ex) {
                         console.log(ex)
                     }

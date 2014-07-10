@@ -509,7 +509,7 @@ function MBIn(rawmsg) {
                 case INT_32: return this.readInt();
                 case INT_64: return this.readInt();
                 default: throw "unexpected primitive type:";
-            }
+            }setter
         } else {
             return this.readTag(this.readIn());
         }
@@ -596,6 +596,9 @@ function MBObjectTagSer() {
         for (var next in data ) {
             if (data.hasOwnProperty(next) && next != "__typeInfo" && next != "__idcnt" ) {
                 var val = data[next];
+                if ( data.hasOwnProperty('j_'+next) ) {
+                    val = data['j_'+next]();
+                }
                 if ( typeof val != 'function' ) {
                     out.writeObject(next);
                     if (out.writeRefIfApplicable(data[next])) {
@@ -652,6 +655,22 @@ function MBSequenceTagSer() {
             if ( o == END_MARKER )
                 break;
             arr.push(o);
+        }
+        if ( 'map' == typeInfo ) {
+            var res = {"__typeInfo" : "map"};
+            var isStringKey = true;
+            for ( var i = 1; i < arr.length; i+=2 ) {
+                var key = arr[i];
+                if ( typeof key === 'string' ) {
+                    var val = arr[i+1];
+                    res[key] = val;
+                } else {
+                    isStringKey = false;
+                    break;
+                }
+            }
+            if ( isStringKey )
+                arr = res;
         }
         inp.objectMap[objpos] = arr;
         return arr;

@@ -1,6 +1,7 @@
 package org.nustaq.reallive.sys.metadata;
 
 import java.io.Serializable;
+import java.util.HashMap;
 
 /**
  * Created by ruedi on 09.07.2014.
@@ -8,7 +9,7 @@ import java.io.Serializable;
 public class TableMeta implements Serializable {
     String name;
     String displayName;
-    ColumnMeta columns[];
+    HashMap<String, ColumnMeta> columns = new HashMap<>();
     String customMeta;
 
     public TableMeta() {
@@ -17,7 +18,10 @@ public class TableMeta implements Serializable {
     public TableMeta(String name, String displayName, ColumnMeta[] columns) {
         this.name = name;
         this.displayName = displayName;
-        this.columns = columns;
+        for (int i = 0; i < columns.length; i++) {
+            ColumnMeta column = columns[i];
+            this.columns.put(column.getName(),column);
+        }
     }
 
     public String getCustomMeta() {
@@ -44,11 +48,12 @@ public class TableMeta implements Serializable {
         this.displayName = displayName;
     }
 
-    public ColumnMeta[] getColumns() {
-        return columns;
+    public ColumnMeta getColumn(String name) {
+        return columns.get(name);
     }
 
-    public void setColumns(ColumnMeta[] columns) {
-        this.columns = columns;
+    public void putColumn(String name, ColumnMeta cm) {
+        columns.put(name, cm);
     }
+
 }

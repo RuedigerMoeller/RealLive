@@ -52,16 +52,14 @@ public class RLImpl extends RealLive {
         //fixme: annotation processing
         final FSTClazzInfo classInfo = conf.getClassInfo(rowClass);
         final FSTClazzInfo.FSTFieldInfo[] fieldInfo = classInfo.getFieldInfo();
-        ColumnMeta cols[] = new ColumnMeta[fieldInfo.length];
         for (int i = 0; i < fieldInfo.length; i++) {
             FSTClazzInfo.FSTFieldInfo fi = fieldInfo[i];
             ColumnMeta cm = new ColumnMeta();
             cm.setName(fi.getField().getName());
             cm.setFieldId(fi.getStructOffset());
             cm.setDisplayName(cm.getName()); // annotation
-            cols[i] = cm;
+            tableMeta.putColumn(cm.getName(),cm);
         }
-        tableMeta.setColumns(cols);
         model.putTable(name,tableMeta);
 
         RLTable<SysTable> sysTables = getTable("SysTable");

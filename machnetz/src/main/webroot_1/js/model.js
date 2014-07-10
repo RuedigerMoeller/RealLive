@@ -1,14 +1,14 @@
 
 var JInvocation = function(obj) {
     this.__typeInfo = 'Invocation';
-    this.setArgument = function(val) { this.argument = val; };
-    this.setCbId = function(val) { this.cbId = val; };
-    this.setName = function(val) { this.name = val; };
+    this.j_argument = function() { return this.argument; };
+    this.j_cbId = function() { return this.cbId; };
+    this.j_name = function() { return this.name; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
@@ -21,16 +21,16 @@ var JInvocation = function(obj) {
 
 var JClusterClients = function(obj) {
     this.__typeInfo = 'ClusterClients';
-    this.setInstanceNum = function(val) { this.instanceNum = val; };
-    this.setVersion = function(val) { this.version = val; };
-    this.setKey = function(val) { this.key = val; };
-    this.setName = function(val) { this.name = val; };
-    this.setState = function(val) { this.state = val; };
+    this.j_instanceNum = function() { return this.instanceNum; };
+    this.j_version = function() { return this.version; };
+    this.j_key = function() { return this.key; };
+    this.j_name = function() { return this.name; };
+    this.j_state = function() { return this.state; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
@@ -43,13 +43,13 @@ var JClusterClients = function(obj) {
 
 var JInvocationCallback = function(obj) {
     this.__typeInfo = 'InvocationCallback';
-    this.setResult = function(val) { this.result = val; };
-    this.setCbId = function(val) { this.cbId = val; };
+    this.j_result = function() { return this.result; };
+    this.j_cbId = function() { return this.cbId; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
@@ -62,14 +62,14 @@ var JInvocationCallback = function(obj) {
 
 var JAuthRequest = function(obj) {
     this.__typeInfo = 'AuthRequest';
-    this.setMisc = function(val) { this.misc = val; };
-    this.setPwd = function(val) { this.pwd = val; };
-    this.setUser = function(val) { this.user = val; };
+    this.j_misc = function() { return this.misc; };
+    this.j_pwd = function() { return this.pwd; };
+    this.j_user = function() { return this.user; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
@@ -82,13 +82,13 @@ var JAuthRequest = function(obj) {
 
 var JAuthResponse = function(obj) {
     this.__typeInfo = 'AuthResponse';
-    this.setSucess = function(val) { this.sucess = val; };
-    this.setSessionKey = function(val) { this.sessionKey = val; };
+    this.j_sucess = function() { return this.sucess; };
+    this.j_sessionKey = function() { return this.sessionKey; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
@@ -101,16 +101,16 @@ var JAuthResponse = function(obj) {
 
 var JChangeBroadcast = function(obj) {
     this.__typeInfo = 'ChangeBroadcast';
-    this.setType = function(val) { this.type = val; };
-    this.setNewRecord = function(val) { this.newRecord = val; };
-    this.setAppliedChange = function(val) { this.appliedChange = val; };
-    this.setRecordKey = function(val) { this.recordKey = val; };
-    this.setTableId = function(val) { this.tableId = val; };
+    this.j_type = function() { return this.type; };
+    this.j_newRecord = function() { return this.newRecord; };
+    this.j_appliedChange = function() { return this.appliedChange; };
+    this.j_recordKey = function() { return this.recordKey; };
+    this.j_tableId = function() { return this.tableId; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
@@ -123,19 +123,19 @@ var JChangeBroadcast = function(obj) {
 
 var JSysTable = function(obj) {
     this.__typeInfo = 'SysTable';
-    this.setFreeMB = function(val) { this.freeMB = val; };
-    this.setNumElems = function(val) { this.numElems = val; };
-    this.setSizeMB = function(val) { this.sizeMB = val; };
-    this.setVersion = function(val) { this.version = val; };
-    this.setDescription = function(val) { this.description = val; };
-    this.setKey = function(val) { this.key = val; };
-    this.setTableName = function(val) { this.tableName = val; };
-    this.setMeta = function(val) { this.meta = val; };
+    this.j_freeMB = function() { return this.freeMB; };
+    this.j_numElems = function() { return this.numElems; };
+    this.j_sizeMB = function() { return this.sizeMB; };
+    this.j_version = function() { return this.version; };
+    this.j_description = function() { return this.description; };
+    this.j_key = function() { return this.key; };
+    this.j_tableName = function() { return this.tableName; };
+    this.j_meta = function() { return this.meta; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
@@ -148,15 +148,15 @@ var JSysTable = function(obj) {
 
 var JTableMeta = function(obj) {
     this.__typeInfo = 'TableMeta';
-    this.setColumns = function(val) { this.columns = val; };
-    this.setCustomMeta = function(val) { this.customMeta = val; };
-    this.setDisplayName = function(val) { this.displayName = val; };
-    this.setName = function(val) { this.name = val; };
+    this.j_columns = function() { return MinBin.jmap(val); };
+    this.j_customMeta = function() { return this.customMeta; };
+    this.j_displayName = function() { return this.displayName; };
+    this.j_name = function() { return this.name; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
@@ -169,15 +169,15 @@ var JTableMeta = function(obj) {
 
 var JColumnMeta = function(obj) {
     this.__typeInfo = 'ColumnMeta';
-    this.setFieldId = function(val) { this.fieldId = val; };
-    this.setCustomMeta = function(val) { this.customMeta = val; };
-    this.setDisplayName = function(val) { this.displayName = val; };
-    this.setName = function(val) { this.name = val; };
+    this.j_fieldId = function() { return this.fieldId; };
+    this.j_customMeta = function() { return this.customMeta; };
+    this.j_displayName = function() { return this.displayName; };
+    this.j_name = function() { return this.name; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
@@ -190,13 +190,13 @@ var JColumnMeta = function(obj) {
 
 var JMetadata = function(obj) {
     this.__typeInfo = 'Metadata';
-    this.setTables = function(val) { this.tables = MinBin.jmap(val); };
-    this.setName = function(val) { this.name = val; };
+    this.j_tables = function() { return MinBin.jmap(val); };
+    this.j_name = function() { return this.name; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
-            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            var setter = 'j_'.concat(key);
             if ( this.hasOwnProperty(setter) ) {
-                this[setter](obj[key]);
+                this[key] = obj[key];
             }
         }
         return this;
