@@ -5,8 +5,12 @@ import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.Record;
 import org.nustaq.reallive.RealLive;
-import org.nustaq.reallive.sys.ClusterClients;
-import org.nustaq.reallive.sys.SysTable;
+import org.nustaq.reallive.sys.metadata.ColumnMeta;
+import org.nustaq.reallive.sys.metadata.Metadata;
+import org.nustaq.reallive.sys.metadata.TableMeta;
+import org.nustaq.reallive.sys.tables.ClusterClients;
+import org.nustaq.reallive.sys.tables.SysTable;
+import org.nustaq.serialization.FSTClazzInfo;
 
 import static java.util.Arrays.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,8 +24,10 @@ public class RLImpl extends RealLive {
     public static int CHANGE_Q_SIZE = 10000;
     public static int FILTER_Q_SIZE = 100000;
     ConcurrentHashMap<String, RLTable> tables = new ConcurrentHashMap<>();
+    Metadata model;
 
     public RLImpl() {
+        model = new Metadata();
         // configure conf
         initSystemTables();
     }
@@ -37,14 +43,32 @@ public class RLImpl extends RealLive {
             throw new RuntimeException("table already created");
         }
         pureCreateTable(name,clazz);
-        addToSysTable(name);
+        addToSysTable(name, clazz);
     }
 
-    private void addToSysTable(String name) {
+    private void addToSysTable(String name, Class rowClass) {
+        TableMeta tableMeta = new TableMeta();
+        tableMeta.setName(name);
+        //fixme: annotation processing
+        final FSTClazzInfo classInfo = conf.getClassInfo(rowClass);
+        final FSTClazzInfo.FSTFieldInfo[] fieldInfo = classInfo.getFieldInfo();
+        ColumnMeta cols[] = new ColumnMeta[fieldInfo.length];
+        for (int i = 0; i < fieldInfo.length; i++) {
+            FSTClazzInfo.FSTFieldInfo fi = fieldInfo[i];
+            ColumnMeta cm = new ColumnMeta();
+            cm.setName(fi.getField().getName());
+            cm.setFieldId(fi.getStructOffset());
+            cm.setDisplayName(cm.getName()); // annotation
+            cols[i] = cm;
+        }
+        tableMeta.setColumns(cols);
+        model.putTable(name,tableMeta);
+
         RLTable<SysTable> sysTables = getTable("SysTable");
         SysTable sysTab = sysTables.createForUpdate("name", true);
         sysTab.setTableName(name);
         sysTab.setDescription("Sample");
+        sysTab.setMeta(tableMeta);
         sysTab._setId(name);
         sysTab.$apply();
     }
@@ -66,6 +90,11 @@ public class RLImpl extends RealLive {
 
     public RLTable getTable(String tableId) {
         return tables.get(tableId);
+    }
+
+    @Override
+    public Metadata getMetadata() {
+        return model;
     }
 
 }

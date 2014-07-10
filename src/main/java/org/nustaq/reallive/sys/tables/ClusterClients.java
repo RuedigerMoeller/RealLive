@@ -1,4 +1,4 @@
-package org.nustaq.reallive.sys;
+package org.nustaq.reallive.sys.tables;
 
 import org.nustaq.reallive.Record;
 

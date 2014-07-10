@@ -14,7 +14,7 @@ public interface RLTable<T extends Record> {
 
     public String getTableId();
     RealLive getRealLive();
-
+    public Class getRowClazz();
     public T createForAddWith(Class<? extends Record> clazz);
     public T createForAdd();
     public T createForUpdateWith(Class<? extends Record> clazz, String key, boolean addIfNotPresent);

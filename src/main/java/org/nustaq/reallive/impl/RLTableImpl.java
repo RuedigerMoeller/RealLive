@@ -9,7 +9,7 @@ import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.reallive.*;
 import org.nustaq.reallive.impl.storage.BinaryStorage;
 import org.nustaq.reallive.impl.storage.FSTBinaryStorage;
-import org.nustaq.reallive.sys.SysTable;
+import org.nustaq.reallive.sys.tables.SysTable;
 
 import java.io.File;
 import java.util.Iterator;
@@ -28,7 +28,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     String tableId;
     IdGenerator<String> idgen;
     BinaryStorage<String,Record> storage;
-    volatile Class clazz;
+    Class clazz;
 
     RealLive realLive; // shared
     private RLStream streamActor;
@@ -56,6 +56,11 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             e.printStackTrace();
         }
         delayed( 3000, ()-> self().$reportStats() );
+    }
+
+    @CallerSideMethod
+    public Class getRowClazz() {
+        return clazz;
     }
 
     @Override @CallerSideMethod

@@ -1,6 +1,7 @@
-package org.nustaq.reallive.sys;
+package org.nustaq.reallive.sys.tables;
 
 import org.nustaq.reallive.Record;
+import org.nustaq.reallive.sys.metadata.TableMeta;
 
 /**
  * Created by ruedi on 07.07.14.
@@ -9,10 +10,19 @@ public class SysTable extends Record {
 
     String tableName;
     String description;
+    TableMeta meta;
 
     int sizeMB;
     int freeMB;
     int numElems;
+
+    public TableMeta getMeta() {
+        return meta;
+    }
+
+    public void setMeta(TableMeta meta) {
+        this.meta = meta;
+    }
 
     public String getTableName() {
         return tableName;

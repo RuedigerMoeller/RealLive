@@ -85,7 +85,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     Object initModel(Invocation inv) {
         System.out.println("Called method initModel !!!");
-        return "Yep";
+        return getRLDB().getMetadata();
     }
 
     Object streamTables(Invocation inv) {

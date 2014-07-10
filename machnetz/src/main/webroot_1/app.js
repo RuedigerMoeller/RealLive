@@ -8,6 +8,7 @@ app.controller('RLAdmin', function ($scope) {
     $scope.socketConnected = false;
 
     $scope.systables = [];
+    $scope.model = null;
 
     $scope.unsubscribe = function( cbId ) {
         delete this.ws.cbMap[cbId];
@@ -45,7 +46,8 @@ app.controller('RLAdmin', function ($scope) {
             $scope.$apply(function () {
                 $scope.socketConnected = true;
                 $scope.call("initModel", 0, function(retVal) {
-                    console.log("Hallo:"+retVal);
+                    console.log("model:"+retVal);
+                    $scope.model = retVal;
                 });
                 $scope.subscribe("streamTables", "", function(msg) {
                     console.log(msg);

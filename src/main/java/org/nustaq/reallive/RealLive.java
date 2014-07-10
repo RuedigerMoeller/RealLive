@@ -1,8 +1,7 @@
 package org.nustaq.reallive;
 
+import org.nustaq.reallive.sys.metadata.Metadata;
 import org.nustaq.serialization.FSTConfiguration;
-
-import java.io.File;
 
 /**
  * Created by ruedi on 21.06.14.
@@ -33,5 +32,6 @@ public abstract class RealLive {
     }
 
     public abstract RLTable getTable(String tableId);
+    public abstract Metadata getMetadata();
 
 }

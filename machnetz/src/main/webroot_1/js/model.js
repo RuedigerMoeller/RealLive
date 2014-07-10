@@ -1,13 +1,9 @@
 
-var JSysTable = function(obj) {
-    this.__typeInfo = 'SysTable';
-    this.setFreeMB = function(val) { this.freeMB = val; };
-    this.setNumElems = function(val) { this.numElems = val; };
-    this.setSizeMB = function(val) { this.sizeMB = val; };
-    this.setVersion = function(val) { this.version = val; };
-    this.setDescription = function(val) { this.description = val; };
-    this.setKey = function(val) { this.key = val; };
-    this.setTableName = function(val) { this.tableName = val; };
+var JInvocation = function(obj) {
+    this.__typeInfo = 'Invocation';
+    this.setArgument = function(val) { this.argument = val; };
+    this.setCbId = function(val) { this.cbId = val; };
+    this.setName = function(val) { this.name = val; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
             var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
@@ -23,11 +19,13 @@ var JSysTable = function(obj) {
 };
 
 
-var JInvocation = function(obj) {
-    this.__typeInfo = 'Invocation';
-    this.setArgument = function(val) { this.argument = val; };
-    this.setCbId = function(val) { this.cbId = val; };
+var JClusterClients = function(obj) {
+    this.__typeInfo = 'ClusterClients';
+    this.setInstanceNum = function(val) { this.instanceNum = val; };
+    this.setVersion = function(val) { this.version = val; };
+    this.setKey = function(val) { this.key = val; };
     this.setName = function(val) { this.name = val; };
+    this.setState = function(val) { this.state = val; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
             var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
@@ -123,13 +121,77 @@ var JChangeBroadcast = function(obj) {
 };
 
 
-var JClusterClients = function(obj) {
-    this.__typeInfo = 'ClusterClients';
-    this.setInstanceNum = function(val) { this.instanceNum = val; };
+var JSysTable = function(obj) {
+    this.__typeInfo = 'SysTable';
+    this.setFreeMB = function(val) { this.freeMB = val; };
+    this.setNumElems = function(val) { this.numElems = val; };
+    this.setSizeMB = function(val) { this.sizeMB = val; };
     this.setVersion = function(val) { this.version = val; };
+    this.setDescription = function(val) { this.description = val; };
     this.setKey = function(val) { this.key = val; };
+    this.setTableName = function(val) { this.tableName = val; };
+    this.setMeta = function(val) { this.meta = val; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            if ( this.hasOwnProperty(setter) ) {
+                this[setter](obj[key]);
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
+var JTableMeta = function(obj) {
+    this.__typeInfo = 'TableMeta';
+    this.setColumns = function(val) { this.columns = val; };
+    this.setCustomMeta = function(val) { this.customMeta = val; };
+    this.setDisplayName = function(val) { this.displayName = val; };
     this.setName = function(val) { this.name = val; };
-    this.setState = function(val) { this.state = val; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            if ( this.hasOwnProperty(setter) ) {
+                this[setter](obj[key]);
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
+var JColumnMeta = function(obj) {
+    this.__typeInfo = 'ColumnMeta';
+    this.setFieldId = function(val) { this.fieldId = val; };
+    this.setCustomMeta = function(val) { this.customMeta = val; };
+    this.setDisplayName = function(val) { this.displayName = val; };
+    this.setName = function(val) { this.name = val; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
+            if ( this.hasOwnProperty(setter) ) {
+                this[setter](obj[key]);
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
+var JMetadata = function(obj) {
+    this.__typeInfo = 'Metadata';
+    this.setTables = function(val) { this.tables = MinBin.jmap(val); };
+    this.setName = function(val) { this.name = val; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
             var setter = 'set'.concat(key.substr(0,1).toUpperCase()).concat(key.substr(1));
@@ -148,13 +210,16 @@ var JClusterClients = function(obj) {
 
 var mbfactory = function(clzname) {
     switch (clzname) {
-        case 'SysTable': return new JSysTable();
         case 'Invocation': return new JInvocation();
+        case 'ClusterClients': return new JClusterClients();
         case 'InvocationCallback': return new JInvocationCallback();
         case 'AuthRequest': return new JAuthRequest();
         case 'AuthResponse': return new JAuthResponse();
         case 'ChangeBroadcast': return new JChangeBroadcast();
-        case 'ClusterClients': return new JClusterClients();
+        case 'SysTable': return new JSysTable();
+        case 'TableMeta': return new JTableMeta();
+        case 'ColumnMeta': return new JColumnMeta();
+        case 'Metadata': return new JMetadata();
         default: return { __typeInfo: clzname };
     }
 };

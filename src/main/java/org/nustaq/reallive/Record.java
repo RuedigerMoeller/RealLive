@@ -187,10 +187,10 @@ public class Record implements Serializable {
     }
 
     public FSTClazzInfo getClassInfo() {
-        return getSchema().getConf().getClassInfo(getClass());
+        return getRealLive().getConf().getClassInfo(getClass());
     }
 
-    public RealLive getSchema() {
+    public RealLive getRealLive() {
         return table.getRealLive();
     }
 
