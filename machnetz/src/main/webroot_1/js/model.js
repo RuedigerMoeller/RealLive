@@ -146,10 +146,35 @@ var JSysTable = function(obj) {
 };
 
 
+var JTestRecord = function(obj) {
+    this.__typeInfo = 'TestRecord';
+    this.j_version = function() { return this.version; };
+    this.j_yearOfBirth = function() { return this.yearOfBirth; };
+    this.j_key = function() { return this.key; };
+    this.j_name = function() { return this.name; };
+    this.j_preName = function() { return this.preName; };
+    this.j_profession = function() { return this.profession; };
+    this.j_sex = function() { return this.sex; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'j_'.concat(key);
+            if ( this.hasOwnProperty(setter) ) {
+                this[key] = obj[key];
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
 var JTableMeta = function(obj) {
     this.__typeInfo = 'TableMeta';
     this.j_columns = function() { return MinBin.jmap(val); };
     this.j_customMeta = function() { return this.customMeta; };
+    this.j_description = function() { return this.description; };
     this.j_displayName = function() { return this.displayName; };
     this.j_name = function() { return this.name; };
     this.fromObj = function(obj) {
@@ -170,7 +195,9 @@ var JTableMeta = function(obj) {
 var JColumnMeta = function(obj) {
     this.__typeInfo = 'ColumnMeta';
     this.j_fieldId = function() { return this.fieldId; };
+    this.j_order = function() { return this.order; };
     this.j_customMeta = function() { return this.customMeta; };
+    this.j_description = function() { return this.description; };
     this.j_displayName = function() { return this.displayName; };
     this.j_name = function() { return this.name; };
     this.fromObj = function(obj) {
@@ -217,6 +244,7 @@ var mbfactory = function(clzname) {
         case 'AuthResponse': return new JAuthResponse();
         case 'ChangeBroadcast': return new JChangeBroadcast();
         case 'SysTable': return new JSysTable();
+        case 'TestRecord': return new JTestRecord();
         case 'TableMeta': return new JTableMeta();
         case 'ColumnMeta': return new JColumnMeta();
         case 'Metadata': return new JMetadata();

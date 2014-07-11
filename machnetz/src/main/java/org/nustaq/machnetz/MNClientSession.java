@@ -89,7 +89,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     }
 
     Object streamTables(Invocation inv) {
-        getRLDB().getTable("SysTable").stream().each( (change) -> sendReply(inv,change) );
+        getRLDB().stream("SysTable").each( (change) -> sendReply(inv,change) );
         return NO_RESULT;
     }
 }

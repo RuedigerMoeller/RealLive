@@ -11,6 +11,7 @@ public class TableMeta implements Serializable {
     String displayName;
     HashMap<String, ColumnMeta> columns = new HashMap<>();
     String customMeta;
+    String description;
 
     public TableMeta() {
     }
@@ -56,4 +57,11 @@ public class TableMeta implements Serializable {
         columns.put(name, cm);
     }
 
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
 }

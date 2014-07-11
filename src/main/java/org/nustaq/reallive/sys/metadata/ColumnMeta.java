@@ -10,6 +10,8 @@ public class ColumnMeta implements Serializable{
     String displayName;
     int fieldId;
     String customMeta;
+    String description;
+    private int order;
 
     public ColumnMeta() {
     }
@@ -50,5 +52,21 @@ public class ColumnMeta implements Serializable{
 
     public void setCustomMeta(String customMeta) {
         this.customMeta = customMeta;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setOrder(int order) {
+        this.order = order;
+    }
+
+    public int getOrder() {
+        return order;
     }
 }

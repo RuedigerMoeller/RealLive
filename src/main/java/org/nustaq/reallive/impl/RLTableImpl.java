@@ -149,6 +149,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public void $put(String key, T object) {
+        object._setId(key);
         storage.put(key,object);
     }
 

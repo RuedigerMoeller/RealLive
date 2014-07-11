@@ -12,13 +12,17 @@ import org.nustaq.reallive.sys.messages.AuthRequest;
 import org.nustaq.reallive.sys.messages.AuthResponse;
 import org.nustaq.reallive.sys.messages.Invocation;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Created by ruedi on 07.07.14.
  */
 public class SysMeta implements GenMeta {
     @Override
-    public Class[] getClasses() {
-        return new Class[] {
+    public List<Class> getClasses() {
+        return new ArrayList<Class>( Arrays.asList(new Class[] {
             SysTable.class,
             Invocation.class,
             AuthRequest.class,
@@ -29,6 +33,6 @@ public class SysMeta implements GenMeta {
             Metadata.class,
             TableMeta.class,
             ColumnMeta.class
-        };
+        }));
     }
 }

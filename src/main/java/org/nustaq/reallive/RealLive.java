@@ -32,6 +32,8 @@ public abstract class RealLive {
     }
 
     public abstract RLTable getTable(String tableId);
+    public abstract RLStream stream(String tableId);
     public abstract Metadata getMetadata();
 
+    public abstract void createTable(String mkt, Class<? extends Record> recordClass);
 }

@@ -7,7 +7,7 @@ app.controller('RLAdmin', function ($scope) {
     $scope.websocketDir = "websocket";
     $scope.socketConnected = false;
 
-    $scope.systables = [];
+    $scope.systables = new RLResultSet();
     $scope.model = null;
 
     $scope.unsubscribe = function( cbId ) {
@@ -38,12 +38,14 @@ app.controller('RLAdmin', function ($scope) {
     };
 
     $scope.visibleColumns = function( columns ) {
-        var result = {};
+        var result = [];
         angular.forEach(columns, function(value, key) {
             if ( ! value['hidden'] ) {
-                result[key] = value;
+                value._key = key;
+                result.push(value);
             }
         });
+        result.sort(function (a,b) { return a.order- b.order; });
         return result;
     };
 
@@ -64,11 +66,8 @@ app.controller('RLAdmin', function ($scope) {
                 });
                 $scope.subscribe("streamTables", "", function(msg) {
                     console.log(msg);
-                    if ( msg.type == 1 ) // add
-                    {
-                        $scope.systables.push(msg.newRecord);
-                    }
-                    else if ( msg.type == 4 ) { // snap fin FIXME: add constant
+                    $scope.systables.push(msg);
+                    if ( msg.type == 4 ) { // snap fin FIXME: add constant
                         $scope.$apply(function () {
 //                            $scope.model = retVal;
                         });

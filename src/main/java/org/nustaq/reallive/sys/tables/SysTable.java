@@ -1,19 +1,27 @@
 package org.nustaq.reallive.sys.tables;
 
 import org.nustaq.reallive.Record;
+import org.nustaq.reallive.sys.annotations.Description;
+import org.nustaq.reallive.sys.annotations.Order;
 import org.nustaq.reallive.sys.metadata.TableMeta;
 
 /**
  * Created by ruedi on 07.07.14.
  */
+@Description("Table containing rows for each table of RealLive")
 public class SysTable extends Record {
 
+    @Order(0)
     String tableName;
+    @Order(10)
     String description;
     TableMeta meta;
 
+    @Order(20)
     int sizeMB;
+    @Order(30)
     int freeMB;
+    @Order(15)
     int numElems;
 
     public TableMeta getMeta() {
