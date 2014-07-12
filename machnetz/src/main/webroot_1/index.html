@@ -25,10 +25,11 @@
     </style>
 </head>
 <body ng-controller="RLAdmin">
-<script src="app.js"></script>
 <script src="js/minbin.js"></script>
 <script src="js/model.js"></script>
 <script src="js/reallive.js"></script>
+<script src="js/trNgGrid.js"></script>
+<script src="app.js"></script>
 <br>
 
 <div class="container">
@@ -63,17 +64,44 @@
         <!--</div>-->
     </div>
     <br>
-</div>
-<br>
-<br>
-    <table class="table table-striped table-hover table-bordered table-condensed">
-        <thead><tr><th ng-repeat="column in visibleColumns(model.tables.SysTable.columns)">{{column.displayName}}</th></tr></thead>
-        <tbody>
+    <div class="row">
+        <table class="table table-striped table-hover table-condensed">
+            <thead><tr><th ng-repeat="column in visibleColumns(model.tables.SysTable.columns)">{{column.displayName}}</th></tr></thead>
+            <tbody>
             <tr ng-repeat="table in systables.list">
                 <td ng-repeat="column in visibleColumns(model.tables.SysTable.columns)">{{table[column.name]}}</td>
             </tr>
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
+    <br>
+    <div class="row">
+        <table tr-ng-grid="" items="systables.list" enable-filtering="false">
+            <thead>
+            <tr>
+                <!--<th field-name="key" enable-filtering="false" enable-sorting="true" cell-width="4em" display-align="right"></th>-->
+                <th field-name="key" display-name="Hallo" ></th>
+                <th field-name="version" enable-filtering="false" ></th>
+                <th field-name="tableName" enable-filtering="false" ></th>
+                <th field-name="description" enable-filtering="false"></th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+    <!--<div class="row">-->
+        <!--<table tr-ng-grid="" items="systables.list" enable-filtering="false">-->
+            <!--<thead>-->
+            <!--<tr><th ng-repeat="column in visibleColumns(model.tables.SysTable.columns)" field-name="{{column.name}}"></th></tr>-->
+            <!--</thead>-->
+        <!--</table>-->
+    <!--</div>-->
+    <div class="row">
+        <table tr-ng-grid="" items="systables.list" enable-filtering="false" fields="model.tables.SysTable.columnsNGTableConf">
+        </table>
+    </div>
+</div>
+<br>
+<br>
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>

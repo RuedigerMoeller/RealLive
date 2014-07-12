@@ -90,6 +90,9 @@ var MinBin = new function MinBin() {
     };
 
     this.jmap = function(map) {
+        if( Object.prototype.toString.call( someVar ) === '[object Array]' ) {
+            return map;
+        }
         var res = [Object.keys(map).length];
         for ( var key in map) {
             res.push(key);
@@ -509,7 +512,7 @@ function MBIn(rawmsg) {
                 case INT_32: return this.readInt();
                 case INT_64: return this.readInt();
                 default: throw "unexpected primitive type:";
-            }setter
+            }
         } else {
             return this.readTag(this.readIn());
         }
@@ -657,7 +660,7 @@ function MBSequenceTagSer() {
             arr.push(o);
         }
         if ( 'map' == typeInfo ) {
-            var res = {"__typeInfo" : "map"};
+            var res = {};
             var isStringKey = true;
             for ( var i = 1; i < arr.length; i+=2 ) {
                 var key = arr[i];
@@ -671,6 +674,12 @@ function MBSequenceTagSer() {
             }
             if ( isStringKey )
                 arr = res;
+        } else if ( 'list' == typeInfo ) {
+            var res = [];
+            for ( var i = 1; i < arr.length; i++ ) {
+                res.push(arr[i]);
+            }
+            return res;
         }
         inp.objectMap[objpos] = arr;
         return arr;

@@ -1,4 +1,4 @@
-var app = angular.module("rl-admin", ['ui.bootstrap'])
+var app = angular.module("rl-admin", ['ui.bootstrap','trNgGrid']);
 
 app.controller('RLAdmin', function ($scope) {
 
@@ -60,6 +60,22 @@ app.controller('RLAdmin', function ($scope) {
                 $scope.call("initModel", 0, function(retVal) {
                     console.log("model:"+retVal);
                     retVal.tables.SysTable.columns.meta.hidden = true;
+                    // add columnconfigs to each table for trNgTable
+                    var conf, col;
+                    for ( conf in retVal.tables ) {
+                        console.log(conf);
+                        if ( conf != '__typeInfo' ) {
+                            var colConf = [];
+                            retVal.tables[conf].columnsNGTableConf = colConf;
+                            var cols = $scope.visibleColumns(retVal.tables[conf].columns);
+                            for ( col in  cols ) {
+                                if ( col != '__typeInfo' && ! col.hidden ) {
+//                                    colConf.push( { fieldName: cols, displayName: cols[col].displayName } )
+                                    colConf.push( cols[col].name )
+                                }
+                            }
+                        }
+                    }
                     $scope.$apply(function () {
                         $scope.model = retVal;
                     });
