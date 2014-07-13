@@ -1,5 +1,35 @@
-var app = angular.module("rl-admin", ['ui.bootstrap','trNgGrid']);
+var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid']);
 
+app.directive('rlTable', function() {
+    return {
+        restrict: 'E',
+        scope: true,
+        controller: function( $scope, $attrs ) {
+            $scope.rlset = new RLResultSet();
+            $scope.gridOptions = {
+                data: 'rlset.list',
+                columnDefs: 'model.tables.'+$attrs.table+'.columnsNGTableConf',
+                enableColumnResize: true,
+                multiSelect: false
+            };
+            console.log("Hallo");
+            RealLive.onModelLoaded(function() {
+                RealLive.querySet($attrs.table,$scope.rlset,$scope);
+            });
+
+        },
+//    {
+//            set: new RLResultSet(),
+//            gridOptions: {
+//                data: [], // '$parent.systables.list',
+//                columnDefs: [], //'$parent.model.tables.SysTable.columnsNGTableConf',
+//                enableColumnResize: true,
+//                multiSelect: false
+//            }
+//        },
+        template: '<div class="gridStyle" ng-grid="gridOptions"></div>'
+    }
+});
 app.controller('RLAdmin', function ($scope) {
 
     $scope.host = 'localhost';
@@ -9,144 +39,32 @@ app.controller('RLAdmin', function ($scope) {
 
     $scope.systables = new RLResultSet();
     $scope.model = null;
-
-    $scope.unsubscribe = function( cbId ) {
-        delete this.ws.cbMap[cbId];
-    };
-
-    $scope.subscribe = function( methodName, arg, callback ) {
-        this.call(methodName,arg,callback,true);
-    };
-
-    $scope.call = function( methodName, arg, callback, stream ) {
-        var msg = MinBin.encode(
-            new JInvocation({
-                "name" : methodName,
-                "argument" : arg,
-                "cbId" : typeof callback === "undefined" ? "0" : (stream ? 'st':'mc').concat($scope.ws.cbId)
-            })
-        );
-        if ( ! (typeof callback === "undefined") ) {
-            if ( ! stream ) {
-                $scope.ws.cbMap['mc'.concat($scope.ws.cbId)] = callback;
-            } else {
-                $scope.ws.cbMap['st'.concat($scope.ws.cbId)] = callback; // stream
-            }
-            $scope.ws.cbId++;
-        }
-        $scope.ws.send(msg);
-    };
-
-    $scope.visibleColumns = function( columns ) {
-        var result = [];
-        angular.forEach(columns, function(value, key) {
-            if ( ! value['hidden'] ) {
-                value._key = key;
-                result.push(value);
-            }
-        });
-        result.sort(function (a,b) { return a.order- b.order; });
-        return result;
+    $scope.gridOptions = {
+        data: 'systables.list',
+        columnDefs: 'model.tables.SysTable.columnsNGTableConf',
+        enableColumnResize: true,
+        multiSelect: false
     };
 
     $scope.doConnect = function () {
-        var ws = new WebSocket("ws://".concat($scope.host).concat(":").concat($scope.port).concat("/").concat($scope.websocketDir));
-        ws.cbId = 1;
-        ws.cbMap = {};
-        ws.onopen = function () {
-            console.log("open");
-            $scope.$apply(function () {
-                $scope.socketConnected = true;
-                $scope.call("initModel", 0, function(retVal) {
-                    console.log("model:"+retVal);
-                    retVal.tables.SysTable.columns.meta.hidden = true;
-                    // add columnconfigs to each table for trNgTable
-                    var conf, col;
-                    for ( conf in retVal.tables ) {
-                        console.log(conf);
-                        if ( conf != '__typeInfo' ) {
-                            var colConf = [];
-                            retVal.tables[conf].columnsNGTableConf = colConf;
-                            var cols = $scope.visibleColumns(retVal.tables[conf].columns);
-                            for ( col in  cols ) {
-                                if ( col != '__typeInfo' && ! col.hidden ) {
-//                                    colConf.push( { fieldName: cols, displayName: cols[col].displayName } )
-                                    colConf.push( cols[col].name )
-                                }
-                            }
+        RealLive.onChange = function(event) {
+            $scope.$apply( function() {
+                $scope.socketConnected = RealLive.socketConnected;
+                if ( "ModelLoaded" == event ) {
+                    $scope.model = RealLive.model;
+                    RealLive.callStreaming("streamTable", "SysTable", function(msg) {
+                        console.log(msg);
+                        $scope.systables.push(msg);
+                        if ( msg.type == RL_SNAPSHOT_DONE ) {
+                            $scope.$apply(function () {});
+                            return true;
                         }
-                    }
-                    $scope.$apply(function () {
-                        $scope.model = retVal;
+                        return false;
                     });
-                });
-                $scope.subscribe("streamTables", "", function(msg) {
-                    console.log(msg);
-                    $scope.systables.push(msg);
-                    if ( msg.type == 4 ) { // snap fin FIXME: add constant
-                        $scope.$apply(function () {
-//                            $scope.model = retVal;
-                        });
-                        return true;
-                    }
-                    return false;
-                });
+                }
             });
         };
-        ws.onerror = function () {
-            console.log("error");
-            $scope.$apply(function () {
-                $scope.socketConnected = false;
-            });
-        };
-        ws.onclose = function () {
-            console.log("closed");
-            $scope.$apply(function () {
-                $scope.socketConnected = false;
-            });
-        };
-        ws.receiveQueue = [];
-        ws.onmessage = function (message) {
-            var fr = new FileReader();
-            if ( typeof message.data == 'string' ) {
-//                $scope.$apply(function () {
-//                    $scope.resptext = message.data;
-//                });
-            } else {
-//                this.receiveQueue.push(message);
-                fr.onloadend = function (event) {
-                    try {
-                        var msg = MinBin.decode(event.target.result);
-                        if (msg instanceof JInvocationCallback) {
-                            var cb = $scope.ws.cbMap[msg.cbId];
-                            if (typeof cb === "function") {
-                                var unsubscribe = cb.call(null, msg.result);
-                                if (unsubscribe || msg.cbId.substring(0, 2) == 'mc') { // single shot
-                                    delete $scope.ws.cbMap[msg.cbId];
-                                }
-                            } else {
-                                console.log("unmapped callback " + msg.cbId + " " + msg);
-                            }
-                        }
-//                    var strMsg = MinBin.prettyPrint(msg);
-//                        $scope.$apply(function () {
-//                            // handle message
-//                        });
-                    } catch (ex) {
-                        console.log(ex)
-                    }
-//                    if ( ws.receiveQueue.length > 0 ) {
-//                        var nextMsg = ws.receiveQueue.shift();
-//                        ws.onmessage(nextMsg);
-//                    }
-                };
-                // error handling is missing
-//                if ( this.receiveQueue.length == 1 )
-//                fr.readAsArrayBuffer(this.receiveQueue.shift().data);
-                fr.readAsArrayBuffer(message.data);
-            }
-        };
-        $scope.ws = ws;
+        RealLive.doConnect($scope.host, $scope.port,$scope.websocketDir);
     };
 
 });

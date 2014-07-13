@@ -11,7 +11,14 @@
     <script src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.11.0.js"></script>
     <!-- Bootstrap -->
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="js/ng-grid.css" />
     <style>
+        .gridStyle {
+            border: 1px solid rgb(212,212,212);
+            /*width: 400px;*/
+            height: 200px
+        }
+
         .tooltip-inner {
             max-width: 700px;
             padding: 1px 2px;
@@ -25,10 +32,14 @@
     </style>
 </head>
 <body ng-controller="RLAdmin">
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+
 <script src="js/minbin.js"></script>
 <script src="js/model.js"></script>
 <script src="js/reallive.js"></script>
-<script src="js/trNgGrid.js"></script>
+<script src="js/ng-grid-2.0.11.min.js"></script>
 <script src="app.js"></script>
 <br>
 
@@ -76,35 +87,15 @@
     </div>
     <br>
     <div class="row">
-        <table tr-ng-grid="" items="systables.list" enable-filtering="false">
-            <thead>
-            <tr>
-                <!--<th field-name="key" enable-filtering="false" enable-sorting="true" cell-width="4em" display-align="right"></th>-->
-                <th field-name="key" display-name="Hallo" ></th>
-                <th field-name="version" enable-filtering="false" ></th>
-                <th field-name="tableName" enable-filtering="false" ></th>
-                <th field-name="description" enable-filtering="false"></th>
-            </tr>
-            </thead>
-        </table>
+        <div class="gridStyle" ng-grid="gridOptions" table="SysTable"></div>
     </div>
-    <!--<div class="row">-->
-        <!--<table tr-ng-grid="" items="systables.list" enable-filtering="false">-->
-            <!--<thead>-->
-            <!--<tr><th ng-repeat="column in visibleColumns(model.tables.SysTable.columns)" field-name="{{column.name}}"></th></tr>-->
-            <!--</thead>-->
-        <!--</table>-->
-    <!--</div>-->
+    <br>
     <div class="row">
-        <table tr-ng-grid="" items="systables.list" enable-filtering="false" fields="model.tables.SysTable.columnsNGTableConf">
-        </table>
+        <rl-table table="person"></rl-table>
     </div>
 </div>
 <br>
 <br>
 
-<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
 </body>
 </html>

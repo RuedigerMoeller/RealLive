@@ -59,6 +59,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     public void $onBinaryMessage(ChannelHandlerContext ctx, byte[] buffer) {
         System.out.println("minmsg");
         final Object msg = conf.asObject(buffer);
+        System.out.println("  minmsg "+msg);
         if (msg instanceof Invocation) {
             final Invocation inv = (Invocation) msg;
             inv.setCurrentContext(ctx);
@@ -88,8 +89,9 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         return getRLDB().getMetadata();
     }
 
-    Object streamTables(Invocation inv) {
-        getRLDB().stream("SysTable").each( (change) -> sendReply(inv,change) );
+    Object streamTable(Invocation inv) {
+        getRLDB().stream("" + inv.getArgument()).each((change) -> sendReply(inv, change));
         return NO_RESULT;
     }
+
 }

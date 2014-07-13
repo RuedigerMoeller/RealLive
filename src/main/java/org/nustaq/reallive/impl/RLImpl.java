@@ -77,7 +77,6 @@ public class RLImpl extends RealLive {
             ColumnMeta cm = new ColumnMeta();
             cm.setName(fi.getField().getName());
             cm.setFieldId(fi.getStructOffset());
-            cm.setDisplayName(cm.getName()); // annotation
 
             desc = fi.getField().getAnnotation(Description.class);
             if ( desc != null ) {
@@ -88,7 +87,7 @@ public class RLImpl extends RealLive {
             if ( ds != null ) {
                 cm.setDisplayName(ds.value());
             } else {
-                cm.setDisplayName(cm.getName());
+                cm.setDisplayName(decamel(cm.getName()));
             }
 
             Order ord = (Order) fi.getField().getAnnotation(Order.class);
@@ -109,6 +108,28 @@ public class RLImpl extends RealLive {
         sysTab.setMeta(tableMeta);
         sysTab._setId(name);
         sysTab.$apply();
+    }
+
+    private String decamel(String name) {
+        String res = "";
+        char prevChar = ' ';
+        for ( int i = 0; i < name.length(); i++ ) {
+            char c = name.charAt(i);
+            if ( i == 0 ) {
+                prevChar = Character.toUpperCase(c);
+                res += prevChar;
+                continue;
+            }
+            if ( Character.isUpperCase(c) && (Character.isLowerCase(prevChar) || !Character.isLetter(prevChar)) ) {
+                res += ' ';
+                prevChar = c;
+                res += c;
+            } else {
+                prevChar = c;
+                res += c;
+            }
+        }
+        return res;
     }
 
     protected void pureCreateTable(String name, Class<? extends Record> clazz) {
