@@ -55,14 +55,14 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
 
     @Override @CallerSideMethod
     public Subscription subscribe(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
-        Subscription<T> subs = new Subscription<>(resultReceiver,matches);
+        Subscription<T> subs = new Subscription<>(getActor().tableActor.getTableId(),matches,resultReceiver);
         self().$subscribe(subs);
         return subs;
     }
 
     @Override @CallerSideMethod
     public Subscription listen(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
-        Subscription<T> subs = new Subscription<>(resultReceiver,matches);
+        Subscription<T> subs = new Subscription<>(getActor().tableActor.getTableId(),matches,resultReceiver);
         self().$listen(subs);
         return subs;
     }

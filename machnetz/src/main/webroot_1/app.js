@@ -14,7 +14,7 @@ app.directive('rlTable', function() {
             };
             console.log("Hallo");
             RealLive.onModelLoaded(function() {
-                RealLive.querySet($attrs.table,$scope.rlset,$scope);
+                RealLive.subscribeSet($attrs.table,"item.yearOfBirth > 1950", $scope.rlset,$scope);
             });
 
         },

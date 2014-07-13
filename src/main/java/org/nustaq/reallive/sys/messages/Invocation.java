@@ -5,9 +5,9 @@ import java.io.Serializable;
 /**
  * Created by ruedi on 08.07.2014.
  */
-public class Invocation implements Serializable {
+public class Invocation<T> implements Serializable {
     String name;
-    Object argument;
+    T argument;
     String cbId;
 
     transient Object currentContext;
@@ -28,11 +28,11 @@ public class Invocation implements Serializable {
         this.name = name;
     }
 
-    public Object getArgument() {
+    public T getArgument() {
         return argument;
     }
 
-    public void setArgument(Object argument) {
+    public void setArgument(T argument) {
         this.argument = argument;
     }
 

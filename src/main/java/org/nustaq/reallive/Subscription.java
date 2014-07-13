@@ -11,12 +11,18 @@ public class Subscription<T extends Record> implements ChangeBroadcastReceiver<T
 
     ChangeBroadcastReceiver<T> cb;
     Predicate<T> filter;
+    String tableKey;
 
     public boolean __matched; // for internal use
 
-    public Subscription(ChangeBroadcastReceiver<T> cb, Predicate<T> filter) {
+    public Subscription(String tab, Predicate<T> filter,ChangeBroadcastReceiver<T> cb) {
         this.cb = cb;
         this.filter = filter;
+        this.tableKey = tab;
+    }
+
+    public String getTableKey() {
+        return tableKey;
     }
 
     public ChangeBroadcastReceiver<T> getChangeReceiver() {

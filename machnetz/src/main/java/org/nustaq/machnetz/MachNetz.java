@@ -17,6 +17,7 @@ import org.nustaq.webserver.ClientSession;
 import org.nustaq.webserver.WebSocketHttpServer;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.LockSupport;
 
@@ -53,14 +54,23 @@ public class MachNetz extends WebSocketHttpServer {
         person.$put("ruedi1", new TestRecord("Möller", "Rüdiger", 1968, "m", "Key Business Management Consulting Agent (KBMCA)"));
         person.$put("other2", new TestRecord("Huber", "Heinz", 1988, "m", "Project Office Support Consultant"));
         person.$put("another2", new TestRecord("Huber", "Heinz", 1988, "m", "Back Office Facility Management Officer"));
-        new Thread(() -> {
-            while( true ) {
-                TestRecord forUpdate = (TestRecord) getRealLive().getTable("person").createForUpdate("ruedi", false);
-                forUpdate.setYearOfBirth((int) (1900+Math.random()*99));
-                forUpdate.$apply();
-                LockSupport.parkNanos(1000*1000*1000);
+        ArrayList<String> keys = new ArrayList<>();
+        person.stream().each( (change) -> {
+            if ( change.isSnapshotDone() ) {
+                new Thread(() -> {
+                    while( true ) {
+                        keys.stream().forEach( (key) -> {
+                            TestRecord forUpdate = (TestRecord) getRealLive().getTable("person").createForUpdate(key, false);
+                            forUpdate.setYearOfBirth((int) (1900+Math.random()*99));
+                            forUpdate.$apply();
+                        });
+                        LockSupport.parkNanos(1000*1000*1000);
+                    }
+                }).start();
+            } else {
+                keys.add(change.getRecordKey());
             }
-        }).start();
+        });
     }
 
 

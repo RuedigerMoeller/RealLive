@@ -4,9 +4,11 @@ import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.annotations.*;
 import io.netty.channel.ChannelHandlerContext;
 import org.nustaq.reallive.RealLive;
+import org.nustaq.reallive.Subscription;
 import org.nustaq.reallive.sys.SysMeta;
 import org.nustaq.reallive.sys.messages.Invocation;
 import org.nustaq.reallive.sys.messages.InvocationCallback;
+import org.nustaq.reallive.sys.messages.QueryTuple;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.webserver.ClientSession;
 
@@ -14,6 +16,7 @@ import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.HashMap;
 
 /**
  * Created by ruedi on 25.05.14.
@@ -90,6 +93,41 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     }
 
     Object streamTable(Invocation inv) {
+        getRLDB().stream("" + inv.getArgument()).each((change) -> sendReply(inv, change));
+        return NO_RESULT;
+    }
+
+    //////////// stream api ///////////////////////////////////////////////////////////////
+
+    HashMap<String, Subscription> subscriptions = new HashMap<>();
+
+    Object unsubscribe(Invocation<String> inv) {
+        String subsId = inv.getArgument();
+        Subscription subs = subscriptions.get(subsId);
+        if ( subs != null ) {
+            getRLDB().stream(subs.getTableKey()).unsubscribe(subs);
+            subscriptions.remove(subsId);
+        }
+        return NO_RESULT;
+    }
+
+    // expect [tableName,filterString]
+    Object subscribe(Invocation<QueryTuple> inv) {
+        QueryTuple argument = inv.getArgument();
+        Subscription subs = getRLDB().stream("" + argument.getTableName()).subscribe(null, (change) -> sendReply(inv, change));
+        subscriptions.put(inv.getCbId(),subs);
+        return NO_RESULT;
+    }
+
+    // expect [tableName,filterString]
+    Object listen(Invocation<QueryTuple> inv) {
+        Subscription subs = getRLDB().stream("" + inv.getArgument()).listen(null, (change) -> sendReply(inv, change));
+        subscriptions.put(inv.getCbId(), subs);
+        return NO_RESULT;
+    }
+
+    // expect [tableName,filterString]
+    Object query(Invocation<QueryTuple> inv) {
         getRLDB().stream("" + inv.getArgument()).each((change) -> sendReply(inv, change));
         return NO_RESULT;
     }

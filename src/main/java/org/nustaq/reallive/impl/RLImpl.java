@@ -76,7 +76,7 @@ public class RLImpl extends RealLive {
             FSTClazzInfo.FSTFieldInfo fi = fieldInfo[i];
             ColumnMeta cm = new ColumnMeta();
             cm.setName(fi.getField().getName());
-            cm.setFieldId(fi.getStructOffset());
+            cm.setFieldId(i);
 
             desc = fi.getField().getAnnotation(Description.class);
             if ( desc != null ) {

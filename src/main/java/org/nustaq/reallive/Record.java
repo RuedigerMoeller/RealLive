@@ -21,7 +21,7 @@ public class Record implements Serializable {
     transient Mode mode = Mode.NONE;
 
     @Order(-2)
-    String key;
+    String recordKey;
     @Order(-1)
     int version;
 
@@ -34,12 +34,12 @@ public class Record implements Serializable {
 
     public Record(Record originalRecord) {
         this.originalRecord = originalRecord;
-        this.key = originalRecord.getKey();
+        this.recordKey = originalRecord.getRecordKey();
         this.table = originalRecord.table;
     }
 
     public Record(String key, RLTable schema) {
-        this.key = key;
+        this.recordKey = key;
         this.table = schema;
     }
 
@@ -48,7 +48,7 @@ public class Record implements Serializable {
     }
 
     public void _setId(String id) {
-        this.key = id;
+        this.recordKey = id;
     }
 
     public void _setOriginalRecord(Record org) {
@@ -63,9 +63,9 @@ public class Record implements Serializable {
         return mode;
     }
 
-    public String getKey()
+    public String getRecordKey()
     {
-        return key;
+        return recordKey;
     }
 
     public void copyTo( Record other ) {
@@ -124,12 +124,12 @@ public class Record implements Serializable {
         if ( mode == Mode.UPDATE || mode == Mode.UPDATE_OR_ADD ) {
             if ( originalRecord == null )
                 throw new RuntimeException("original record must not be null for update");
-            if ( key == null )
-                throw new RuntimeException("key must not be null on update");
+            if ( recordKey == null )
+                throw new RuntimeException("recordKey must not be null on update");
             RecordChange recordChange = computeDiff();
             table.$update(recordChange, mode == Mode.UPDATE_OR_ADD);
             copyTo(originalRecord);
-            return new Promise<>(key);
+            return new Promise<>(recordKey);
         } else
             throw new RuntimeException("wrong mode. Use table.create* and table.prepare* methods.");
     }
@@ -138,7 +138,7 @@ public class Record implements Serializable {
         FSTClazzInfo classInfo = getClassInfo();
         FSTClazzInfo.FSTFieldInfo[] fieldInfo = classInfo.getFieldInfo();
 
-        RecordChange change = new RecordChange(getKey());
+        RecordChange change = new RecordChange(getRecordKey());
 
         ArrayList<FSTClazzInfo.FSTFieldInfo> changedFields = new ArrayList<>();
         ArrayList changedValues = new ArrayList();

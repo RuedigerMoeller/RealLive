@@ -20,11 +20,11 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
     }
 
     public static <T extends Record> ChangeBroadcast NewUpdate(String tableId, T t, RecordChange appliedChange) {
-        return new ChangeBroadcast(UPDATE,tableId,t.getKey(),t,appliedChange);
+        return new ChangeBroadcast(UPDATE,tableId,t.getRecordKey(),t,appliedChange);
     }
 
     public static <T extends Record> ChangeBroadcast<T> NewAdd(String tableId, T record) {
-        return new ChangeBroadcast<>(ADD,tableId,record.getKey(),record,null);
+        return new ChangeBroadcast<>(ADD,tableId,record.getRecordKey(),record,null);
     }
 
     public static <T extends Record> ChangeBroadcast<T> NewError(String tableId, Object e) {
@@ -32,7 +32,7 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
     }
 
     public static <T extends Record> ChangeBroadcast<T> NewRemove(String tableId, T record) {
-        return new ChangeBroadcast<>(REMOVE,tableId,record.getKey(),record,null);
+        return new ChangeBroadcast<>(REMOVE,tableId,record.getRecordKey(),record,null);
     }
 
     private ChangeBroadcast(int type, String tableId, String recordKey, T newRecord, RecordChange<String, T> appliedChange) {

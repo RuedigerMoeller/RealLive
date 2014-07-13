@@ -25,7 +25,19 @@ function RLResultSet() {
             } break;
             case RL_UPDATE: {
                 var rec = this.map[change.recordKey];
-                console.log(rec);
+                if ( rec ) {
+                    RealLive.model.systables
+                    var changeArray = change.appliedChange.fieldIndex;
+                    for ( var i = 0; i < changeArray.length; i++ ) {
+                        var fieldId = changeArray[i];
+                        var newValue = change.appliedChange.newVal[i];
+                        var fieldName = RealLive.getFieldName(change.tableId,fieldId);
+                        rec[fieldName] = newValue;
+                        //var oldValue = change.appliedChange.oldVal[i];
+                        //var error = rec[fieldName] != oldValue;
+                    }
+                }
+//                console.log(rec);
             } break;
         }
     }
@@ -39,6 +51,18 @@ var RealLive = new function() {
     this.model = null; // RealLive data model
     this.onChange = null; // callback function
     this.toDo = [];
+
+    this.getTableMeta = function(tableId,columnName) {
+        var res = this.model.tables[tableId];
+        if ( columnName ) {
+            return res.columns[columnName];
+        }
+        return res;
+    };
+
+    this.getFieldName = function(tableId,fieldId) {
+        return this.getTableMeta( tableId).fieldId2Name[fieldId];
+    };
 
     this.onModelLoaded = function(func) {
         if ( this.socketConnected && this.model ) {
@@ -74,22 +98,25 @@ var RealLive = new function() {
                 console.log("model:"+retVal);
 
                 retVal.tables.SysTable.columns.meta.hidden = true;
-                // for ng table
+
+                // setup column config for ng table
                 for ( conf in retVal.tables ) {
                     console.log(conf);
                     if ( conf != '__typeInfo' ) {
                         var colConf = [];
+                        var indexToFieldName = [];
                         retVal.tables[conf].columnsNGTableConf = colConf;
+                        retVal.tables[conf].fieldId2Name = indexToFieldName;
                         var cols = _this.visibleColumns(retVal.tables[conf].columns);
                         for ( col in  cols ) {
                             if ( col != '__typeInfo' && ! col.hidden ) {
     //                                    colConf.push( { fieldName: cols, displayName: cols[col].displayName } )
                                 colConf.push( { field: cols[col].name, displayName: cols[col].displayName } );
+                                indexToFieldName[cols[col].fieldId] = cols[col].name;
                             }
                         }
                     }
                 }
-
                 _this.model = retVal;
                 _this.sendChange('ModelLoaded');
                 _this.runToDos();
@@ -139,7 +166,7 @@ var RealLive = new function() {
         };
     };
 
-    this.unsubscribe = function( cbId ) {
+    this.deletCBId = function( cbId ) {
         delete this.ws.cbMap[cbId];
     };
 
@@ -148,16 +175,43 @@ var RealLive = new function() {
         this.call(methodName,arg,callback,true);
     };
 
+    /////////////// subs/query
+
+    this.subscribe = function( tableName, queryString, callback ) {
+        this.callStreaming(
+            "subscribe",
+            new JQueryTuple({ tableName: tableName, querySource: queryString }),
+            callback
+        );
+    };
+
+    // if scope is set => apply after each change
+    this.subscribeSet = function( tableName, queryString, resultset, scope ) {
+        this.callStreaming(
+            "subscribe",
+            new JQueryTuple({ tableName: tableName, querySource: queryString }),
+            function(change) {
+                resultset.push(change);
+                if ( scope != null ) {
+                    scope.$apply(function () {});
+                }
+                return false;
+            }
+        );
+    };
+
+    /////////////// .. end subs query
+
+    // tmp method
     this.querySet = function( queryId, resultset, scope ) {
         this.callStreaming("streamTable", queryId, function(change) {
-            console.log(change);
             resultset.push(change);
             if ( change.type == RL_SNAPSHOT_DONE ) {
                 scope.$apply(function () {});
                 return true;
             }
             return false;
-        },true);
+        });
     };
 
     this.call = function( methodName, arg, callback, stream ) {

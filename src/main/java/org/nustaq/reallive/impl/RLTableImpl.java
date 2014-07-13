@@ -159,12 +159,12 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         if ( t != null ) {
             RecordChange appliedChange = change.apply(t);
             t.incVersion();
-            put(t.getKey(), t);
+            put(t.getRecordKey(), t);
             broadCastUpdate(appliedChange, t);
         } else if (addIfNotPresent) {
             t = createForAdd();
             RecordChange appliedChange = change.apply(t);
-            put(t.getKey(), t);
+            put(t.getRecordKey(), t);
             broadCastAdd(t);
         }
     }

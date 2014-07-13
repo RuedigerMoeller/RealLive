@@ -24,7 +24,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
         T newRec = changeBC.getRecord();
         switch (changeBC.getType()) {
             case ChangeBroadcast.ADD:
-                map.put(newRec.getKey(),newRec);
+                map.put(newRec.getRecordKey(),newRec);
                 break;
             case ChangeBroadcast.REMOVE:
                 map.remove(changeBC.getRecordKey());
@@ -55,7 +55,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
     }
 
     public void dump() {
-        map.values().stream().sorted( (a,b) -> a.getKey().compareTo(b.getKey()) ).forEach( (r) -> {
+        map.values().stream().sorted( (a,b) -> a.getRecordKey().compareTo(b.getRecordKey()) ).forEach( (r) -> {
             System.out.println(r);
         });
     }

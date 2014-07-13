@@ -2,13 +2,14 @@ package org.nustaq.reallive;
 
 import org.nustaq.serialization.FSTClazzInfo;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
 /**
  * Created by ruedi on 21.06.14.
  */
-public class RecordChange<K, T extends Record> {
+public class RecordChange<K, T extends Record> implements Serializable {
 
     K recordId;
     String tableId;
