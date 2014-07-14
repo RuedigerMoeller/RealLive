@@ -10,7 +10,7 @@ app.directive('rlTable', function() {
                 data: 'rlset.list',
                 columnDefs: 'model.tables.'+$attrs.table+'.columnsNGTableConf',
                 enableColumnResize: true,
-                multiSelect: false
+                multiSelect: false,
             };
             console.log("Hallo");
             RealLive.onModelLoaded(function() {
@@ -30,6 +30,7 @@ app.directive('rlTable', function() {
         template: '<div class="gridStyle" ng-grid="gridOptions"></div>'
     }
 });
+
 app.controller('RLAdmin', function ($scope) {
 
     $scope.host = 'localhost';

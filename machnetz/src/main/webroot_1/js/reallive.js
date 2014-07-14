@@ -105,13 +105,19 @@ var RealLive = new function() {
                     if ( conf != '__typeInfo' ) {
                         var colConf = [];
                         var indexToFieldName = [];
+
                         retVal.tables[conf].columnsNGTableConf = colConf;
                         retVal.tables[conf].fieldId2Name = indexToFieldName;
                         var cols = _this.visibleColumns(retVal.tables[conf].columns);
                         for ( col in  cols ) {
                             if ( col != '__typeInfo' && ! col.hidden ) {
     //                                    colConf.push( { fieldName: cols, displayName: cols[col].displayName } )
-                                colConf.push( { field: cols[col].name, displayName: cols[col].displayName } );
+                                colConf.push(
+                                    {   field: cols[col].name,
+                                        displayName: cols[col].displayName,
+                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()"><span ng-cell-text>{{COL_FIELD }}</span></div>'
+                                    }
+                                );
                                 indexToFieldName[cols[col].fieldId] = cols[col].name;
                             }
                         }
@@ -238,6 +244,7 @@ var RealLive = new function() {
         for( key in columns ) {
             if ( columns.hasOwnProperty(key) ) {
                 var value = columns[key];
+
                 if (!value['hidden']) {
                     value._key = key;
                     result.push(value);

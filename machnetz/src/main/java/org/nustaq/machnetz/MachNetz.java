@@ -2,6 +2,7 @@ package org.nustaq.machnetz;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import io.netty.handler.codec.http.FullHttpRequest;
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Scheduler;
 import org.nustaq.kontraktor.impl.DispatcherThread;
@@ -59,9 +60,9 @@ public class MachNetz extends WebSocketHttpServer {
             if ( change.isSnapshotDone() ) {
                 new Thread(() -> {
                     while( true ) {
-                        keys.stream().forEach( (key) -> {
+                        keys.stream().forEach((key) -> {
                             TestRecord forUpdate = (TestRecord) getRealLive().getTable("person").createForUpdate(key, false);
-                            forUpdate.setYearOfBirth((int) (1900+Math.random()*99));
+                            forUpdate.setYearOfBirth((int) (1900 + Math.random() * 99));
                             forUpdate.$apply();
                         });
                         LockSupport.parkNanos(1000*1000*1000);
@@ -73,6 +74,10 @@ public class MachNetz extends WebSocketHttpServer {
         });
     }
 
+    @Override
+    public void onHttpRequest(ChannelHandlerContext ctx, FullHttpRequest req, NettyWSHttpServer.HttpResponseSender sender) {
+        super.onHttpRequest(ctx, req, sender);
+    }
 
     @Override
     public void onOpen(ChannelHandlerContext ctx) {
