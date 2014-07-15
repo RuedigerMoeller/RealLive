@@ -8,8 +8,12 @@ const RL_ERROR = 5;
 function RLResultSet() {
     this.map = {};
     this.list = [];
+    this.preChangeHook = null;
 
     this.push = function(change) {
+        if (this.preChangeHook) {
+            this.preChangeHook.call(null,change);
+        }
         switch ( change.type ) {
             case RL_ADD: {
                 var rec = change.newRecord;
@@ -40,6 +44,18 @@ function RLResultSet() {
 //                console.log(rec);
             } break;
         }
+    }
+
+    this.getChangedFieldNames = function(change) {
+        var res = [];
+        if (change.appliedChange) {
+            var changeArray = change.appliedChange.fieldIndex;
+            for ( var i = 0; i < changeArray.length; i++ ) {
+                var fieldId = changeArray[i];
+                res.push(RealLive.getFieldName(change.tableId,fieldId));
+            }
+        }
+        return res;
     }
 }
 
@@ -86,15 +102,15 @@ var RealLive = new function() {
     };
 
     this.doConnect = function (host,port,websocketDir) {
-        var _this = this;
+        var self = this;
 
         this.ws = new WebSocket("ws://".concat(host).concat(":").concat(port).concat("/").concat(websocketDir));
         this.ws.cbId = 1;
         this.ws.cbMap = {};
         this.ws.onopen = function () {
             console.log("open");
-            _this.socketConnected = true;
-            _this.call("initModel", 0, function(retVal) {
+            self.socketConnected = true;
+            self.call("initModel", 0, function(retVal) {
                 console.log("model:"+retVal);
 
                 retVal.tables.SysTable.columns.meta.hidden = true;
@@ -108,14 +124,15 @@ var RealLive = new function() {
 
                         retVal.tables[conf].columnsNGTableConf = colConf;
                         retVal.tables[conf].fieldId2Name = indexToFieldName;
-                        var cols = _this.visibleColumns(retVal.tables[conf].columns);
+                        var cols = self.visibleColumns(retVal.tables[conf].columns);
                         for ( col in  cols ) {
                             if ( col != '__typeInfo' && ! col.hidden ) {
     //                                    colConf.push( { fieldName: cols, displayName: cols[col].displayName } )
                                 colConf.push(
                                     {   field: cols[col].name,
                                         displayName: cols[col].displayName,
-                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()"><span ng-cell-text>{{COL_FIELD }}</span></div>'
+//                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()" id="{{row.entity.recordKey}}#COL_FIELD"><span ng-cell-text>{{COL_FIELD}}</span></div>'
+                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()"><span ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">{{COL_FIELD}}</span></div>'
                                     }
                                 );
                                 indexToFieldName[cols[col].fieldId] = cols[col].name;
@@ -123,22 +140,22 @@ var RealLive = new function() {
                         }
                     }
                 }
-                _this.model = retVal;
-                _this.sendChange('ModelLoaded');
-                _this.runToDos();
+                self.model = retVal;
+                self.sendChange('ModelLoaded');
+                self.runToDos();
             });
         };
 
         this.ws.onerror = function () {
             console.log("error");
-            _this.socketConnected = false;
-            _this.sendChange('State');
+            self.socketConnected = false;
+            self.sendChange('State');
         };
 
         this.ws.onclose = function () {
             console.log("closed");
-            _this.socketConnected = false;
-            _this.sendChange('State');
+            self.socketConnected = false;
+            self.sendChange('State');
         };
 
         this.ws.onmessage = function (message) {

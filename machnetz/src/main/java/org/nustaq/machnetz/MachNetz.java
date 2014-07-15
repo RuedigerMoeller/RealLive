@@ -63,7 +63,10 @@ public class MachNetz extends WebSocketHttpServer {
                         keys.stream().forEach((key) -> {
                             TestRecord forUpdate = (TestRecord) getRealLive().getTable("person").createForUpdate(key, false);
                             forUpdate.setYearOfBirth((int) (1900 + Math.random() * 99));
+                            forUpdate.setPreName("POK "+(int)(Math.random()*5));
+                            forUpdate.setName("Name "+(int)(Math.random()*5));
                             forUpdate.$apply();
+                            LockSupport.parkNanos(1000*1000*1000);
                         });
                         LockSupport.parkNanos(1000*1000*1000);
                     }
