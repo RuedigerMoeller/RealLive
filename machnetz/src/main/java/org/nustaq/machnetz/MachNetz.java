@@ -19,6 +19,7 @@ import org.nustaq.webserver.WebSocketHttpServer;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.LockSupport;
 
@@ -49,26 +50,28 @@ public class MachNetz extends WebSocketHttpServer {
         realLive = new RLImpl();
         realLive.createTable( "person", TestRecord.class );
         RLTable person = realLive.getTable("person");
-        person.$put("ruedi", new TestRecord("Möller", "Rüdiger", 1968, "m", "Key Business Management Consulting Agent (KBMCA)"));
-        person.$put("other", new TestRecord("Huber", "Heinz", 1988, "m", "Project Office Support Consultant"));
-        person.$put("another", new TestRecord("Huber", "Heinz", 1988, "m", "Back Office Facility Management Officer"));
-        person.$put("ruedi1", new TestRecord("Möller", "Rüdiger", 1968, "m", "Key Business Management Consulting Agent (KBMCA)"));
-        person.$put("other2", new TestRecord("Huber", "Heinz", 1988, "m", "Project Office Support Consultant"));
-        person.$put("another2", new TestRecord("Huber", "Heinz", 1988, "m", "Back Office Facility Management Officer"));
+        for ( int i = 0; i < 100; i++ ) {
+            person.$put("ruedi"+i, new TestRecord("Möller", "Rüdiger", 1968, "m", "Key Business Management Consulting Agent (KBMCA)"));
+            person.$put("other"+i, new TestRecord("Huber", "Heinz", 1988, "m", "Project Office Support Consultant"));
+            person.$put("another"+i, new TestRecord("Huber", "Heinz", 1988, "m", "Back Office Facility Management Officer"));
+        }
         ArrayList<String> keys = new ArrayList<>();
         person.stream().each( (change) -> {
             if ( change.isSnapshotDone() ) {
+                Collections.shuffle(keys);
                 new Thread(() -> {
                     while( true ) {
                         keys.stream().forEach((key) -> {
-                            TestRecord forUpdate = (TestRecord) getRealLive().getTable("person").createForUpdate(key, false);
-                            forUpdate.setYearOfBirth((int) (1900 + Math.random() * 99));
-                            forUpdate.setPreName("POK "+(int)(Math.random()*5));
-                            forUpdate.setName("Name "+(int)(Math.random()*5));
-                            forUpdate.$apply();
-                            LockSupport.parkNanos(1000*1000*1000);
+                            if (key.indexOf("ruedi") >= 0) {
+                                TestRecord forUpdate = (TestRecord) getRealLive().getTable("person").createForUpdate(key, false);
+                                forUpdate.setYearOfBirth((int) (1900 + Math.random() * 99));
+                                forUpdate.setPreName("POK " + (int) (Math.random() * 5));
+                                forUpdate.setName("Name " + (int) (Math.random() * 5));
+                                forUpdate.$apply();
+                                LockSupport.parkNanos(1000 * 1000 * 50);
+                            }
                         });
-                        LockSupport.parkNanos(1000*1000*1000);
+                        LockSupport.parkNanos(1000*1000*100);
                     }
                 }).start();
             } else {

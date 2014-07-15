@@ -2,32 +2,32 @@
 // refs only on string, sequence, object. native arrays missing
 // detect cycles in prettyprinter
 
-const END_MARKER = "_E_";
+var END_MARKER = "_E_";
 
 // low 3 bits contain type
-const INT_8 = 1; // 0x0001 (17 = array)
-const INT_16 = 2; // 2 (18 ..)
-const INT_32 = 3; // 3 (19 ..)
-const INT_64 = 4; // 4 (20 ..)
-const TAG = 5; // 5, top 5 bits contains tag id
-const END = 6; // 6, end marker
-const RESERV = 7; // 7 escape for future extension
+var INT_8 = 1; // 0x0001 (17 = array)
+var INT_16 = 2; // 2 (18 ..)
+var INT_32 = 3; // 3 (19 ..)
+var INT_64 = 4; // 4 (20 ..)
+var TAG = 5; // 5, top 5 bits contains tag id
+var END = 6; // 6, end marker
+var RESERV = 7; // 7 escape for future extension
 
-const UNSIGN_MASK = 8; // int only. if true => unsigned ..
-const ARRAY_MASK = 16; // int only, next item expected to be length, then plain data little endian
-const CHAR = UNSIGN_MASK | INT_16;
+var UNSIGN_MASK = 8; // int only. if true => unsigned ..
+var ARRAY_MASK = 16; // int only, next item expected to be length, then plain data little endian
+var CHAR = UNSIGN_MASK | INT_16;
 
 // predefined tag id's
-const STRING = 0;
-const FLOAT = 1;
-const DOUBLE = 2;
-const DOUBLE_ARR = 3;
-const FLOAT_ARR = 4;
-const OBJECT = 5;
-const SEQUENCE = 6;
-const NULL = 7;
-const BOOL = 8;
-const HANDLE = 9; // not supported in 1.0
+var STRING = 0;
+var FLOAT = 1;
+var DOUBLE = 2;
+var DOUBLE_ARR = 3;
+var FLOAT_ARR = 4;
+var OBJECT = 5;
+var SEQUENCE = 6;
+var NULL = 7;
+var BOOL = 8;
+var HANDLE = 9; // not supported in 1.0
 
 var MinBin = new function MinBin() {
 

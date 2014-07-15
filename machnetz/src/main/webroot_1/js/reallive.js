@@ -1,18 +1,19 @@
-const RL_UPDATE    = 0;
-const RL_ADD       = 1;
-const RL_REMOVE    = 2;
-const RL_OPERATION = 3;
-const RL_SNAPSHOT_DONE = 4;
-const RL_ERROR = 5;
+var RL_UPDATE    = 0;
+var RL_ADD       = 1;
+var RL_REMOVE    = 2;
+var RL_OPERATION = 3;
+var RL_SNAPSHOT_DONE = 4;
+var RL_ERROR = 5;
 
 function RLResultSet() {
     this.map = {};
     this.list = [];
     this.preChangeHook = null;
+    this.snapFin = false;
 
     this.push = function(change) {
         if (this.preChangeHook) {
-            this.preChangeHook.call(null,change);
+            this.preChangeHook.call(null,change,this.snapFin);
         }
         switch ( change.type ) {
             case RL_ADD: {
@@ -27,6 +28,9 @@ function RLResultSet() {
                     this.list.splice(rec._rlIdx,1);
                 }
             } break;
+            case RL_SNAPSHOT_DONE:
+                this.snapFin = true;
+                break;
             case RL_UPDATE: {
                 var rec = this.map[change.recordKey];
                 if ( rec ) {
@@ -127,12 +131,31 @@ var RealLive = new function() {
                         var cols = self.visibleColumns(retVal.tables[conf].columns);
                         for ( col in  cols ) {
                             if ( col != '__typeInfo' && ! col.hidden ) {
-    //                                    colConf.push( { fieldName: cols, displayName: cols[col].displayName } )
+                                var align = '';
+                                if ( cols[col].align ) {
+                                    align = cols[col].align;
+                                } else {
+                                    var type = cols[col].javaType.toLowerCase();
+                                    switch (type) {
+                                        case 'int':
+                                        case 'byte':
+                                        case 'short':
+                                        case 'double':
+                                        case 'float':
+                                        case 'integer':
+                                            align = 'right'; break;
+                                        default: align='left';
+                                    }
+                                }
                                 colConf.push(
                                     {   field: cols[col].name,
                                         displayName: cols[col].displayName,
+                                        groupable: false,
 //                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()" id="{{row.entity.recordKey}}#COL_FIELD"><span ng-cell-text>{{COL_FIELD}}</span></div>'
-                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()"><span ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">{{COL_FIELD}}</span></div>'
+                                        cellTemplate:
+                                           '<div class="ngCellText" style="text-align: '+align + ';" ' +
+                                               'ng-class="col.colIndex()"><span style="border-radius: 4px; transition: background-color .2s ease-out; padding: 4px;" ' +
+                                               'ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">{{COL_FIELD}}</span></div>'
                                     }
                                 );
                                 indexToFieldName[cols[col].fieldId] = cols[col].name;

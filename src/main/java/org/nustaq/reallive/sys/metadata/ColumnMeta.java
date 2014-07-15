@@ -7,11 +7,14 @@ import java.io.Serializable;
  */
 public class ColumnMeta implements Serializable{
     String name;
+    String javaType;
     String displayName;
     int fieldId;
     String customMeta;
     String description;
-    private int order;
+    String align;
+    String renderStyle;
+    int order;
 
     public ColumnMeta() {
     }
@@ -68,5 +71,29 @@ public class ColumnMeta implements Serializable{
 
     public int getOrder() {
         return order;
+    }
+
+    public String getJavaType() {
+        return javaType;
+    }
+
+    public void setJavaType(String javaType) {
+        this.javaType = javaType;
+    }
+
+    public String getAlign() {
+        return align;
+    }
+
+    public void setAlign(String align) {
+        this.align = align;
+    }
+
+    public String getRenderStyle() {
+        return renderStyle;
+    }
+
+    public void setRenderStyle(String renderStyle) {
+        this.renderStyle = renderStyle;
     }
 }

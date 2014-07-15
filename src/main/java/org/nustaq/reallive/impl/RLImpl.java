@@ -7,9 +7,7 @@ import org.nustaq.reallive.RLStream;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.Record;
 import org.nustaq.reallive.RealLive;
-import org.nustaq.reallive.sys.annotations.Description;
-import org.nustaq.reallive.sys.annotations.DisplayName;
-import org.nustaq.reallive.sys.annotations.Order;
+import org.nustaq.reallive.sys.annotations.*;
 import org.nustaq.reallive.sys.metadata.ColumnMeta;
 import org.nustaq.reallive.sys.metadata.Metadata;
 import org.nustaq.reallive.sys.metadata.TableMeta;
@@ -96,6 +94,18 @@ public class RLImpl extends RealLive {
             } else {
                 cm.setOrder(cm.getName().hashCode()&0xff+0xffff00);
             }
+
+            Align al = fi.getField().getAnnotation(Align.class);
+            if ( al != null ) {
+                cm.setAlign(al.value());
+            }
+
+            RenderStyle rs = fi.getField().getAnnotation(RenderStyle.class);
+            if ( rs != null ) {
+                cm.setRenderStyle(rs.value());
+            }
+
+            cm.setJavaType(fi.getType().getSimpleName());
 
             tableMeta.putColumn(cm.getName(),cm);
         }

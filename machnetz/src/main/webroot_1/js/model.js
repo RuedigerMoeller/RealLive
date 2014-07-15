@@ -256,10 +256,13 @@ var JColumnMeta = function(obj) {
 this.__typeInfo = 'ColumnMeta';
     this.j_fieldId = function() { return this.fieldId; };
     this.j_order = function() { return this.order; };
+    this.j_align = function() { return this.align; };
     this.j_customMeta = function() { return this.customMeta; };
     this.j_description = function() { return this.description; };
     this.j_displayName = function() { return this.displayName; };
+    this.j_javaType = function() { return this.javaType; };
     this.j_name = function() { return this.name; };
+    this.j_renderStyle = function() { return this.renderStyle; };
     this.fromObj = function(obj) {
             for ( var key in obj ) {
                 var setter = 'j_'.concat(key);
