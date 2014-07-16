@@ -54,6 +54,13 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     @Override @CallerSideMethod
+    public Subscription subscribeKey( String key, ChangeBroadcastReceiver<T> resultReceiver) {
+        Subscription subs = new Subscription(getActor().tableActor.getTableId(), new Subscription.KeyPredicate(key),resultReceiver);
+        self().$subscribe(subs);
+        return subs;
+    }
+
+    @Override @CallerSideMethod
     public Subscription subscribe(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
         Subscription<T> subs = new Subscription<>(getActor().tableActor.getTableId(),matches,resultReceiver);
         self().$subscribe(subs);
@@ -69,6 +76,16 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
 
     public void $subscribe(Subscription subs) {
         subscribers.add(subs);
+        if ( subs.getFilter() instanceof Subscription.KeyPredicate ) {
+            self().$listen(subs);
+            tableActor.$get( ((Subscription.KeyPredicate) subs.getFilter()).getKey())
+                .then(
+                    (record,e) -> {
+                        ChangeBroadcast changeBC = ChangeBroadcast.NewAdd(tableActor.getTableId(), record);
+                        subs.getChangeReceiver().onChangeReceived(changeBC);
+                    });
+            return;
+        }
         tableActor.$filter(subs.getFilter(),null, (r,e) -> {
             if ( e == null ) {
                 subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewAdd(tableActor.getTableId(), r));

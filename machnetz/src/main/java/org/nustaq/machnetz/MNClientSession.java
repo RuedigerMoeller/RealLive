@@ -111,6 +111,14 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         return NO_RESULT;
     }
 
+    // expect [tableName,recordkey]
+    Object subscribeKey(Invocation<QueryTuple> inv) {
+        QueryTuple argument = inv.getArgument();
+        Subscription subs = getRLDB().stream("" + argument.getTableName()).subscribeKey(argument.getQuerySource(), (change) -> sendReply(inv, change));
+        subscriptions.put(inv.getCbId(),subs);
+        return NO_RESULT;
+    }
+
     // expect [tableName,filterString]
     Object subscribe(Invocation<QueryTuple> inv) {
         QueryTuple argument = inv.getArgument();

@@ -1,5 +1,58 @@
 var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid']);
 
+var rl_elemid = 1;
+function genId(prefix) {
+    rl_elemid++;
+    return prefix.concat(rl_elemid.toString());
+}
+
+app.directive( 'rlRecord', function()  {
+   return {
+       restrict: 'E',
+       table: 'no-table',
+       recordKey: 'no-key',
+       snapFin: false,
+       record: {},
+       scope: true,
+       controller: function( $scope, $attrs, $element ) {
+           $scope.table = $attrs.table;
+           $scope.recordKey = $attrs.recordKey;
+           if ( $attrs.hilight ) {
+               $scope.hilight = $attrs.hilight;
+           }
+           RealLive.onModelLoaded(function() {
+               RealLive.subscribeKey($scope.table,$scope.recordKey,function(change) {
+                   switch ( change.type ) {
+                       case RL_ADD: {
+                           $scope.record = change.newRecord;
+                       } break;
+                       case RL_REMOVE: {
+                           $scope.record = null;
+                       } break;
+                       case RL_SNAPSHOT_DONE:
+                           $scope.snapFin = true;
+                           break;
+                       case RL_UPDATE: {
+                           $scope.$apply( function() {
+                               var rec = $scope.record;
+                               if ( rec ) {
+                                   var changeArray = change.appliedChange.fieldIndex;
+                                   for ( var i = 0; i < changeArray.length; i++ ) {
+                                       var fieldId = changeArray[i];
+                                       var newValue = change.appliedChange.newVal[i];
+                                       var fieldName = RealLive.getFieldName(change.tableId,fieldId);
+                                       rec[fieldName] = newValue;
+                                   }
+                               }
+                           });
+                       } break;
+                   }
+               });
+           });
+       }
+   };
+});
+
 app.directive('rlTable', function() {
     return {
         restrict: 'E',
@@ -7,6 +60,9 @@ app.directive('rlTable', function() {
         controller: function( $scope, $attrs ) {
             $scope.rlset = new RLResultSet();
             $scope.height = '300px';
+            if ( $attrs.height ) {
+                $scope.height = $attrs.height;
+            }
             $scope.gridOptions = {
                 data: 'rlset.list',
                 columnDefs: 'model.tables.'+$attrs.table+'.columnsNGTableConf',
@@ -14,7 +70,6 @@ app.directive('rlTable', function() {
                 multiSelect: false,
                 enableColumnReordering:false
             };
-            console.log("Hallo");
             RealLive.onModelLoaded(function() {
                 $scope.rlset.preChangeHook = function(change,snapFin) {
                     if (change.type==RL_UPDATE) {
@@ -49,9 +104,6 @@ app.directive('rlTable', function() {
                             $scope.$apply(new function() {});
                     }
                 };
-                if ( $attrs.height ) {
-                    $scope.height = $attrs.height;
-                }
                 RealLive.subscribeSet($attrs.table,"item.yearOfBirth > 1950", $scope.rlset,null); //$scope);
             });
 

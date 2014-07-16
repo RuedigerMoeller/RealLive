@@ -34,7 +34,6 @@ function RLResultSet() {
             case RL_UPDATE: {
                 var rec = this.map[change.recordKey];
                 if ( rec ) {
-                    RealLive.model.systables
                     var changeArray = change.appliedChange.fieldIndex;
                     for ( var i = 0; i < changeArray.length; i++ ) {
                         var fieldId = changeArray[i];
@@ -48,7 +47,7 @@ function RLResultSet() {
 //                console.log(rec);
             } break;
         }
-    }
+    };
 
     this.getChangedFieldNames = function(change) {
         var res = [];
@@ -222,6 +221,14 @@ var RealLive = new function() {
     };
 
     /////////////// subs/query
+
+    this.subscribeKey = function( tableName, recordKey, callback ) {
+        this.callStreaming(
+            "subscribeKey",
+            new JQueryTuple({ tableName: tableName, querySource: recordKey }),
+            callback
+        );
+    };
 
     this.subscribe = function( tableName, queryString, callback ) {
         this.callStreaming(

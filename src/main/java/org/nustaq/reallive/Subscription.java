@@ -7,6 +7,25 @@ import java.util.function.Predicate;
  */
 public class Subscription<T extends Record> implements ChangeBroadcastReceiver<T> {
 
+    public static class KeyPredicate implements Predicate<Record> {
+
+        String key;
+
+        public KeyPredicate(String key) {
+            this.key = key;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public boolean test(Record o) {
+            return o.getRecordKey().equals(key);
+        }
+
+    }
+
     Predicate<T> TRUE = (x) -> true;
 
     ChangeBroadcastReceiver<T> cb;
