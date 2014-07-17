@@ -62,17 +62,48 @@ public class RecordChange<K, T extends Record> implements Serializable {
      * @param rec
      * @return
      */
+    final static Object EMPTY = new Object() { public String toString() { return "EMPTY"; }};
     public RecordChange<K,T> apply(T rec) {
         RecordChange<K,T> res = new RecordChange<>(this);
         Object oldValues[] = new Object[newVal.length];
+        int eqCounter = 0;
         for (int i = 0; i < newVal.length; i++) {
             Object val = newVal[i];
             int id = fieldIndex[i];
-            oldValues[i] = rec.getField(id);
-            rec.setField(id,val);
+            final Object oldVal = rec.getField(id);
+
+            if ( (oldVal == null && newVal == null) || (oldVal != null && oldVal.equals(val)) ) {
+                eqCounter++;
+                oldValues[i] = EMPTY;
+            } else {
+                oldValues[i] = oldVal;
+                rec.setField(id, val);
+            }
         }
         res.oldVals = oldValues;
+        if (eqCounter>0) {
+            res.shrink(eqCounter);
+        }
         return res;
+    }
+
+    private void shrink(int eqCounter) {
+        int newFieldIndex[] = new int[fieldIndex.length-eqCounter];
+        Object newOldVals[] = new Object[oldVals.length-eqCounter];
+        Object newNewVals[] = new Object[newVal.length-eqCounter];
+        int idx = 0;
+        for (int i = 0; i < oldVals.length; i++) {
+            Object oldVal = oldVals[i];
+            if (oldVal != EMPTY) {
+                newFieldIndex[idx] = fieldIndex[i];
+                newOldVals[idx] = oldVals[i];
+                newNewVals[idx] = newVal[i];
+                idx++;
+            }
+        }
+        fieldIndex = newFieldIndex;
+        oldVals = newOldVals;
+        newVal = newNewVals;
     }
 
     /**

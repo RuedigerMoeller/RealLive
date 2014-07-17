@@ -6,6 +6,52 @@ function genId(prefix) {
     return prefix.concat(rl_elemid.toString());
 }
 
+app.directive('rlHi', function() {
+    return {
+        transclude:true,
+//        replace: true,
+//        template: '<b>uh-<div ng-transclude></div>-uh</b>'
+        template: '<span style="border-radius: 4px; transition: background-color .2s ease-out; padding: 4px;" id="{{itid}}" ng-transclude></span>',
+        scope: true,
+        link: function( $scope, $element, $attrs ) {
+            $scope.itid = genId('rlhi');
+            $element.id = $scope.itid;
+            $scope.$watch(
+                function() {
+                    return $element[0].children[0].innerHTML;
+                },
+                function(newVal,oldVal) {
+                    if (newVal!=oldVal) {
+                        var elementId = $scope.itid;
+                        var test = document.getElementById($scope.itid);
+                        if (!test.hicount && test.hicount != 0) {
+                            test.hicount = 1;
+                        } else {
+                            test.hicount++;
+                        }
+                        test.style.backgroundColor = '#F2E38A';
+                        (function () {
+                            var current = test;
+                            var prevKey = elementId;
+                            setTimeout(function () {
+                                if (current.hicount <= 1 || prevKey != current.id) {
+                                    current.style.backgroundColor = 'rgba(230,230,230,0.0)';
+                                    current.hicount = 0;
+                                } else {
+                                    current.hicount--;
+                                }
+                            }, 2000);
+                        }());
+                    }
+                }
+            );
+//            setTimeout(function() {
+//                document.getElementById($scope.itid).style.backgroundColor = "#F2E38A";
+//            },5000);
+        }
+    }
+});
+
 app.directive( 'rlRecord', function()  {
    return {
        restrict: 'E',
@@ -14,7 +60,9 @@ app.directive( 'rlRecord', function()  {
        snapFin: false,
        record: {},
        scope: true,
-       controller: function( $scope, $attrs, $element ) {
+//       transclude: true,
+//       template:'<span ng-transclude></span>',
+       link: function( $scope, $element, $attrs) {
            $scope.table = $attrs.table;
            $scope.recordKey = $attrs.recordKey;
            if ( $attrs.hilight ) {
