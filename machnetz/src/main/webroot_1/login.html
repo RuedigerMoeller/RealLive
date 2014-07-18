@@ -1,0 +1,42 @@
+<div class="container">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h4 class="modal-title" id="myModalLabel"><b>Log in</b></h4>
+    </div>
+    <div class="modal-body">
+        <div class="row col-md-4">
+            <img src="img/real_live_notext.png">&nbsp;<span rl-hi><b>{{reallive}}</b></span>
+        </div>
+        <div class="row col-md-4">
+            <div class="row">
+                <!--<div class="col-sm-offset-0 ">-->
+                <div class="form-group">
+                    <label for="user">User</label>
+                    <div class="input-group">
+                        <input ng-model="user" type="text" class="form-control" name="Host" id="user" placeholder="UserId" required>
+                        <!--<span class="input-group-addon danger"><span class="glyphicon glyphicon-remove"></span></span>-->
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label for="pwd">Password</label>
+                    <div class="input-group">
+                        <input ng-model="pwd" type="password" class="form-control" id="pwd" name="Password" placeholder="Password">
+                        <!--<span class="input-group-addon info"><span class="glyphicon glyphicon-asterisk"></span></span>-->
+                    </div>
+                </div>
+            </div>
+            <div class="row col-md-offset-5">
+                <br>
+                <button type="button" class="btn btn-primary" id="login" ng-click="doLogin()">Login</button>
+            </div>
+            <div class="row">
+                <br>
+                <div class="form-group">
+                    <div rl-hi>{{msg}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

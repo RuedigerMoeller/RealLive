@@ -1,12 +1,32 @@
-var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid']);
+var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid', 'ngRoute']);
 
-var rl_elemid = 1;
-function genId(prefix) {
-    rl_elemid++;
-    return prefix.concat(rl_elemid.toString());
-}
+app .config(['$routeProvider',
+    function($routeProvider) {
+        $routeProvider.
+            when('/market', {
+                templateUrl: 'marketController.html',
+                controller: 'MarketController'
+            }).
+            when('/position', {
+                templateUrl: 'position.html',
+                controller: 'PositionController'
+            }).
+            otherwise({
+                templateUrl: 'market.html'
+//                controller: 'LoginController'
+            });
+    }]);
+
+
 
 app.directive('rlHi', function() {
+    var rl_elemid = 1;
+
+    function genId(prefix) {
+        rl_elemid++;
+        return prefix.concat(rl_elemid.toString());
+    }
+
     return {
         transclude:true,
 //        replace: true,
@@ -160,14 +180,14 @@ app.directive('rlTable', function() {
     }
 });
 
-app.controller('RLAdmin', function ($scope) {
+app.controller('RLAdmin', function ($scope,$modal) {
 
-    $scope.host = 'localhost';
-    $scope.port = '8887';
+    $scope.loggedIn = false;
+    $scope.host = window.location.hostname;
+    $scope.port = window.location.port;
     $scope.websocketDir = "websocket";
     $scope.socketConnected = false;
 
-    $scope.systables = new RLResultSet();
     $scope.model = null;
     $scope.gridOptions = {
         data: 'systables.list',
@@ -182,19 +202,53 @@ app.controller('RLAdmin', function ($scope) {
                 $scope.socketConnected = RealLive.socketConnected;
                 if ( "ModelLoaded" == event ) {
                     $scope.model = RealLive.model;
-                    RealLive.callStreaming("streamTable", "SysTable", function(msg) {
-                        console.log(msg);
-                        $scope.systables.push(msg);
-                        if ( msg.type == RL_SNAPSHOT_DONE ) {
-                            $scope.$apply(function () {});
-                            return true;
-                        }
-                        return false;
-                    });
+                    $scope.openLogin($scope);
                 }
             });
         };
         RealLive.doConnect($scope.host, $scope.port,$scope.websocketDir);
     };
+
+    $scope.openLogin = function() {
+        var instance = $modal.open({
+            templateUrl: "login.html",
+            size:'sm',
+            backdrop:false,
+            keyboard:false,
+            reallive:'reallive',
+            user: '',
+            loggedin: false,
+            controller: function($scope) {
+                $scope.reallive = 'RealLive',
+                window.setTimeout(function() {
+                    $scope.reallive='Realtime';
+                    window.setTimeout(function() {
+                        $scope.reallive='EveryThing';
+                        window.setTimeout(function() {
+                            $scope.reallive='.';
+                            window.setTimeout(function() {
+                                $scope.reallive='All Data. Real Time.';
+                            }, 3000);
+                        }, 3000);
+                    }, 3000);
+                }, 3000);
+                $scope.doLogin = function() {
+                    var self = this;
+                    RealLive.subscribeKey('person', this.user, function(change) {
+                        if ( change.type == RL_ADD ) {
+                            self.loggedIn = true;
+                            instance.close(true);
+                        } else {
+                            if (!self.loggedIn) {
+                                self.msg = "Invalid user or password. retry.";
+                            }
+                        }
+                    });
+                }
+            }
+        })
+
+    };
+    $scope.doConnect();
 
 });

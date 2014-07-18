@@ -81,8 +81,13 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
             tableActor.$get( ((Subscription.KeyPredicate) subs.getFilter()).getKey())
                 .then(
                     (record,e) -> {
-                        ChangeBroadcast changeBC = ChangeBroadcast.NewAdd(tableActor.getTableId(), record);
-                        subs.getChangeReceiver().onChangeReceived(changeBC);
+                        if ( record == null ) {
+                            ChangeBroadcast changeBC = ChangeBroadcast.NewSnapFin(tableActor.getTableId());
+                            subs.getChangeReceiver().onChangeReceived(changeBC);
+                        } else {
+                            ChangeBroadcast changeBC = ChangeBroadcast.NewAdd(tableActor.getTableId(), record);
+                            subs.getChangeReceiver().onChangeReceived(changeBC);
+                        }
                     });
             return;
         }

@@ -7,90 +7,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Netty2Go TestClient</title>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.14/angular.js"></script>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    <script src="js/angular-1.2.9/angular.js"></script>
+    <script src="js/angular-1.2.9/angular-route.js"></script>
     <script src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.11.0.js"></script>
-    <!-- Bootstrap -->
+    <script src="js/minbin.js"></script>
+    <script src="js/model.js"></script>
+    <script src="js/reallive.js"></script>
+    <script src="js/ng-grid-2.0.11.debug.js"></script>
+    <script src="app.js"></script>
+
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="js/ng-grid.css" />
-    <style>
-        .gridStyle {
-            border: 1px solid rgb(212,212,212);
-            height: 300px;
-        }
-        .tooltip-inner {
-            max-width: 700px;
-            padding: 1px 2px;
-            color: #ffffff;
-            text-align: center;
-            text-decoration: none;
-            background-color: #ffffff;
-            border-radius: 4px;
-        }
+    <link rel="stylesheet" type="text/css" href="js/reallive.css" />
 
+    <style type="text/css">
+        body { padding-top: 80px; }
     </style>
 </head>
-<body ng-controller="RLAdmin">
-<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
 
-<script src="js/minbin.js"></script>
-<script src="js/model.js"></script>
-<script src="js/reallive.js"></script>
-<script src="js/ng-grid-2.0.11.debug.js"></script>
-<script src="app.js"></script>
-<br>
+<body ng-controller="RLAdmin">
+
+
+<div ng-include="'navbar.html'"></div>
+
 
 <div class="container">
-    <div class="row">
-        <h3>Test Server Settings</h3>
-    </div>
-    <br>
-    <div class="row">
-        <!--<div class="col-sm-offset-0 ">-->
-            <div class="form-inline" role="form">
-                <div class="form-group">
-                    <label for="host">Host</label>
-                    <div class="input-group">
-                        <input ng-model="host" type="text" class="form-control" name="Host" id="host" placeholder="Host" required>
-                        <!--<span class="input-group-addon danger"><span class="glyphicon glyphicon-remove"></span></span>-->
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="port">Port</label>
-                    <div class="input-group">
-                        <input ng-model="port" type="text" class="form-control" name="Port" id="port" placeholder="Port">
-                        <!--<span class="input-group-addon info"><span class="glyphicon glyphicon-asterisk"></span></span>-->
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="connect">&nbsp;</label>
-                    <div class="input-group">
-                        <button type="button" class="btn btn-primary" id="connect" ng-click="doConnect()" ng-disabled="socketConnected">Connect</button>
-                    </div>
-                </div>
-            </div>
-        <!--</div>-->
-    </div>
-    <br>
-    <br>
-    <div class="row">
-        <rl-table table="person" height="400px"></rl-table>
-    </div>
 
-    <br>
-    <br>
     <div class="row">
-        <rl-record style="padding: 8px; background-color: #a0a0a0; border: 1px solid black; " table="person" record-key="ruedi5">
-            Name: <span rl-hi>{{record.preName}}</span> <b>{{record.name}}</b> born:{{record.yearOfBirth}} </rl-record>
-    </div>
-
-    <br>
-    <div class="row">
-        <rl-table table="SysTable" height="300px"></rl-table>
+        <div class="col-md-9">
+            <div ng-view></div>
+        </div>
     </div>
 
 </div>
+
+
 <br>
 <br>
 
