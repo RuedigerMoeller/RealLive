@@ -11,7 +11,6 @@ import org.nustaq.reallive.sys.annotations.*;
 import org.nustaq.reallive.sys.metadata.ColumnMeta;
 import org.nustaq.reallive.sys.metadata.Metadata;
 import org.nustaq.reallive.sys.metadata.TableMeta;
-import org.nustaq.reallive.sys.tables.ClusterClients;
 import org.nustaq.reallive.sys.tables.SysTable;
 import org.nustaq.serialization.FSTClazzInfo;
 
@@ -39,7 +38,7 @@ public class RLImpl extends RealLive {
     }
 
     protected void initSystemTables() {
-        Arrays.stream(new Class[]{SysTable.class, ClusterClients.class}).forEach(
+        Arrays.stream(new Class[]{SysTable.class}).forEach(
             (clz) -> createTable(clz.getSimpleName(), clz)
         );
     }
@@ -50,6 +49,11 @@ public class RLImpl extends RealLive {
         }
         pureCreateTable(name,clazz);
         addToSysTable(name, clazz);
+    }
+
+    @Override
+    public void createTable(Class<? extends Record> recordClass) {
+        createTable(recordClass.getSimpleName(),recordClass);
     }
 
     private void addToSysTable(String name, Class rowClass) {

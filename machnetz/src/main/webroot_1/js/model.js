@@ -1,11 +1,10 @@
 
-var JClusterClients = function(obj) {
-this.__typeInfo = 'ClusterClients';
-    this.j_instanceNum = function() { return this.instanceNum; };
+var JTrader = function(obj) {
+this.__typeInfo = 'Trader';
+    this.j_cashBalance = function() { return this.cashBalance; };
     this.j_version = function() { return this.version; };
-    this.j_name = function() { return this.name; };
+    this.j_email = function() { return this.email; };
     this.j_recordKey = function() { return this.recordKey; };
-    this.j_state = function() { return this.state; };
     this.fromObj = function(obj) {
             for ( var key in obj ) {
                 var setter = 'j_'.concat(key);
@@ -23,28 +22,9 @@ this.__typeInfo = 'ClusterClients';
 
 var JInvocationCallback = function(obj) {
 this.__typeInfo = 'InvocationCallback';
+    this.j_sequence = function() { return this.sequence; };
     this.j_result = function() { return this.result; };
     this.j_cbId = function() { return this.cbId; };
-    this.fromObj = function(obj) {
-            for ( var key in obj ) {
-                var setter = 'j_'.concat(key);
-                if ( this.hasOwnProperty(setter) ) {
-                    this[key] = obj[key];
-                }
-            }
-            return this;
-        };
-        if ( obj != null ) {
-            this.fromObj(obj);
-        }
-    };
-
-
-var JAuthRequest = function(obj) {
-this.__typeInfo = 'AuthRequest';
-    this.j_misc = function() { return this.misc; };
-    this.j_pwd = function() { return this.pwd; };
-    this.j_user = function() { return this.user; };
     this.fromObj = function(obj) {
             for ( var key in obj ) {
                 var setter = 'j_'.concat(key);
@@ -131,6 +111,29 @@ this.__typeInfo = 'TestRecord';
     };
 
 
+var JTrade = function(obj) {
+this.__typeInfo = 'Trade';
+    this.j_version = function() { return this.version; };
+    this.j_tradeTime = function() { return this.tradeTime; };
+    this.j_buyOrderId = function() { return this.buyOrderId; };
+    this.j_recordKey = function() { return this.recordKey; };
+    this.j_sellOrderId = function() { return this.sellOrderId; };
+    this.j_tradeTimeStringUTC = function() { return this.tradeTimeStringUTC; };
+    this.fromObj = function(obj) {
+            for ( var key in obj ) {
+                var setter = 'j_'.concat(key);
+                if ( this.hasOwnProperty(setter) ) {
+                    this[key] = obj[key];
+                }
+            }
+            return this;
+        };
+        if ( obj != null ) {
+            this.fromObj(obj);
+        }
+    };
+
+
 var JTableMeta = function(obj) {
 this.__typeInfo = 'TableMeta';
     this.j_columns = function() { return MinBin.jmap(val); };
@@ -138,6 +141,34 @@ this.__typeInfo = 'TableMeta';
     this.j_description = function() { return this.description; };
     this.j_displayName = function() { return this.displayName; };
     this.j_name = function() { return this.name; };
+    this.fromObj = function(obj) {
+            for ( var key in obj ) {
+                var setter = 'j_'.concat(key);
+                if ( this.hasOwnProperty(setter) ) {
+                    this[key] = obj[key];
+                }
+            }
+            return this;
+        };
+        if ( obj != null ) {
+            this.fromObj(obj);
+        }
+    };
+
+
+var JMarket = function(obj) {
+this.__typeInfo = 'Market';
+    this.j_ask = function() { return this.ask; };
+    this.j_askQty = function() { return this.askQty; };
+    this.j_bid = function() { return this.bid; };
+    this.j_bidQty = function() { return this.bidQty; };
+    this.j_lastPrc = function() { return this.lastPrc; };
+    this.j_lastQty = function() { return this.lastQty; };
+    this.j_version = function() { return this.version; };
+    this.j_lastMatch = function() { return this.lastMatch; };
+    this.j_lastMatchTimeUTC = function() { return this.lastMatchTimeUTC; };
+    this.j_recordKey = function() { return this.recordKey; };
+    this.j_state = function() { return this.state; };
     this.fromObj = function(obj) {
             for ( var key in obj ) {
                 var setter = 'j_'.concat(key);
@@ -191,6 +222,31 @@ this.__typeInfo = 'QueryTuple';
     };
 
 
+var JOrder = function(obj) {
+this.__typeInfo = 'Order';
+    this.j_buy = function() { return this.buy; };
+    this.j_limitPrice = function() { return this.limitPrice; };
+    this.j_qty = function() { return this.qty; };
+    this.j_version = function() { return this.version; };
+    this.j_instrumentKey = function() { return this.instrumentKey; };
+    this.j_originatingOrderId = function() { return this.originatingOrderId; };
+    this.j_recordKey = function() { return this.recordKey; };
+    this.j_traderKey = function() { return this.traderKey; };
+    this.fromObj = function(obj) {
+            for ( var key in obj ) {
+                var setter = 'j_'.concat(key);
+                if ( this.hasOwnProperty(setter) ) {
+                    this[key] = obj[key];
+                }
+            }
+            return this;
+        };
+        if ( obj != null ) {
+            this.fromObj(obj);
+        }
+    };
+
+
 var JInvocation = function(obj) {
 this.__typeInfo = 'Invocation';
     this.j_argument = function() { return this.argument; };
@@ -211,10 +267,13 @@ this.__typeInfo = 'Invocation';
     };
 
 
-var JAuthResponse = function(obj) {
-this.__typeInfo = 'AuthResponse';
-    this.j_sucess = function() { return this.sucess; };
-    this.j_sessionKey = function() { return this.sessionKey; };
+var JInstrument = function(obj) {
+this.__typeInfo = 'Instrument';
+    this.j_version = function() { return this.version; };
+    this.j_expiryDate = function() { return this.expiryDate; };
+    this.j_description = function() { return this.description; };
+    this.j_expiryDateString = function() { return this.expiryDateString; };
+    this.j_recordKey = function() { return this.recordKey; };
     this.fromObj = function(obj) {
             for ( var key in obj ) {
                 var setter = 'j_'.concat(key);
@@ -281,17 +340,19 @@ this.__typeInfo = 'ColumnMeta';
 
 var mbfactory = function(clzname) {
 switch (clzname) {
-        case 'ClusterClients': return new JClusterClients();
+        case 'Trader': return new JTrader();
         case 'InvocationCallback': return new JInvocationCallback();
-        case 'AuthRequest': return new JAuthRequest();
         case 'RecordChange': return new JRecordChange();
         case 'SysTable': return new JSysTable();
         case 'TestRecord': return new JTestRecord();
+        case 'Trade': return new JTrade();
         case 'TableMeta': return new JTableMeta();
+        case 'Market': return new JMarket();
         case 'Metadata': return new JMetadata();
         case 'QueryTuple': return new JQueryTuple();
+        case 'Order': return new JOrder();
         case 'Invocation': return new JInvocation();
-        case 'AuthResponse': return new JAuthResponse();
+        case 'Instrument': return new JInstrument();
         case 'ChangeBroadcast': return new JChangeBroadcast();
         case 'ColumnMeta': return new JColumnMeta();
         default: return { __typeInfo: clzname };

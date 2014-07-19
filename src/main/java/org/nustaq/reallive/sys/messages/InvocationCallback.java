@@ -8,6 +8,7 @@ import java.io.Serializable;
 public class InvocationCallback implements Serializable {
     Object result;
     String cbId;
+    int sequence;
 
     public InvocationCallback() {
     }
@@ -15,6 +16,14 @@ public class InvocationCallback implements Serializable {
     public InvocationCallback(Object result, String cbId) {
         this.result = result;
         this.cbId = cbId;
+    }
+
+    public int getSequence() {
+        return sequence;
+    }
+
+    public void setSequence(int sequence) {
+        this.sequence = sequence;
     }
 
     public Object getResult() {

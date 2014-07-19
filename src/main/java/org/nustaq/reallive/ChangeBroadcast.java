@@ -102,4 +102,8 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
     public boolean isError() {
         return getType() == ERROR;
     }
+
+    public boolean isAdd() {
+        return getType() == ADD;
+    }
 }

@@ -36,4 +36,5 @@ public abstract class RealLive {
     public abstract Metadata getMetadata();
 
     public abstract void createTable(String mkt, Class<? extends Record> recordClass);
+    public abstract void createTable(Class<? extends Record> recordClass);
 }

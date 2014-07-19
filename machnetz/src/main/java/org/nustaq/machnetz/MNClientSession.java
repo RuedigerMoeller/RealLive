@@ -5,6 +5,7 @@ import org.nustaq.kontraktor.annotations.*;
 import io.netty.channel.ChannelHandlerContext;
 import org.nustaq.reallive.RealLive;
 import org.nustaq.reallive.Subscription;
+import org.nustaq.reallive.queries.JSQuery;
 import org.nustaq.reallive.sys.SysMeta;
 import org.nustaq.reallive.sys.messages.Invocation;
 import org.nustaq.reallive.sys.messages.InvocationCallback;
@@ -17,6 +18,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by ruedi on 25.05.14.
@@ -60,9 +62,9 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     final MethodType rpctype = MethodType.methodType(Object.class,Invocation.class);
     public void $onBinaryMessage(ChannelHandlerContext ctx, byte[] buffer) {
-        System.out.println("minmsg");
+//        System.out.println("minmsg");
         final Object msg = conf.asObject(buffer);
-        System.out.println("  minmsg "+msg);
+//        System.out.println("  minmsg "+msg);
         if (msg instanceof Invocation) {
             final Invocation inv = (Invocation) msg;
             inv.setCurrentContext(ctx);
@@ -80,10 +82,12 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         }
     }
 
+    AtomicInteger msgCount = new AtomicInteger(1);
     protected void sendReply(Invocation inv, Object msg) {
         String cbId = inv.getCbId();
         ChannelHandlerContext ctx = (ChannelHandlerContext) inv.getCurrentContext();
         InvocationCallback cb = new InvocationCallback(msg, cbId);
+        cb.setSequence(msgCount.incrementAndGet());
         server.sendWSBinaryMessage(ctx,conf.asByteArray(cb));
     }
 
@@ -122,21 +126,22 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     // expect [tableName,filterString]
     Object subscribe(Invocation<QueryTuple> inv) {
         QueryTuple argument = inv.getArgument();
-        Subscription subs = getRLDB().stream("" + argument.getTableName()).subscribe(null, (change) -> sendReply(inv, change));
+        Subscription subs = getRLDB().stream("" + argument.getTableName()).subscribe( new JSQuery(argument.getQuerySource()), (change) -> sendReply(inv, change));
         subscriptions.put(inv.getCbId(),subs);
         return NO_RESULT;
     }
 
     // expect [tableName,filterString]
     Object listen(Invocation<QueryTuple> inv) {
-        Subscription subs = getRLDB().stream("" + inv.getArgument()).listen(null, (change) -> sendReply(inv, change));
+        QueryTuple argument = inv.getArgument();
+        Subscription subs = getRLDB().stream("" + argument).listen(new JSQuery(argument.getQuerySource()), (change) -> sendReply(inv, change));
         subscriptions.put(inv.getCbId(), subs);
         return NO_RESULT;
     }
 
     // expect [tableName,filterString]
     Object query(Invocation<QueryTuple> inv) {
-        getRLDB().stream("" + inv.getArgument()).each((change) -> sendReply(inv, change));
+        getRLDB().stream("" + inv.getArgument()).filter(new JSQuery(inv.getArgument().getQuerySource()),(change) -> sendReply(inv, change));
         return NO_RESULT;
     }
 

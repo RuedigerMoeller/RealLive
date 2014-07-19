@@ -3,16 +3,21 @@ var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid', 'ngRoute']);
 app .config(['$routeProvider',
     function($routeProvider) {
         $routeProvider.
+            when('/admin', {
+                templateUrl: 'admin.html'
+            }).
             when('/market', {
-                templateUrl: 'marketController.html',
-                controller: 'MarketController'
+                templateUrl: 'market.html'
+            }).
+            when('/testing', {
+                templateUrl: 'testing.html'
             }).
             when('/position', {
                 templateUrl: 'position.html',
                 controller: 'PositionController'
             }).
             otherwise({
-                templateUrl: 'market.html'
+                templateUrl: 'testing.html'
 //                controller: 'LoginController'
             });
     }]);
@@ -43,25 +48,7 @@ app.directive('rlHi', function() {
                 function(newVal,oldVal) {
                     if (newVal!=oldVal) {
                         var elementId = $scope.itid;
-                        var test = document.getElementById($scope.itid);
-                        if (!test.hicount && test.hicount != 0) {
-                            test.hicount = 1;
-                        } else {
-                            test.hicount++;
-                        }
-                        test.style.backgroundColor = '#F2E38A';
-                        (function () {
-                            var current = test;
-                            var prevKey = elementId;
-                            setTimeout(function () {
-                                if (current.hicount <= 1 || prevKey != current.id) {
-                                    current.style.backgroundColor = 'rgba(230,230,230,0.0)';
-                                    current.hicount = 0;
-                                } else {
-                                    current.hicount--;
-                                }
-                            }, 2000);
-                        }());
+                        RealLive.highlightElem(elementId);
                     }
                 }
             );
@@ -125,54 +112,83 @@ app.directive('rlTable', function() {
     return {
         restrict: 'E',
         scope: true,
+        exclude: {},
         controller: function( $scope, $attrs ) {
             $scope.rlset = new RLResultSet();
             $scope.height = '300px';
+            if ( $attrs.rlExclude ) {
+                var list = $attrs.rlExclude.split(",");
+                $scope.exclude = {};
+                for ( var i = 0; i < list.length; i++ )
+                    $scope.exclude[list[i]] = true;
+            } else {
+                $scope.exclude = {};
+            }
+            if ( $attrs.rlQuery ) {
+                $scope.rlQuery = $attrs.rlQuery;
+            } else
+                $scope.rlQuery = '';
             if ( $attrs.height ) {
                 $scope.height = $attrs.height;
             }
+
+            $scope.$on("$destroy", function() {
+                console.log("destroy");
+                $scope.rlset.unsubscribe();
+            });
+
+            $scope.getColumns = function() {
+                if ( RealLive.model == null ) {
+                    return [];
+                }
+                var cols = $scope.model.tables[$attrs.table].columnsNGTableConf;
+                var res = [];
+                for (var i=0; i < cols.length; i++ ) {
+                    var col = cols[i];
+                    if ( ! $scope.exclude[col.field] ) {
+                        res.push(col);
+                    }
+                }
+                return res;
+            };
             $scope.gridOptions = {
                 data: 'rlset.list',
-                columnDefs: 'model.tables.'+$attrs.table+'.columnsNGTableConf',
+                columnDefs: [],
                 enableColumnResize: true,
                 multiSelect: false,
-                enableColumnReordering:false
+                enableColumnReordering:false,
+                rowTemplate:
+                    '<span id="row#{{row.entity.recordKey}}" style="border-radius: 4px; transition: background-color .2s ease-out; padding: 4px;">'+
+                    "<div ng-style=\"{ 'cursor': row.cursor }\" ng-repeat=\"col in renderedColumns\" ng-class=\"col.colIndex()\" class=\"ngCell {{col.cellClass}}\">" +
+                    "\n" +
+                    "\t<div class=\"ngVerticalBar\" ng-style=\"{height: rowHeight}\" ng-class=\"{ ngVerticalBarVisible: !$last }\">&nbsp;</div>\r" +
+                    "\n" +
+                    "\t<div ng-cell></div>\r" +
+                    "\n" +
+                    "</div></span>"
             };
+            $scope.$watch('rlset.list.length');
             RealLive.onModelLoaded(function() {
-                $scope.rlset.preChangeHook = function(change,snapFin) {
-                    if (change.type==RL_UPDATE) {
+                $scope.gridOptions.columnDefs = $scope.getColumns();
+                $scope.rlset.postChangeHook = function(change,snapFin) {
+                    if (change.type==RL_UPDATE)
+                    {
                         var fieldList = $scope.rlset.getChangedFieldNames(change);
                         var recKey = change.recordKey;
                         for (var i=0; i < fieldList.length; i++) {
                             var elementId = recKey + '#row.entity.' + fieldList[i];
-                            var test = document.getElementById(elementId);
-//                            console.log('hi '+elementId);
-                            if ( test != null ) {
-                                if ( ! test.hicount && test.hicount != 0 ) {
-                                    test.hicount = 1;
-                                } else {
-                                    test.hicount++;
-                                }
-                                test.style.backgroundColor = '#F2E38A';
-                                (function () {
-                                    var current = test;
-                                    var prevKey = elementId;
-                                    setTimeout(function () {
-                                        if ( current.hicount <= 1 || prevKey != current.id ) {
-                                            current.style.backgroundColor = 'rgba(230,230,230,0.0)';
-                                            current.hicount = 0;
-                                        } else {
-                                            current.hicount--;
-                                        }
-                                    }, 2000);
-                                }());
-                            }
+                            RealLive.highlightElem(elementId);
                         }
-                        if ( snapFin )
-                            $scope.$apply(new function() {});
+                    }
+                    if ( snapFin ) {
+                        $scope.$digest();
+                    }
+                    if (change.type==RL_ADD) {
+                        var elementId = 'row#'+change.recordKey;
+                        RealLive.highlightElem(elementId);
                     }
                 };
-                RealLive.subscribeSet($attrs.table,"item.yearOfBirth > 1950", $scope.rlset,null); //$scope);
+                RealLive.subscribeSet($attrs.table, $scope.rlQuery, $scope.rlset,null); //$scope);
             });
 
         },
@@ -219,28 +235,42 @@ app.controller('RLAdmin', function ($scope,$modal) {
             user: '',
             loggedin: false,
             controller: function($scope) {
-                $scope.reallive = 'RealLive',
+                window.setTimeout( function() {
+                    var loginuser = document.getElementById("loginuser");
+                    if ( loginuser != null )
+                        loginuser.focus();
+                },1000);
+                $scope.size = 'sm';
+                $scope.reallive = 'All data ..',
                 window.setTimeout(function() {
-                    $scope.reallive='Realtime';
+                    $scope.reallive='in RealTime';
+                    $scope.$digest();
                     window.setTimeout(function() {
-                        $scope.reallive='EveryThing';
+                        $scope.reallive='.';
+                        $scope.$digest();
                         window.setTimeout(function() {
-                            $scope.reallive='.';
+                            $scope.reallive='..';
+                            $scope.$digest();
                             window.setTimeout(function() {
-                                $scope.reallive='All Data. Real Time.';
+                                $scope.reallive='RealLive';
+                                $scope.$digest();
                             }, 3000);
-                        }, 3000);
-                    }, 3000);
+                        }, 2000);
+                    }, 2000);
                 }, 3000);
                 $scope.doLogin = function() {
                     var self = this;
-                    RealLive.subscribeKey('person', this.user, function(change) {
+                    RealLive.subscribeKey('Trader', this.user, function(change) {
                         if ( change.type == RL_ADD ) {
                             self.loggedIn = true;
+                            $scope.$parent.user = change.newRecord;
                             instance.close(true);
+                            document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,0)';
+                            setTimeout(function() {document.getElementById('rl-app-overlay').style.display='none';}, 2000);
                         } else {
                             if (!self.loggedIn) {
                                 self.msg = "Invalid user or password. retry.";
+                                $scope.$digest();
                             }
                         }
                     });

@@ -6,7 +6,6 @@ import org.nustaq.reallive.sys.messages.*;
 import org.nustaq.reallive.sys.metadata.ColumnMeta;
 import org.nustaq.reallive.sys.metadata.Metadata;
 import org.nustaq.reallive.sys.metadata.TableMeta;
-import org.nustaq.reallive.sys.tables.ClusterClients;
 import org.nustaq.reallive.sys.tables.SysTable;
 import org.nustaq.serialization.minbin.GenMeta;
 
@@ -23,9 +22,6 @@ public class SysMeta implements GenMeta {
         return new ArrayList<Class>( Arrays.asList(new Class[] {
             SysTable.class,
             Invocation.class,
-            AuthRequest.class,
-            AuthResponse.class,
-            ClusterClients.class,
             InvocationCallback.class,
             ChangeBroadcast.class,
             Metadata.class,

@@ -9,6 +9,7 @@ import org.nustaq.kontraktor.impl.DispatcherThread;
 import io.netty.channel.ChannelHandlerContext;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.machnetz.model.TestRecord;
+import org.nustaq.machnetz.model.rlxchange.*;
 import org.nustaq.netty2go.NettyWSHttpServer;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.RealLive;
@@ -19,7 +20,9 @@ import org.nustaq.webserver.WebSocketHttpServer;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.LockSupport;
 
@@ -48,6 +51,72 @@ public class MachNetz extends WebSocketHttpServer {
 
     protected void initServer() {
         realLive = new RLImpl();
+
+        initTestTable();
+        initRLExchange();
+        openMarket();
+    }
+
+    private void openMarket() {
+        // fixme: should clear orders. trades
+        RLTable market = realLive.getTable("Market");
+        realLive.getTable("Instrument").stream().each((change) -> {
+            if ( change.isAdd() ) {
+                Instrument record = (Instrument) change.getRecord();
+                market.$put(record.getRecordKey(), new Market(record.getRecordKey(),0,0,0,0,0,0,0,"n/a"));
+            }
+        });
+    }
+
+    private void initRLExchange() {
+        Arrays.stream( new Class[] {
+                TestRecord.class,
+                Instrument.class,
+                Market.class,
+                Order.class,
+                Trade.class,
+                Trader.class
+            }
+        ).forEach( (clz) -> realLive.createTable(clz) );
+
+        String description = "10€ in case $X wins";
+        long expiry = System.currentTimeMillis()+4*7*24*60*60*1000;
+        String expString = new Date(expiry).toString();
+        Arrays.stream( new Instrument[] {
+            new Instrument("Germany", description, expiry, expString),
+            new Instrument("Italy", description, expiry, expString),
+            new Instrument("Brazil", description, expiry, expString),
+            new Instrument("France", description, expiry, expString),
+            new Instrument("Greece", description, expiry, expString),
+            new Instrument("Croatia", description, expiry, expString),
+            new Instrument("Bavaria", description, expiry, expString),
+            new Instrument("Belgium", description, expiry, expString),
+            new Instrument("USA", description, expiry, expString),
+            new Instrument("Argentina", description, expiry, expString),
+            new Instrument("Cameroun", description, expiry, expString),
+            new Instrument("Nigeria", description, expiry, expString),
+            new Instrument("Netherlands", description, expiry, expString),
+            new Instrument("Meckpomm", description, expiry, expString),
+            new Instrument("Russia", description, expiry, expString),
+            new Instrument("Iran", description, expiry, expString),
+        }).forEach((instr) -> {
+            instr.setDescription(instr.getDescription().replace("$X",instr.getRecordKey()));
+            realLive.getTable("Instrument").$put(instr.getRecordKey(),instr);
+        });
+
+        Arrays.stream( new Trader[] {
+            new Trader("Hans", "hans@wurst.de", 100),
+            new Trader("Hubert", "hans@wurst.de", 300),
+            new Trader("Ruedi", "hans@wurst.de", 200),
+            new Trader("Hara", "hans@wurst.de", 2000),
+            new Trader("Kiri", "hans@wurst.de", 3000),
+            new Trader("Angela", "hans@wurst.de", 11),
+            new Trader("Mutti", "hans@wurst.de", 10),
+        }).forEach((trader) -> realLive.getTable("Trader").$put(trader.getRecordKey(),trader));
+
+    }
+
+    private void initTestTable() {
         realLive.createTable( "person", TestRecord.class );
         RLTable person = realLive.getTable("person");
         for ( int i = 0; i < 100; i++ ) {
@@ -68,7 +137,8 @@ public class MachNetz extends WebSocketHttpServer {
                                 forUpdate.setPreName("POK " + (int) (Math.random() * 5));
                                 forUpdate.setName("Name " + (int) (Math.random() * 5));
                                 forUpdate.$apply();
-                                LockSupport.parkNanos(1000 * 1000 * 50);
+//                                LockSupport.parkNanos(1000*1000*100);
+                                LockSupport.parkNanos(1000 * 1000 * 200);
                             }
                         });
                         LockSupport.parkNanos(1000*1000*100);

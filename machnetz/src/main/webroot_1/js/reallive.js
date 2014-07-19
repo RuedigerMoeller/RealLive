@@ -5,62 +5,7 @@ var RL_OPERATION = 3;
 var RL_SNAPSHOT_DONE = 4;
 var RL_ERROR = 5;
 
-function RLResultSet() {
-    this.map = {};
-    this.list = [];
-    this.preChangeHook = null;
-    this.snapFin = false;
 
-    this.push = function(change) {
-        if (this.preChangeHook) {
-            this.preChangeHook.call(null,change,this.snapFin);
-        }
-        switch ( change.type ) {
-            case RL_ADD: {
-                var rec = change.newRecord;
-                this.map[rec.recordKey] = rec;
-                this.list.push(rec);
-                rec._rlIdx = this.list.length-1;
-            } break;
-            case RL_REMOVE: {
-                var rec = this.map[change.recordKey];
-                if ( rec !== 'undefined') {
-                    this.list.splice(rec._rlIdx,1);
-                }
-            } break;
-            case RL_SNAPSHOT_DONE:
-                this.snapFin = true;
-                break;
-            case RL_UPDATE: {
-                var rec = this.map[change.recordKey];
-                if ( rec ) {
-                    var changeArray = change.appliedChange.fieldIndex;
-                    for ( var i = 0; i < changeArray.length; i++ ) {
-                        var fieldId = changeArray[i];
-                        var newValue = change.appliedChange.newVal[i];
-                        var fieldName = RealLive.getFieldName(change.tableId,fieldId);
-                        rec[fieldName] = newValue;
-                        //var oldValue = change.appliedChange.oldVal[i];
-                        //var error = rec[fieldName] != oldValue;
-                    }
-                }
-//                console.log(rec);
-            } break;
-        }
-    };
-
-    this.getChangedFieldNames = function(change) {
-        var res = [];
-        if (change.appliedChange) {
-            var changeArray = change.appliedChange.fieldIndex;
-            for ( var i = 0; i < changeArray.length; i++ ) {
-                var fieldId = changeArray[i];
-                res.push(RealLive.getFieldName(change.tableId,fieldId));
-            }
-        }
-        return res;
-    }
-}
 
 var RealLive = new function() {
 
@@ -70,6 +15,32 @@ var RealLive = new function() {
     this.model = null; // RealLive data model
     this.onChange = null; // callback function
     this.toDo = [];
+
+    this.highlightElem = function(elementId) {
+        if ( !elementId )
+            return;
+        var element = document.getElementById(elementId);
+        if ( !element )
+            return;
+        if (!element.hicount && element.hicount != 0) {
+            element.hicount = 1;
+        } else {
+            element.hicount++;
+        }
+        element.style.backgroundColor = '#F2E38A';
+        (function () {
+            var current = element;
+            var prevKey = elementId;
+            setTimeout(function () {
+                if (current.hicount <= 1 || prevKey != current.id) {
+                    current.style.backgroundColor = 'rgba(230,230,230,0.0)';
+                    current.hicount = 0;
+                } else {
+                    current.hicount--;
+                }
+            }, 3000);
+        }());
+    };
 
     this.getTableMeta = function(tableId,columnName) {
         var res = this.model.tables[tableId];
@@ -104,6 +75,8 @@ var RealLive = new function() {
         }
     };
 
+    this.lastSeq = 0;
+
     this.doConnect = function (host,port,websocketDir) {
         var self = this;
 
@@ -111,6 +84,7 @@ var RealLive = new function() {
         this.ws.cbId = 1;
         this.ws.cbMap = {};
         this.ws.onopen = function () {
+            this.lastSeq = 0;
             console.log("open");
             self.socketConnected = true;
             self.call("initModel", 0, function(retVal) {
@@ -149,6 +123,7 @@ var RealLive = new function() {
                                 colConf.push(
                                     {   field: cols[col].name,
                                         displayName: cols[col].displayName,
+                                        width: (cols[col].name.length*13).toString()+"px",
                                         groupable: false,
 //                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()" id="{{row.entity.recordKey}}#COL_FIELD"><span ng-cell-text>{{COL_FIELD}}</span></div>'
                                         cellTemplate:
@@ -189,6 +164,12 @@ var RealLive = new function() {
                     try {
                         var msg = MinBin.decode(event.target.result);
                         if (msg instanceof JInvocationCallback) {
+                            if ( _thisWS.lastSeq != 0 ) {
+                                if ( _thisWS.lastSeq != msg.sequence-1 ) {
+                                    console.log("ERROR: lastSeq ".concat(_thisWS.lastSeq)+" newSeq:".concat(msg.sequence));
+                                }
+                            }
+                            _thisWS.lastSeq = msg.sequence;
                             var cb = _thisWS.cbMap[msg.cbId];
                             if (typeof cb === "function") {
                                 var unsubscribe = cb.call(null, msg.result);
@@ -211,13 +192,19 @@ var RealLive = new function() {
         };
     };
 
+    this.unsubscribe = function(cbid) {
+        if ( this.ws.cbMap[cbid])
+            delete this.ws.cbMap[cbid];
+        this.call("unsubscribe",cbid);
+    };
+
     this.deletCBId = function( cbId ) {
         delete this.ws.cbMap[cbId];
     };
 
     // call streaming, callback must return true to unsubscribe
     this.callStreaming = function( methodName, arg, callback ) {
-        this.call(methodName,arg,callback,true);
+        return this.call(methodName,arg,callback,true);
     };
 
     /////////////// subs/query
@@ -240,16 +227,17 @@ var RealLive = new function() {
 
     // if scope is set => apply after each change
     this.subscribeSet = function( tableName, queryString, resultset, scope ) {
-        this.callStreaming(
+        var cb = function(change) {
+            resultset.push(change);
+            if ( scope != null ) {
+                scope.$apply(function () {});
+            }
+            return false;
+        };
+        resultset.subsId = this.callStreaming(
             "subscribe",
             new JQueryTuple({ tableName: tableName, querySource: queryString }),
-            function(change) {
-                resultset.push(change);
-                if ( scope != null ) {
-                    scope.$apply(function () {});
-                }
-                return false;
-            }
+            cb
         );
     };
 
@@ -268,6 +256,7 @@ var RealLive = new function() {
     };
 
     this.call = function( methodName, arg, callback, stream ) {
+        var res = null;
         var msg = MinBin.encode(
             new JInvocation({
                 "name" : methodName,
@@ -277,13 +266,14 @@ var RealLive = new function() {
         );
         if ( ! (typeof callback === "undefined") ) {
             if ( ! stream ) {
-                this.ws.cbMap['mc'.concat(this.ws.cbId)] = callback;
+                this.ws.cbMap[res = 'mc'.concat(this.ws.cbId)] = callback;
             } else {
-                this.ws.cbMap['st'.concat(this.ws.cbId)] = callback; // stream
+                this.ws.cbMap[res = 'st'.concat(this.ws.cbId)] = callback; // stream
             }
             this.ws.cbId++;
         }
         this.ws.send(msg);
+        return res;
     };
 
     this.visibleColumns = function( columns ) {
@@ -302,4 +292,93 @@ var RealLive = new function() {
         return result;
     };
 
+};
+
+function RLResultSet() {
+    this.map = {};
+    this.list = [];
+    this.preChangeHook = null;
+    this.postChangeHook = null;
+    this.snapFin = false;
+    this.subsId = null;
+
+    this.unsubscribe = function() {
+        if ( this.subsId ) {
+            if ( RealLive ) {
+                RealLive.unsubscribe(this.subsId);
+                this.subsId = null;
+            }
+        }
+    };
+
+    this.push = function(change) {
+        if (this.preChangeHook) {
+            this.preChangeHook.call(null,change,this.snapFin);
+        }
+        switch ( change.type ) {
+            case RL_ADD: {
+//                console.log( "add "+change.recordKey);
+                var rec = change.newRecord;
+                if ( this.map[change.recordKey] ) {
+                    console.log('double add rec '+change.recordKey);
+                }
+                this.map[rec.recordKey] = rec;
+                this.list.push(rec);
+            } break;
+            case RL_REMOVE: {
+//                console.log( "remove "+change.recordKey);
+                var rec = this.map[change.recordKey];
+                if ( rec !== 'undefined') {
+                    delete this.map[change.recordKey];
+                    for ( var x = 0; x < this.list.length; x++) {
+                        if ( this.list[x].recordKey == change.recordKey ) {
+                            this.list.splice(x,1);
+                        }
+                    }
+//                    if (this.map[change.recordKey]) {
+//                        console.log("FAIL-------------------------------REMOVE MAP "+change.recordKey);
+//                    }
+                } else {
+                    console.log('could not find removed rec '+change.recordKey+" "+this.map[change.recordKey]);
+                }
+            } break;
+            case RL_SNAPSHOT_DONE:
+                this.snapFin = true;
+//                console.log("** snapfin on set ** size:"+this.list.length);
+                for (var i=0; i < this.list.length; i++) {
+                    console.log(this.list[i].recordKey);
+                }
+                break;
+            case RL_UPDATE: {
+                var rec = this.map[change.recordKey];
+                if ( rec ) {
+                    var changeArray = change.appliedChange.fieldIndex;
+                    for ( var i = 0; i < changeArray.length; i++ ) {
+                        var fieldId = changeArray[i];
+                        var newValue = change.appliedChange.newVal[i];
+                        var fieldName = RealLive.getFieldName(change.tableId,fieldId);
+                        rec[fieldName] = newValue;
+                        //var oldValue = change.appliedChange.oldVal[i];
+                        //var error = rec[fieldName] != oldValue;
+                    }
+                }
+//                console.log(rec);
+            } break;
+        }
+        if (this.postChangeHook) {
+            this.postChangeHook.call(null,change,this.snapFin);
+        }
+    };
+
+    this.getChangedFieldNames = function(change) {
+        var res = [];
+        if (change.appliedChange) {
+            var changeArray = change.appliedChange.fieldIndex;
+            for ( var i = 0; i < changeArray.length; i++ ) {
+                var fieldId = changeArray[i];
+                res.push(RealLive.getFieldName(change.tableId,fieldId));
+            }
+        }
+        return res;
+    }
 };

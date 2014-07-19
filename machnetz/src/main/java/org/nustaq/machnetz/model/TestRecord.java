@@ -66,4 +66,5 @@ public class TestRecord extends Record {
     public void setProfession(String profession) {
         this.profession = profession;
     }
+
 }

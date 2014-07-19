@@ -38,6 +38,10 @@ public class Record implements Serializable {
         this.table = originalRecord.table;
     }
 
+    public Record(String key) {
+        this(key,null);
+    }
+
     public Record(String key, RLTable schema) {
         this.recordKey = key;
         this.table = schema;
@@ -203,7 +207,7 @@ public class Record implements Serializable {
         for (int i = 0; i < fieldInfo.length; i++) {
             FSTClazzInfo.FSTFieldInfo fstFieldInfo = fieldInfo[i];
             try {
-                res += fstFieldInfo.getField().get(this) + "\t ";
+                res += fstFieldInfo.getField().getName()+": "+fstFieldInfo.getField().get(this) + ", ";
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }

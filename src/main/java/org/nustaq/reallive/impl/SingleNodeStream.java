@@ -77,7 +77,6 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     public void $subscribe(Subscription subs) {
         subscribers.add(subs);
         if ( subs.getFilter() instanceof Subscription.KeyPredicate ) {
-            self().$listen(subs);
             tableActor.$get( ((Subscription.KeyPredicate) subs.getFilter()).getKey())
                 .then(
                     (record,e) -> {
@@ -155,7 +154,9 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
                                 changeBC.getTableId(),
                                 changeBC.getRecord()
                                                   ));
-                    } // else did not match and does not match
+                    } else {
+                        // silent
+                    }
                 }
                 break;
             default:

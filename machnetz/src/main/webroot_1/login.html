@@ -1,42 +1,47 @@
-<div class="container">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-        <h4 class="modal-title" id="myModalLabel"><b>Log in</b></h4>
-    </div>
-    <div class="modal-body">
-        <div class="row col-md-4">
-            <img src="img/real_live_notext.png">&nbsp;<span rl-hi><b>{{reallive}}</b></span>
-        </div>
-        <div class="row col-md-4">
-            <div class="row">
-                <!--<div class="col-sm-offset-0 ">-->
-                <div class="form-group">
-                    <label for="user">User</label>
-                    <div class="input-group">
-                        <input ng-model="user" type="text" class="form-control" name="Host" id="user" placeholder="UserId" required>
-                        <!--<span class="input-group-addon danger"><span class="glyphicon glyphicon-remove"></span></span>-->
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="form-group">
-                    <label for="pwd">Password</label>
-                    <div class="input-group">
-                        <input ng-model="pwd" type="password" class="form-control" id="pwd" name="Password" placeholder="Password">
-                        <!--<span class="input-group-addon info"><span class="glyphicon glyphicon-asterisk"></span></span>-->
-                    </div>
-                </div>
-            </div>
-            <div class="row col-md-offset-5">
-                <br>
-                <button type="button" class="btn btn-primary" id="login" ng-click="doLogin()">Login</button>
-            </div>
-            <div class="row">
-                <br>
-                <div class="form-group">
-                    <div rl-hi>{{msg}}</div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div style="padding: 40px;">
+<table width="100%">
+    <tr>
+        <td colspan="2"><span style="font-size: 1.3em;"><b>Log In</b></span></td>
+    </tr>
+    <tr>
+        <td colspan="2" style="border-bottom: 1px solid darkgrey;"><br></td>
+    </tr>
+    <tr>
+        <td colspan="2"><br></td>
+    </tr>
+    <tr>
+        <td align="CENTER" style="width: 180px;"><img src="img/real_live_notext.png"><br><br><span style="font-size: 1.1em;" rl-hi><b>{{reallive}}</b></span></td>
+        <td>
+            <form ng-submit="doLogin()">
+            <table style="width: 100%;" cellpadding="4px">
+                <tr>
+                    <td>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input ng-model="user" id="loginuser" type="text" class="form-control" name="Host" placeholder="UserId" required>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input ng-model="pwd" type="password" class="form-control" name="Password" placeholder="Password">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="RIGHT">
+                        <br>
+                        <button type="submit" style="width: 80px;" class="btn btn-primary btn-default" id="login" ng-click="doLogin()">Login</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div rl-hi>{{msg}}</div>
+                    </td>
+                </tr>
+            </table>
+            </form>
+        </td>
+    </tr>
+</table>
 </div>
