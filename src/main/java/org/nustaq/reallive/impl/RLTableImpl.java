@@ -35,6 +35,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     private ChangeBroadcastReceiver receiver;
 
     public void $init( String tableId, RealLive realLive, Class<T> clz, SingleNodeStream streamActor ) {
+        Thread.currentThread().setName("TableImpl:"+tableId);
         this.clazz = clz;
         this.tableId = tableId;
         this.realLive = realLive;
@@ -131,26 +132,30 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     //
 
     @Override
-    public Future<String> $addGetId(T object) {
+    public Future<String> $addGetId(T object, int originator) {
         String nextKey = idgen.nextid();
         object._setId(nextKey);
         put(nextKey, object);
-        broadCastAdd(object);
+        broadCastAdd(object,originator);
         return new Promise<>(nextKey);
     }
 
     @Override
-    public void $add(T object) {
+    public void $add(T object, int originator) {
         String nextKey = idgen.nextid();
         object._setId(nextKey);
         put(nextKey, object);
-        broadCastAdd(object);
+        broadCastAdd(object,originator);
     }
 
     @Override
-    public void $put(String key, T object) {
+    public void $put(String key, T object, int originator) {
         object._setId(key);
+        if ( storage.contains(key) ) {
+            broadCastRemove(storage.get(key),originator);
+        }
         storage.put(key,object);
+        broadCastAdd(object,originator);
     }
 
     @Override
@@ -165,15 +170,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             t = createForAdd();
             RecordChange appliedChange = change.apply(t);
             put(t.getRecordKey(), t);
-            broadCastAdd(t);
+            broadCastAdd(t,change.getOriginator());
         }
     }
 
     @Override
-    public void $remove(String key) {
+    public void $remove(String key, int originator) {
         Record record = storage.removeAndGet(key);
         if ( record != null )
-            broadCastRemove(record);
+            broadCastRemove(record,originator);
     }
 
     public void $reportStats() {
@@ -181,7 +186,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         sysTable.setNumElems(storage.size());
         sysTable.setSizeMB(storage.getSizeMB());
         sysTable.setFreeMB(storage.getFreeMB());
-        sysTable.$apply();
+        sysTable.$apply(0);
         delayed( 3000, () -> self().$reportStats() );
     }
 
@@ -190,14 +195,14 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     //
     //////////////////////////////////////////////////////////////////////
 
-    private void broadCastRemove(Record rec) {
+    private void broadCastRemove(Record rec, int originator) {
         if ( receiver != null )
-            receiver.onChangeReceived(ChangeBroadcast.NewRemove(tableId, rec));
+            receiver.onChangeReceived(ChangeBroadcast.NewRemove(tableId, rec, originator));
     }
 
-    private void broadCastAdd(T t) {
+    private void broadCastAdd(T t, int originator) {
         if ( receiver != null )
-            receiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId, t));
+            receiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId, t, originator));
     }
 
     private void broadCastUpdate(RecordChange appliedChange, T t) {

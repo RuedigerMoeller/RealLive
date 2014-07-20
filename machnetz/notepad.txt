@@ -1,2 +1,4 @@
 - onModelLoaded in subscribe methods moven
 - query errors in GUI
+- Inthread auf non interfaces muss fehlern
+- bring back static InThread

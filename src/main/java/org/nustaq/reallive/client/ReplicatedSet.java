@@ -81,5 +81,24 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
     public boolean isSnaphotFinished() {
         return snaphotFinished;
     }
+
+    /**
+     * warning, this can make the set corrupt. Usable in case one updates a replication locally at the
+     * same time ignoring all change broadcasts induced by self (using originatorId)
+     * @param key
+     */
+    public void unsafeRemove(String key) {
+        map.remove(key);
+    }
+
+    /**
+     * warning, this can make the set corrupt. Usable in case one updates a replication locally at the
+     * same time ignoring all change broadcasts induced by self (using originatorId)
+     * @param r
+     */
+    public void unsafeAdd(T r) {
+        map.put(r.getRecordKey(),r);
+    }
+
 }
 

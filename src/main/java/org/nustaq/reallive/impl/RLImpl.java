@@ -121,7 +121,7 @@ public class RLImpl extends RealLive {
         sysTab.setDescription(model.getTable(name).getDescription());
         sysTab.setMeta(tableMeta);
         sysTab._setId(name);
-        sysTab.$apply();
+        sysTab.$apply(0);
     }
 
     private String decamel(String name) {

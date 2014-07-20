@@ -2,6 +2,7 @@ package org.nustaq.machnetz.rlxchange;
 
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.machnetz.model.rlxchange.Instrument;
+import org.nustaq.machnetz.model.rlxchange.Market;
 import org.nustaq.machnetz.model.rlxchange.Order;
 import org.nustaq.machnetz.model.rlxchange.Trade;
 import org.nustaq.reallive.RLTable;
@@ -15,6 +16,8 @@ import java.util.HashMap;
  */
 public class Matcher extends Actor<Matcher> {
 
+    public static int MATCHER_ID = 1; // id of sending matcher
+
     RealLive rl;
 
     RLTable<Order> orders;
@@ -23,35 +26,61 @@ public class Matcher extends Actor<Matcher> {
     ReplicatedSet<Instrument> instrSet;
     HashMap<String,InstrumentMatcher> matcherMap = new HashMap<>();
 
+    Thread t = null;
+
+    void checkThread() {
+        if ( t == null )
+            t = Thread.currentThread();
+        else
+            if ( t != Thread.currentThread() )
+                throw new RuntimeException("wrong thread");
+    }
+
     public void $init(RealLive rl) {
+        Thread.currentThread().setName("Matcher");
+        checkThread();
         this.rl = rl;
 
         orders = rl.getTable("Order");
         trades = rl.getTable("Trade");
+        RLTable<Market> market = rl.getTable("Market");
         instruments = rl.getTable("Instrument");
 
         instrSet = new ReplicatedSet<Instrument>();
 
         // sharding could be done using an instrument level filter below
-        instruments.stream().filter(null, (change) -> {
+        instruments.stream().each((change) -> {
+            checkThread();
+            instrSet.onChangeReceived(change); // forward to instr set
             if (change.isAdd()) {
-                matcherMap.put(change.getRecordKey(), new InstrumentMatcher(change.getRecord(),orders,trades));
+                Instrument inst = change.getRecord();
+                market.$get(inst.getRecordKey()).then((m, e) -> {
+                    checkThread();
+                    if (m != null) {
+                        market.prepareForUpdate(m);
+                        matcherMap.put(change.getRecordKey(), new InstrumentMatcher(inst, orders, trades, m));
+                        System.out.println("PUT MATCHER size: "+matcherMap.size()+" id "+System.identityHashCode(matcherMap));
+                    }
+                });
+            } else if ( change.isSnapshotDone() ) {
+                checkThread();
+                orders.stream().subscribe(null,(ordchange) -> {
+                    checkThread();
+                    if ( ordchange.getRecord() != null ) {
+                        InstrumentMatcher instrumentMatcher = matcherMap.get(ordchange.getRecord().getInstrumentKey());
+                        if ( instrumentMatcher == null ) {
+                            System.out.println("fatal: no matcher found for " + ordchange.getRecord());
+                            System.out.println("matcherMap "+matcherMap);
+                        }
+                        instrumentMatcher.onARUChange(ordchange);
+                    }
+                    else if ( ordchange.isSnapshotDone() ) {
+                        matcherMap.values().forEach((matcher) -> matcher.snapDone(ordchange) );
+                    } else {
+                        System.out.println("ignored change message "+ordchange);
+                    }
+                });
             }
-            instrSet.onChangeReceived(change);
-        });
-
-        // just start matching after instruments are loaded
-        instrSet.onFinished(() -> {
-            orders.stream().subscribe(null,(change) -> {
-                if ( change.getRecord() != null ) {
-                    matcherMap.get(change.getRecord().getInstrumentKey()).onARUChange(change);
-                }
-                else if ( change.isSnapshotDone() ) {
-                    matcherMap.values().forEach((matcher) -> matcher.snapDone(change) );
-                } else {
-                    System.out.println("ignored change message "+change);
-                }
-            });
         });
 
     }

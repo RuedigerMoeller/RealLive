@@ -26,4 +26,6 @@ public interface BinaryStorage<K,V> {
 
     int getFreeMB();
     int getSizeMB();
+
+    boolean contains(String key);
 }

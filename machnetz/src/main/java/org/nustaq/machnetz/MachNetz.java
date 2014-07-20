@@ -65,7 +65,7 @@ public class MachNetz extends WebSocketHttpServer {
         realLive.getTable("Instrument").stream().each((change) -> {
             if ( change.isAdd() ) {
                 Instrument record = (Instrument) change.getRecord();
-                market.$put(record.getRecordKey(), new Market(record.getRecordKey(),0,0,0,0,0,0,0,"n/a"));
+                market.$put(record.getRecordKey(), new Market(record.getRecordKey(),0,0,0,0,0,0,0,"n/a"), 0);
             }
         });
     }
@@ -103,7 +103,7 @@ public class MachNetz extends WebSocketHttpServer {
             new Instrument("Iran", description, expiry, expString),
         }).forEach((instr) -> {
             instr.setDescription(instr.getDescription().replace("$X",instr.getRecordKey()));
-            realLive.getTable("Instrument").$put(instr.getRecordKey(),instr);
+            realLive.getTable("Instrument").$put(instr.getRecordKey(),instr,0);
         });
 
         Arrays.stream( new Trader[] {
@@ -114,13 +114,23 @@ public class MachNetz extends WebSocketHttpServer {
             new Trader("Kiri", "hans@wurst.de", 3000),
             new Trader("Angela", "hans@wurst.de", 11),
             new Trader("Mutti", "hans@wurst.de", 10),
-        }).forEach((trader) -> realLive.getTable("Trader").$put(trader.getRecordKey(),trader));
+        }).forEach((trader) -> realLive.getTable("Trader").$put(trader.getRecordKey(),trader,0));
 
-        Matcher matcher = Actors.SpawnActor(Matcher.class);
-        matcher.$init(realLive);
+        realLive.getTable("Instrument").$sync().then((r,e) -> {
 
-        Feeder feeder = Actors.SpawnActor(Feeder.class);
-        feeder.$feed0(realLive);
+            realLive.getTable("Instrument").stream().each( change -> {
+                if ( change.isSnapshotDone() ) {
+                    Matcher matcher = Actors.AsActor(Matcher.class);
+                    matcher.$init(realLive);
+
+                    Feeder feeder = Actors.AsActor(Feeder.class);
+                    feeder.$feed0(realLive);
+                } else {
+                    System.out.println("instr change "+change.getRecord());
+                }
+            });
+
+        });
 
     }
 
@@ -131,45 +141,66 @@ public class MachNetz extends WebSocketHttpServer {
     public static class Feeder extends Actor<Feeder> {
 
         public void $feed0( RealLive rl ) {
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            self().$feed(rl);
+            Thread.currentThread().setName("Feeder");
+            delayed(5000, () -> self().$feed(rl));
         }
 
+        int orderCount = 0;
         public void $feed( RealLive rl ) {
-            rl.getTable("Instrument").stream().each((change) -> {
-                if ( change.isAdd() ) {
-                    Instrument instrument = (Instrument) change.getRecord();
-                    Order newOrder = (Order) rl.getTable("Order").createForAdd();
-                    newOrder.setInstrumentKey(instrument.getRecordKey());
-                    newOrder.setBuy(Math.random()>.5);
-                    newOrder.setQty((int) (Math.random()*10+5));
-                    newOrder.setLimitPrice((int) (Math.random()*5+5));
-                    switch ((int)(Math.random()*3)) {
-                        case 0:
-                            newOrder.setTraderKey("Ruedi");
-                            break;
-                        case 1:
-                            newOrder.setTraderKey("Hubert");
-                            break;
-                        case 2:
-                            newOrder.setTraderKey("Kiri");
-                            break;
+            RLTable<Instrument> instr = rl.getTable("Instrument");
+            instr.stream().each((change) -> {
+                if ( orderCount > 1000 ) {
+                    RLTable orTable = rl.getTable("Order");
+                    orTable.stream().each((delChange) -> {
+                        if ( delChange.isAdd() ) {
+                            String text = ((Order) delChange.getRecord()).getText();
+                            if (text != null && text.startsWith("Feeder")) {
+                                orTable.$remove(delChange.getRecordKey(), 2);
+                            }
+                        }
+                        if ( delChange.isSnapshotDone() ) {
+                            orderCount = 0;
+                        }
+                    });
+                } else {
+                    if ( change.isAdd() ) {
+                        Instrument instrument = change.getRecord();
+                        Order newOrder = (Order) rl.getTable("Order").createForAdd();
+                        newOrder.setInstrumentKey(instrument.getRecordKey());
+                        boolean isBuy = Math.random() > .5;
+                        if ( isBuy ) {
+                            newOrder.setBuy(isBuy);
+                            newOrder.setQty((int) (Math.random() * 7 + 5));
+                            newOrder.setLimitPrice((int) (Math.random() * 15 + 5));
+                        } else {
+                            newOrder.setBuy(isBuy);
+                            newOrder.setQty((int) (Math.random() * 13 + 5));
+                            newOrder.setLimitPrice((int) (Math.random() * 15 + 10));
+                        }
+                        switch ((int)(Math.random()*3)) {
+                            case 0:
+                                newOrder.setTraderKey("Hara");
+                                break;
+                            case 1:
+                                newOrder.setTraderKey("Hubert");
+                                break;
+                            case 2:
+                                newOrder.setTraderKey("Kiri");
+                                break;
+                        }
+                        newOrder.setCreationTime(System.currentTimeMillis());
+                        int len = (int) (Math.random()*20+1);
+                        String t = "Feeder ";
+                        for ( int i = 0; i < len; i++)
+                            t+=" poaskdpaokds";
+                        newOrder.setText(t);
+                        newOrder.$apply(2);
+                        orderCount++;
                     }
-                    newOrder.setCreationTime(System.currentTimeMillis());
-                    int len = (int) (Math.random()*20+1);
-                    String t = "Feeder ";
-                    for ( int i = 0; i < len; i++)
-                        t+=" poaskdpaokds";
-                    newOrder.setText(t);
-                    newOrder.$apply();
                 }
             });
             if ( ! stopF ) {
-                delayed(1000, () -> self().$feed(rl));
+                delayed(2000, () -> self().$feed(rl));
             }
         }
 
@@ -179,9 +210,9 @@ public class MachNetz extends WebSocketHttpServer {
         realLive.createTable( "person", TestRecord.class );
         RLTable person = realLive.getTable("person");
         for ( int i = 0; i < 100; i++ ) {
-            person.$put("ruedi"+i, new TestRecord("Möller", "Rüdiger", 1968, "m", "Key Business Management Consulting Agent (KBMCA)"));
-            person.$put("other"+i, new TestRecord("Huber", "Heinz", 1988, "m", "Project Office Support Consultant"));
-            person.$put("another"+i, new TestRecord("Huber", "Heinz", 1988, "m", "Back Office Facility Management Officer"));
+            person.$put("ruedi"+i, new TestRecord("Möller", "Rüdiger", 1968, "m", "Key Business Management Consulting Agent (KBMCA)"),0);
+            person.$put("other"+i, new TestRecord("Huber", "Heinz", 1988, "m", "Project Office Support Consultant"),0);
+            person.$put("another"+i, new TestRecord("Huber", "Heinz", 1988, "m", "Back Office Facility Management Officer"),0);
         }
         ArrayList<String> keys = new ArrayList<>();
         person.stream().each( (change) -> {
@@ -195,7 +226,7 @@ public class MachNetz extends WebSocketHttpServer {
                                 forUpdate.setYearOfBirth((int) (1900 + Math.random() * 99));
                                 forUpdate.setPreName("POK " + (int) (Math.random() * 5));
                                 forUpdate.setName("Name " + (int) (Math.random() * 5));
-                                forUpdate.$apply();
+                                forUpdate.$apply(0);
 //                                LockSupport.parkNanos(1000*1000*100);
                                 LockSupport.parkNanos(1000 * 1000 * 200);
                             }

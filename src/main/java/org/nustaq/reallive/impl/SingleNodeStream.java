@@ -16,12 +16,13 @@ import java.util.function.Predicate;
 public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T>> implements RLStream<T>, ChangeBroadcastReceiver<T> {
 
     RLTableImpl<T> tableActor;
-    ArrayList<Subscription<T>> subscribers = new ArrayList<>();
+    ArrayList<SubscriptionImpl<T>> subscribers = new ArrayList<>();
 
     public SingleNodeStream() {
     }
 
     public void $init(RLTableImpl<T> tableActor) {
+        Thread.currentThread().setName("SNStream:"+tableActor.getTableId());
         this.tableActor = tableActor;
     }
 
@@ -39,11 +40,11 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     public void filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
         tableActor.$filter(matches,terminateQuery, (r,e) -> {
             if ( e == RLTable.FIN ) {
-                resultReceiver.onChangeReceived( ChangeBroadcast.NewSnapFin(tableActor.getTableId()));
+                resultReceiver.onChangeReceived( ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0));
             } else if ( e == null ) {
-                resultReceiver.onChangeReceived( ChangeBroadcast.NewAdd(tableActor.getTableId(),r));
+                resultReceiver.onChangeReceived( ChangeBroadcast.NewAdd(tableActor.getTableId(),r,0));
             } else {
-                resultReceiver.onChangeReceived( ChangeBroadcast.NewError(tableActor.getTableId(), e));
+                resultReceiver.onChangeReceived( ChangeBroadcast.NewError(tableActor.getTableId(), e,0));
             }
         });
     }
@@ -54,37 +55,37 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     @Override @CallerSideMethod
-    public Subscription subscribeKey( String key, ChangeBroadcastReceiver<T> resultReceiver) {
-        Subscription subs = new Subscription(getActor().tableActor.getTableId(), new Subscription.KeyPredicate(key),resultReceiver);
+    public Subscription<T> subscribeKey(String key, ChangeBroadcastReceiver<T> resultReceiver) {
+        SubscriptionImpl subs = new SubscriptionImpl(getActor().tableActor.getTableId(), new SubscriptionImpl.KeyPredicate(key),inThread(sender.get(),resultReceiver));
         self().$subscribe(subs);
         return subs;
     }
 
     @Override @CallerSideMethod
-    public Subscription subscribe(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
-        Subscription<T> subs = new Subscription<>(getActor().tableActor.getTableId(),matches,resultReceiver);
+    public Subscription<T> subscribe(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
+        SubscriptionImpl<T> subs = new SubscriptionImpl<>(getActor().tableActor.getTableId(),matches,inThread(sender.get(),resultReceiver));
         self().$subscribe(subs);
         return subs;
     }
 
     @Override @CallerSideMethod
-    public Subscription listen(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
-        Subscription<T> subs = new Subscription<>(getActor().tableActor.getTableId(),matches,resultReceiver);
+    public Subscription<T> listen(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
+        SubscriptionImpl<T> subs = new SubscriptionImpl<>(getActor().tableActor.getTableId(),matches,inThread(sender.get(),resultReceiver));
         self().$listen(subs);
         return subs;
     }
 
-    public void $subscribe(Subscription subs) {
+    public void $subscribe(SubscriptionImpl subs) { // fixme: inthread missing, not possible
         subscribers.add(subs);
-        if ( subs.getFilter() instanceof Subscription.KeyPredicate ) {
-            tableActor.$get( ((Subscription.KeyPredicate) subs.getFilter()).getKey())
+        if ( subs.getFilter() instanceof SubscriptionImpl.KeyPredicate ) {
+            tableActor.$get( ((SubscriptionImpl.KeyPredicate) subs.getFilter()).getKey())
                 .then(
                     (record,e) -> {
                         if ( record == null ) {
-                            ChangeBroadcast changeBC = ChangeBroadcast.NewSnapFin(tableActor.getTableId());
+                            ChangeBroadcast changeBC = ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0);
                             subs.getChangeReceiver().onChangeReceived(changeBC);
                         } else {
-                            ChangeBroadcast changeBC = ChangeBroadcast.NewAdd(tableActor.getTableId(), record);
+                            ChangeBroadcast changeBC = ChangeBroadcast.NewAdd(tableActor.getTableId(), record,0);
                             subs.getChangeReceiver().onChangeReceived(changeBC);
                         }
                     });
@@ -92,21 +93,21 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
         }
         tableActor.$filter(subs.getFilter(),null, (r,e) -> {
             if ( e == null ) {
-                subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewAdd(tableActor.getTableId(), r));
+                subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewAdd(tableActor.getTableId(), r,0));
             } else if ( e == RLTable.FIN ) {
-                subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewSnapFin(tableActor.getTableId()));
+                subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0));
             } else {
-                subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewError(tableActor.getTableId(), e));
+                subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewError(tableActor.getTableId(), e,0));
             }
         });
     }
 
-    public void $listen(Subscription subs) {
+    public void $listen(SubscriptionImpl subs) {
         subscribers.add(subs);
     }
 
     @Override
-    public void unsubscribe(Subscription subs) {
+    public void unsubscribe(Subscription<T> subs) {
         subscribers.remove(subs);
     }
 
@@ -118,7 +119,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
         switch (changeBC.getType()) {
             case ChangeBroadcast.ADD:
                 for (int i = 0; i < subscribers.size(); i++) {
-                    Subscription<T> subs = subscribers.get(i);
+                    SubscriptionImpl<T> subs = subscribers.get(i);
                     if (subs.getFilter().test(changeBC.getRecord())) {
                         subs.getChangeReceiver().onChangeReceived(changeBC);
                     }
@@ -126,7 +127,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
                 break;
             case ChangeBroadcast.REMOVE:
                 for (int i = 0; i < subscribers.size(); i++) {
-                    Subscription<T> subs = subscribers.get(i);
+                    SubscriptionImpl<T> subs = subscribers.get(i);
                     if ( subs.getFilter().test(changeBC.getRecord()) ) {
                         subs.getChangeReceiver().onChangeReceived(changeBC);
                     }
@@ -135,12 +136,12 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
             case ChangeBroadcast.UPDATE:
                 changeBC.toOld();
                 for (int i = 0; i < subscribers.size(); i++) {
-                    Subscription<T> subs = subscribers.get(i);
+                    SubscriptionImpl<T> subs = subscribers.get(i);
                     subs.__matched = subs.getFilter().test(changeBC.getRecord());
                 }
                 changeBC.toNew();
                 for (int i = 0; i < subscribers.size(); i++) {
-                    Subscription<T> subs = subscribers.get(i);
+                    SubscriptionImpl<T> subs = subscribers.get(i);
                     boolean matchesOld = subs.__matched;
                     boolean matchesNew = subs.getFilter().test(changeBC.getRecord());
                     if ( matchesOld && matchesNew ) {
@@ -149,14 +150,16 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
                         subs.onChangeReceived(
                             ChangeBroadcast.NewRemove(
                                 changeBC.getTableId(),
-                                changeBC.getRecord()
+                                changeBC.getRecord(),
+                                changeBC.getOriginator()
                             ));
                     } else if ( ! matchesOld && matchesNew ) {
                         subs.onChangeReceived(
                             ChangeBroadcast.NewAdd(
                                 changeBC.getTableId(),
-                                changeBC.getRecord()
-                                                  ));
+                                changeBC.getRecord(),
+                                changeBC.getOriginator()
+                        ));
                     } else {
                         // silent
                     }

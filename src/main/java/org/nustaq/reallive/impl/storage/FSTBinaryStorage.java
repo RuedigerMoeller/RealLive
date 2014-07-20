@@ -85,4 +85,9 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
         return store.getCapacityMB();
     }
 
+    @Override
+    public boolean contains(String key) {
+        return store.getBinary(store.encodeKey(key)) != null;
+    }
+
 }

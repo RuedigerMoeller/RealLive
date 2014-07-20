@@ -41,4 +41,18 @@ public class SortedReplicatedSet<T extends Record> extends ReplicatedSet<T> {
         return treeSet;
     }
 
+    @Override
+    public void unsafeRemove(String key) {
+        T r = map.get(key);
+        if ( r != null ) {
+            treeSet.remove(r);
+            super.unsafeRemove(key);
+        }
+    }
+
+    @Override
+    public void unsafeAdd(T r) {
+        treeSet.add(r);
+        super.unsafeAdd(r);
+    }
 }

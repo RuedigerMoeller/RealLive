@@ -17,6 +17,7 @@ public class RecordChange<K, T extends Record> implements Serializable {
     Object[] newVal;
     Object[] oldVals;
     int [] fieldIndex;
+    int originator;
 
     public RecordChange(K id) {
         recordId = id;
@@ -28,6 +29,15 @@ public class RecordChange<K, T extends Record> implements Serializable {
         this.newVal = rc.newVal;
         this.fieldIndex = rc.fieldIndex;
         this.oldVals = rc.oldVals;
+
+    }
+
+    public int getOriginator() {
+        return originator;
+    }
+
+    public void setOriginator(int originator) {
+        this.originator = originator;
     }
 
     public void setChanges(List<FSTClazzInfo.FSTFieldInfo> fieldInfos, List<Object> value ) {
@@ -65,6 +75,7 @@ public class RecordChange<K, T extends Record> implements Serializable {
     final static Object EMPTY = new Object() { public String toString() { return "EMPTY"; }};
     public RecordChange<K,T> apply(T rec) {
         RecordChange<K,T> res = new RecordChange<>(this);
+        res.setOriginator(originator);
         Object oldValues[] = new Object[newVal.length];
         int eqCounter = 0;
         for (int i = 0; i < newVal.length; i++) {

@@ -99,7 +99,7 @@ public class TClient {
                 recordForAdd.setBidQty(100);
                 recordForAdd.setAskQty(110);
                 recordForAdd.setInstrument("FDS "+i);
-                recids.add(recordForAdd.$apply());
+                recids.add(recordForAdd.$apply(0));
             }
             Promise res = new Promise();
             yieldList(recids).then((r,e) -> {
@@ -114,7 +114,7 @@ public class TClient {
                 TCRecord recordForUpdate = table.createForUpdate(stringFuture.getResult(), false);
                 recordForUpdate.setAskPrc(1+Math.random());
                 recordForUpdate.setBidPrc(0+Math.random());
-                recordForUpdate.$apply();
+                recordForUpdate.$apply(0);
             }
 
             delayed(10, () -> self().$run(table));
@@ -139,8 +139,8 @@ public class TClient {
 
         RLTable<TCRecord> table = schema.getTable("mkt");
 
-        TCMutator mutator = Actors.SpawnActor(TCMutator.class);
-        ClientActor client = Actors.SpawnActor(ClientActor.class);
+        TCMutator mutator = Actors.AsActor(TCMutator.class);
+        ClientActor client = Actors.AsActor(ClientActor.class);
 
         mutator.$init(table).then( (r,e) -> {
             client.$run(table);

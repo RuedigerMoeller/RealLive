@@ -42,6 +42,7 @@ var JInvocationCallback = function(obj) {
 
 var JRecordChange = function(obj) {
     this.__typeInfo = 'RecordChange';
+    this.j_originator = function() { return parseInt(this.originator,10); };
     this.j_recordId = function() { return this.recordId; };
     this.j_newVal = function() { return this.newVal; };
     this.j_oldVals = function() { return this.oldVals; };
@@ -295,6 +296,7 @@ var JInstrument = function(obj) {
 
 var JChangeBroadcast = function(obj) {
     this.__typeInfo = 'ChangeBroadcast';
+    this.j_originator = function() { return parseInt(this.originator,10); };
     this.j_type = function() { return parseInt(this.type,10); };
     this.j_error = function() { return this.error; };
     this.j_newRecord = function() { return this.newRecord; };

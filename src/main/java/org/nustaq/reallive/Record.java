@@ -119,11 +119,12 @@ public class Record implements Serializable {
     }
 
     /**
-     * persist an add or update of a record
+     * persist an add or update of a record. The id given is added to a resulting change broadcast, so a
+     * process is capable to identify changes caused by itself.
      */
-    public Future<String> $apply() {
+    public Future<String> $apply(int mutatorId) {
         if ( mode == Mode.ADD ) {
-            return table.$addGetId(this);
+            return table.$addGetId(this,mutatorId);
         } else
         if ( mode == Mode.UPDATE || mode == Mode.UPDATE_OR_ADD ) {
             if ( originalRecord == null )
@@ -131,8 +132,9 @@ public class Record implements Serializable {
             if ( recordKey == null )
                 throw new RuntimeException("recordKey must not be null on update");
             RecordChange recordChange = computeDiff();
+            recordChange.setOriginator(mutatorId);
             table.$update(recordChange, mode == Mode.UPDATE_OR_ADD);
-            copyTo(originalRecord);
+            copyTo(originalRecord); // nil all diffs. Once prepared, record can be reused for updateing
             return new Promise<>(recordKey);
         } else
             throw new RuntimeException("wrong mode. Use table.create* and table.prepare* methods.");

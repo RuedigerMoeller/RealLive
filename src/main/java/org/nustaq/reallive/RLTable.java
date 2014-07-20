@@ -31,14 +31,14 @@ public interface RLTable<T extends Record> {
      * @param object
      * @return
      */
-    public Future<String> $addGetId(T object);
+    public Future<String> $addGetId(T object, int originator);
 
     /**
      * add the given record and assign it a new unique key. The new key is not returned.
      * @param object
      * @return
      */
-    public void $add(T object);
+    public void $add(T object, int originator);
 
 
     /**
@@ -48,7 +48,7 @@ public interface RLTable<T extends Record> {
      * @param key
      * @param object
      */
-    public void $put(String key, T object);
+    public void $put(String key, T object, int originator);
 
     /**
      * create a new unique record key and return a future to it
@@ -60,7 +60,7 @@ public interface RLTable<T extends Record> {
      * remove the record associated with given key
      * @param key
      */
-    public void $remove(String key);
+    public void $remove(String key, int originator);
 
     /**
      * get the record associated with the given key

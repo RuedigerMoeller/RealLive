@@ -35,7 +35,7 @@ public class TableTest {
         for ( int i = 0; i < MAX; i++ ) {
             newRec.setX(i);
             int finalI = i;
-            test.$addGetId(newRec);
+            test.$addGetId(newRec,0);
             if ( (finalI%1000) == 0 ) {
                 System.out.println("adding .. "+finalI );
             }
@@ -56,37 +56,37 @@ public class TableTest {
         TestRec add0 = table.createForAdd();
         TestRec add1 = table.createForAdd();
 
-        Future<String> k1 = table.$addGetId(add1);
-        Future<String> k0 = table.$addGetId(add0);
+        Future<String> k1 = table.$addGetId(add1,0);
+        Future<String> k0 = table.$addGetId(add0,0);
 
         Actors.yield(k0, k1).then( (_r,e) -> {
 
             TestRec forUpdate1 = table.createForUpdate(k1.getResult(), false);
             forUpdate1.setAnother("sodi");
-            forUpdate1.$apply();
+            forUpdate1.$apply(0);
 
             forUpdate1.setAnother("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-            forUpdate1.$apply();
+            forUpdate1.$apply(0);
 
             forUpdate1.setAnother("asd");
-            forUpdate1.$apply();
+            forUpdate1.$apply(0);
 
             forUpdate1.setAnother("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab");
-            forUpdate1.$apply();
+            forUpdate1.$apply(0);
 
             TestRec forUpdate = table.createForUpdate(k0.getResult(), false);
             forUpdate.setAnother("sodifjsodifjsodifjsodifjsodifjsodijfsodifjsoidfjsoidfjsoidfjsofijdsodijfsodfijsoijfd");
-            forUpdate.$apply();
+            forUpdate.$apply(0);
 
             forUpdate.setAnother("sod");
-            forUpdate.$apply();
+            forUpdate.$apply(0);
 
             forUpdate.setAnother("sodaosidjaosidjaosidjaosdijweofdfkgjdkfgjhdkfghjdfkgjdfkvbjdvksdvkdscbnkscdnksdbjcsdf");
-            forUpdate.$apply();
+            forUpdate.$apply(0);
 
             forUpdate.setAnother("pok");
 
-            forUpdate.$apply().then( (key1,e1) -> {
+            forUpdate.$apply(0).then( (key1,e1) -> {
                 System.out.println("org " + k0 + " applied " + key1);
                 stream.each( (change) -> {
                     if (change.isSnapshotDone()) {
@@ -121,7 +121,7 @@ public class TableTest {
             }
             newRec.setX(i);
             int finalI = i;
-            table.$addGetId(newRec).then((r, e) -> {
+            table.$addGetId(newRec,0).then((r, e) -> {
                 if ((finalI % 1000) == 0) {
                     System.out.println("adding .. " + finalI);
                 }
@@ -163,7 +163,7 @@ public class TableTest {
                     table.prepareForUpdate(record);
                     record.setName(longString.substring((int) (longString.length() * Math.random())));
 //                    r.setName(longString.substring(0,(int) (20 * Math.random())));
-                    record.$apply();
+                    record.$apply(0);
                 }
             }
                                      );
@@ -280,7 +280,7 @@ public class TableTest {
         CountDownLatch latch = new CountDownLatch(1);
         for ( int i = 0; i < 10; i++ ) {
             newRec.setX(i);
-            res[i] = test.$addGetId(newRec);
+            res[i] = test.$addGetId(newRec,0);
         }
         Actors.yield(res).then( (r, e) -> {
             for (int i = 0; i < r.length; i++) {
