@@ -1,23 +1,71 @@
 <div class="container">
-    <div class="row">
-        <h3>Market</h3>
+    <div class="row" style="padding-bottom: 4px;">
+        <button style="min-width: 80px;" class="btn-xs btn-primary" ng-click="isMarketCollapsed = !isMarketCollapsed">Market</button>
     </div>
     <div class="row">
-        <rl-table table="Market" height="400px" rl-exclude="lastMatch,version"></rl-table>
-    </div>
-<br>
-    <div class="row">
-        <h3>Open Orders</h3>
-    </div>
-    <div class="row">
-        <rl-table table="Order" rl-query="recordKey=={{user.recordKey}}" height="200px" rl-exclude="lastMatch,version"></rl-table>
+        <div collapse="isMarketCollapsed">
+            <rl-table table="Market" height="300px" rl-exclude="lastMatch,version"></rl-table>
+        </div>
     </div>
 <br>
-    <div class="row">
-        <h3>Instruments</h3>
+    <div class="row" style="padding-bottom: 4px;">
+        <button style="min-width: 80px;" class="btn-xs btn-primary" ng-click="isOECollapsed = !isOECollapsed">Order Entry</button>
     </div>
     <div class="row">
-        <rl-table table="Instrument" height="200px" rl-exclude="expiryDate"></rl-table>
+        <div collapse="isOECollapsed">
+            <div class="well well-sm" ng-controller="OrderEntry">
+                <form class="simple-form">
+                    <table width="100%">
+                        <tr>
+                            <td colspan="3">
+                                <input style="width: 30%;" type="text" ng-model="order.instrumentKey" class="form-control" placeholder="Instrument" required/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 100px;">
+                                <input type="number" ng-model="order.limitPrice" class="form-control" placeholder="Limit" required/>
+                            </td>
+                            <td style="width: 100px;">
+                                <input type="number" ng-model="order.qty" class="form-control" placeholder="Quantity" required/>
+                            </td>
+                            <td>
+                                <input type="text" ng-model="order.text" class="form-control" placeholder="Text"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" align="right">
+                                <table>
+                                    <tr>
+                                        <td style="padding-right: 6px; ">
+                                            <button style="min-width: 80px;" class="btn btn-danger pull-right" ng-click="doOrder(true)">Buy</button>
+                                        </td>
+                                        <td>
+                                            <button style="min-width: 80px;" class="btn btn-primary pull-right" ng-click="doOrder(false)">Sell</button>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </div>
     </div>
-
+<br>
+    <div class="row" style="padding-bottom: 4px;">
+        <button style="min-width: 80px;" class="btn-xs btn-primary" ng-click="isOrdersCollapsed = !isOrdersCollapsed">Orders</button>
+    </div>
+    <div class="row">
+        <div collapse="isOrdersCollapsed">
+            <rl-table table="Order" rl-query="it.traderKey=='{{user.recordKey}}'" height="200px" rl-exclude="lastMatch,version"></rl-table>
+        </div>
+    </div>
 </div>

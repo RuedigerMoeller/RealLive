@@ -3,6 +3,7 @@ package org.nustaq.machnetz;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import io.netty.handler.codec.http.FullHttpRequest;
+import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Scheduler;
 import org.nustaq.kontraktor.impl.DispatcherThread;
@@ -10,6 +11,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.machnetz.model.TestRecord;
 import org.nustaq.machnetz.model.rlxchange.*;
+import org.nustaq.machnetz.rlxchange.Matcher;
 import org.nustaq.netty2go.NettyWSHttpServer;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.RealLive;
@@ -35,7 +37,7 @@ public class MachNetz extends WebSocketHttpServer {
 
     // don't buffer too much.
     public static int CLIENTQ_SIZE = 1000;
-    public static int MAX_THREADS = 8;
+    public static int MAX_THREADS = 1;
 
     Scheduler clientScheduler = new ElasticScheduler(MAX_THREADS, CLIENTQ_SIZE);
     private RealLive realLive;
@@ -113,6 +115,63 @@ public class MachNetz extends WebSocketHttpServer {
             new Trader("Angela", "hans@wurst.de", 11),
             new Trader("Mutti", "hans@wurst.de", 10),
         }).forEach((trader) -> realLive.getTable("Trader").$put(trader.getRecordKey(),trader));
+
+        Matcher matcher = Actors.SpawnActor(Matcher.class);
+        matcher.$init(realLive);
+
+        Feeder feeder = Actors.SpawnActor(Feeder.class);
+        feeder.$feed0(realLive);
+
+    }
+
+    volatile static boolean stopF = false;
+    public static void stopFeed() {
+        stopF = true;
+    }
+    public static class Feeder extends Actor<Feeder> {
+
+        public void $feed0( RealLive rl ) {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            self().$feed(rl);
+        }
+
+        public void $feed( RealLive rl ) {
+            rl.getTable("Instrument").stream().each((change) -> {
+                if ( change.isAdd() ) {
+                    Instrument instrument = (Instrument) change.getRecord();
+                    Order newOrder = (Order) rl.getTable("Order").createForAdd();
+                    newOrder.setInstrumentKey(instrument.getRecordKey());
+                    newOrder.setBuy(Math.random()>.5);
+                    newOrder.setQty((int) (Math.random()*10+5));
+                    newOrder.setLimitPrice((int) (Math.random()*5+5));
+                    switch ((int)(Math.random()*3)) {
+                        case 0:
+                            newOrder.setTraderKey("Ruedi");
+                            break;
+                        case 1:
+                            newOrder.setTraderKey("Hubert");
+                            break;
+                        case 2:
+                            newOrder.setTraderKey("Kiri");
+                            break;
+                    }
+                    newOrder.setCreationTime(System.currentTimeMillis());
+                    int len = (int) (Math.random()*20+1);
+                    String t = "Feeder ";
+                    for ( int i = 0; i < len; i++)
+                        t+=" poaskdpaokds";
+                    newOrder.setText(t);
+                    newOrder.$apply();
+                }
+            });
+            if ( ! stopF ) {
+                delayed(1000, () -> self().$feed(rl));
+            }
+        }
 
     }
 

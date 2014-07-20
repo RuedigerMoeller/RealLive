@@ -139,8 +139,8 @@ public class TClient {
 
         RLTable<TCRecord> table = schema.getTable("mkt");
 
-        TCMutator mutator = Actors.AsActor(TCMutator.class);
-        ClientActor client = Actors.AsActor(ClientActor.class);
+        TCMutator mutator = Actors.SpawnActor(TCMutator.class);
+        ClientActor client = Actors.SpawnActor(ClientActor.class);
 
         mutator.$init(table).then( (r,e) -> {
             client.$run(table);

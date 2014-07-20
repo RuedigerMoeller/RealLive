@@ -2,6 +2,8 @@ package org.nustaq.machnetz.model.rlxchange;
 
 import org.nustaq.reallive.Record;
 
+import java.util.Date;
+
 /**
  * Created by ruedi on 18.07.14.
  *
@@ -19,6 +21,32 @@ public class Order extends Record {
 
     String traderKey;
     String originatingOrderId; // partial matches
+    String text;
+
+    long creationTime;
+    transient String creationTimeString;
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
+    public String getCreationTimeString() {
+        if ( creationTimeString == null )
+            creationTimeString = new Date(creationTime).toString();
+        return creationTimeString;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
 
     public String getInstrumentKey() {
         return instrumentKey;

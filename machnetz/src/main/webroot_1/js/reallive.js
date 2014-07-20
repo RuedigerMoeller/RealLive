@@ -123,7 +123,7 @@ var RealLive = new function() {
                                 colConf.push(
                                     {   field: cols[col].name,
                                         displayName: cols[col].displayName,
-                                        width: (cols[col].name.length*13).toString()+"px",
+                                        width: (cols[col].name.length*12).toString()+"px",
                                         groupable: false,
 //                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()" id="{{row.entity.recordKey}}#COL_FIELD"><span ng-cell-text>{{COL_FIELD}}</span></div>'
                                         cellTemplate:
@@ -177,13 +177,17 @@ var RealLive = new function() {
                                     delete _thisWS.cbMap[msg.cbId];
                                 }
                             } else {
-                                console.log("unmapped callback " + msg.cbId + " " + msg);
+                                if ( msg )
+                                    console.log("unmapped callback " + msg.cbId + " " + msg);
+                                else {
+                                    console.log("corrupted message unmapped callback " + msg.cbId + " " + msg);
+                                }
                             }
                         }
 //                    var strMsg = MinBin.prettyPrint(msg);
 //                    // handle message
                     } catch (ex) {
-                        console.log(ex)
+                        console.log(ex.stack);
                     }
                 };
                 // error handling is missing
@@ -227,6 +231,7 @@ var RealLive = new function() {
 
     // if scope is set => apply after each change
     this.subscribeSet = function( tableName, queryString, resultset, scope ) {
+        console.log("** SUBSCRIBE "+tableName+" query:"+queryString);
         var cb = function(change) {
             resultset.push(change);
             if ( scope != null ) {
@@ -345,9 +350,9 @@ function RLResultSet() {
             case RL_SNAPSHOT_DONE:
                 this.snapFin = true;
 //                console.log("** snapfin on set ** size:"+this.list.length);
-                for (var i=0; i < this.list.length; i++) {
-                    console.log(this.list[i].recordKey);
-                }
+//                for (var i=0; i < this.list.length; i++) {
+//                    console.log(this.list[i].recordKey);
+//                }
                 break;
             case RL_UPDATE: {
                 var rec = this.map[change.recordKey];

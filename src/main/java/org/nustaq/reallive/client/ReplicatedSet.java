@@ -12,8 +12,9 @@ import java.util.HashMap;
  */
 public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<T> {
 
-    HashMap<String,T> map = new HashMap<>();
-    Promise snapFin;
+    protected HashMap<String,T> map = new HashMap<>();
+    protected Promise snapFin;
+    boolean snaphotFinished = false;
 
     public ReplicatedSet() {
         snapFin = new Promise();
@@ -24,26 +25,39 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
         T newRec = changeBC.getRecord();
         switch (changeBC.getType()) {
             case ChangeBroadcast.ADD:
-                map.put(newRec.getRecordKey(),newRec);
+                handleAdd(newRec);
                 break;
             case ChangeBroadcast.REMOVE:
-                map.remove(changeBC.getRecordKey());
+                handleRemove(changeBC);
                 break;
             case ChangeBroadcast.UPDATE:
-                T t = map.get(changeBC.getRecordKey());
-                if ( t == null ) {
-                    System.out.println("replication error: unknown record updated: "+changeBC.getRecordKey()+" "+changeBC.getRecord());
-                } else {
-                    changeBC.getAppliedChange().apply(t);
-                }
+                handleUpdate(changeBC);
                 break;
             case ChangeBroadcast.SNAPSHOT_DONE:
+                snaphotFinished = true;
                 snapFin.receiveResult("void",null);
                 break;
             case ChangeBroadcast.ERROR:
             default:
         }
 
+    }
+
+    protected void handleUpdate(ChangeBroadcast<T> changeBC) {
+        T t = map.get(changeBC.getRecordKey());
+        if ( t == null ) {
+            System.out.println("replication error: unknown record updated: "+changeBC.getRecordKey()+" "+changeBC.getRecord());
+        } else {
+            changeBC.getAppliedChange().apply(t);
+        }
+    }
+
+    protected void handleRemove(ChangeBroadcast<T> changeBC) {
+        map.remove(changeBC.getRecordKey());
+    }
+
+    protected void handleAdd(T newRec) {
+        map.put(newRec.getRecordKey(),newRec);
     }
 
     /**
@@ -63,4 +77,9 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
     public int getSize() {
         return map.size();
     }
+
+    public boolean isSnaphotFinished() {
+        return snaphotFinished;
+    }
 }
+

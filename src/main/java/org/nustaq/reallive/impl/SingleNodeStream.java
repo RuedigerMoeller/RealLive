@@ -112,6 +112,9 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
 
     @Override
     public void onChangeReceived(ChangeBroadcast<T> changeBC) {
+        if ( changeBC.isARU() ) {
+            changeBC.getRecord()._setTable(tableActor);
+        }
         switch (changeBC.getType()) {
             case ChangeBroadcast.ADD:
                 for (int i = 0; i < subscribers.size(); i++) {

@@ -19,7 +19,7 @@ public interface RLTable<T extends Record> {
     public T createForAdd();
     public T createForUpdateWith(Class<? extends Record> clazz, String key, boolean addIfNotPresent);
     public T createForUpdate(String key, boolean addIfNotPresent);
-    public void prepareRecordForUpdate(T original);
+    public void prepareForUpdate(T original);
     public RLStream<T> stream();
 
     ////////////////////////////////////////////////////////////////////////////////////////

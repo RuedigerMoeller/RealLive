@@ -262,7 +262,7 @@ function MBOut() {
                 return false;
             }
             this.objId2pos[this.objectId(o)] = this.pos;
-            console.log("register ".concat(o).concat(" id ").concat(id).concat(" to ").concat(this.pos));
+//            console.log("register ".concat(o).concat(" id ").concat(id).concat(" to ").concat(this.pos));
         } else {
 //            console.log("cant id ".concat(o) );
         }
@@ -604,8 +604,8 @@ function MBObjectTagSer() {
                 }
                 if ( typeof val != 'function' ) {
                     out.writeObject(next);
-                    if (out.writeRefIfApplicable(data[next])) {
-                        out.writeObject(data[next]);
+                    if (out.writeRefIfApplicable(val)) {
+                        out.writeObject(val);
                     }
                 }
             }

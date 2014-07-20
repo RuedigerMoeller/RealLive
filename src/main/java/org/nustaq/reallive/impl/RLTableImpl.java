@@ -110,7 +110,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override @CallerSideMethod
-    public void prepareRecordForUpdate(T record) {
+    public void prepareForUpdate(T record) {
         T res = null;
         try {
             res = (T) record.getClass().newInstance();
@@ -172,7 +172,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     @Override
     public void $remove(String key) {
         Record record = storage.removeAndGet(key);
-        broadCastRemove(record);
+        if ( record != null )
+            broadCastRemove(record);
     }
 
     public void $reportStats() {

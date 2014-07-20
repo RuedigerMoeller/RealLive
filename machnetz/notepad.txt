@@ -1,1 +1,2 @@
 - onModelLoaded in subscribe methods moven
+- query errors in GUI

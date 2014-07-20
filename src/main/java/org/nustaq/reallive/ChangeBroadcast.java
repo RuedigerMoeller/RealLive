@@ -28,7 +28,9 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
     }
 
     public static <T extends Record> ChangeBroadcast<T> NewError(String tableId, Object e) {
-        return new ChangeBroadcast<>(ERROR,tableId,null,null,null);
+        ChangeBroadcast<T> tChangeBroadcast = new ChangeBroadcast<>(ERROR, tableId, null, null, null);
+        tChangeBroadcast.setError(e);
+        return tChangeBroadcast;
     }
 
     public static <T extends Record> ChangeBroadcast<T> NewRemove(String tableId, T record) {
@@ -49,6 +51,15 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
 
     T newRecord; // state of record after update
     RecordChange<String,T> appliedChange; // in case of update contains old values of updated fields
+    Object error;
+
+    public Object getError() {
+        return error;
+    }
+
+    public void setError(Object error) {
+        this.error = error;
+    }
 
     public boolean isSnapshotDone() {
         return getType() == SNAPSHOT_DONE;
@@ -93,7 +104,7 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
             case SNAPSHOT_DONE:
                 return "ChangeBC SNAPSHOT_DONE on " + tableId;
             case ERROR:
-                return "ChangeBC ERROR on " + tableId;
+                return "ChangeBC ERROR on " + tableId+" "+error;
             default:
                 return super.toString();
         }
@@ -105,5 +116,9 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
 
     public boolean isAdd() {
         return getType() == ADD;
+    }
+
+    public boolean isARU() {
+        return type == ADD || type == UPDATE || type == REMOVE;
     }
 }

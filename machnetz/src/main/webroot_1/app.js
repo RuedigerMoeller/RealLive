@@ -124,10 +124,6 @@ app.directive('rlTable', function() {
             } else {
                 $scope.exclude = {};
             }
-            if ( $attrs.rlQuery ) {
-                $scope.rlQuery = $attrs.rlQuery;
-            } else
-                $scope.rlQuery = '';
             if ( $attrs.height ) {
                 $scope.height = $attrs.height;
             }
@@ -156,6 +152,7 @@ app.directive('rlTable', function() {
                 columnDefs: [],
                 enableColumnResize: true,
                 multiSelect: false,
+                rowHeight: 27,
                 enableColumnReordering:false,
                 rowTemplate:
                     '<span id="row#{{row.entity.recordKey}}" style="border-radius: 4px; transition: background-color .2s ease-out; padding: 4px;">'+
@@ -167,28 +164,36 @@ app.directive('rlTable', function() {
                     "\n" +
                     "</div></span>"
             };
-            $scope.$watch('rlset.list.length');
-            RealLive.onModelLoaded(function() {
-                $scope.gridOptions.columnDefs = $scope.getColumns();
-                $scope.rlset.postChangeHook = function(change,snapFin) {
-                    if (change.type==RL_UPDATE)
-                    {
+
+            var subscribe = function () {
+                $scope.rlset.postChangeHook = function (change, snapFin) {
+                    if (change.type == RL_UPDATE) {
                         var fieldList = $scope.rlset.getChangedFieldNames(change);
                         var recKey = change.recordKey;
-                        for (var i=0; i < fieldList.length; i++) {
+                        for (var i = 0; i < fieldList.length; i++) {
                             var elementId = recKey + '#row.entity.' + fieldList[i];
                             RealLive.highlightElem(elementId);
                         }
                     }
-                    if ( snapFin ) {
+                    if (snapFin) {
                         $scope.$digest();
                     }
-                    if (change.type==RL_ADD) {
-                        var elementId = 'row#'+change.recordKey;
+                    if (change.type == RL_ADD) {
+                        var elementId = 'row#' + change.recordKey;
                         RealLive.highlightElem(elementId);
                     }
                 };
-                RealLive.subscribeSet($attrs.table, $scope.rlQuery, $scope.rlset,null); //$scope);
+                RealLive.subscribeSet($attrs.table, $attrs.rlQuery ? $attrs.rlQuery : "true", $scope.rlset, null); //$scope);
+            };
+
+            $scope.$watch('rlset.list.length');
+            $attrs.$observe('rlQuery', function() {
+                $scope.rlset.unsubscribe();
+                RealLive.onModelLoaded(subscribe);
+            });
+
+            RealLive.onModelLoaded(function() {
+                $scope.gridOptions.columnDefs = $scope.getColumns();
             });
 
         },
@@ -196,7 +201,23 @@ app.directive('rlTable', function() {
     }
 });
 
+app.controller('OrderEntry', function($scope) {
+    $scope.order = new JOrder();
+    $scope.order.instrumentKey = 'Germany';
+
+    $scope.doOrder = function(buy) {
+        $scope.order.buy = buy;
+        $scope.order.traderKey = $scope.user.recordKey;
+        var transmittedOrder = new JOrder($scope.order);
+        RealLive.call("addOrder", transmittedOrder, function(result) {
+            console.log("Order sucess "+result);
+        });
+    }
+});
+
 app.controller('RLAdmin', function ($scope,$modal) {
+
+    $scope.isOECollapsed = true;
 
     $scope.loggedIn = false;
     $scope.host = window.location.hostname;
@@ -228,7 +249,7 @@ app.controller('RLAdmin', function ($scope,$modal) {
     $scope.openLogin = function() {
         var instance = $modal.open({
             templateUrl: "login.html",
-            size:'sm',
+//            size:'sm',
             backdrop:false,
             keyboard:false,
             reallive:'reallive',

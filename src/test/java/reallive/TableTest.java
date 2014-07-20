@@ -160,7 +160,7 @@ public class TableTest {
                     System.out.println("ERROR---------------");
                 } else {
                     TestRec record = r.getRecord();// fixme: should clone
-                    table.prepareRecordForUpdate(record);
+                    table.prepareForUpdate(record);
                     record.setName(longString.substring((int) (longString.length() * Math.random())));
 //                    r.setName(longString.substring(0,(int) (20 * Math.random())));
                     record.$apply();

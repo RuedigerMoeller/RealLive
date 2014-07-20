@@ -11,6 +11,9 @@ public class Trade extends Record {
     String sellOrderId;
 
     long tradeTime;
+    int tradePrice;
+    int tradeQty;
+
     String tradeTimeStringUTC; // js ...
 
     public String getBuyOrderId() {
@@ -43,5 +46,21 @@ public class Trade extends Record {
 
     public void setTradeTimeStringUTC(String tradeTimeStringUTC) {
         this.tradeTimeStringUTC = tradeTimeStringUTC;
+    }
+
+    public int getTradePrice() {
+        return tradePrice;
+    }
+
+    public void setTradePrice(int tradePrice) {
+        this.tradePrice = tradePrice;
+    }
+
+    public int getTradeQty() {
+        return tradeQty;
+    }
+
+    public void setTradeQty(int tradeQty) {
+        this.tradeQty = tradeQty;
     }
 }

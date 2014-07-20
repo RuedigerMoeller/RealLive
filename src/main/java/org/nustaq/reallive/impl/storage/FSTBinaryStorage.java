@@ -77,7 +77,7 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
 
     @Override
     public int getFreeMB() {
-        return (int) (store.getUsedMem()/1024/1024);
+        return store.getCapacityMB()-(int)(store.getUsedMem()/1024/1024);
     }
 
     @Override

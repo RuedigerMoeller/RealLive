@@ -3,6 +3,9 @@ package org.nustaq.machnetz;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.annotations.*;
 import io.netty.channel.ChannelHandlerContext;
+import org.nustaq.machnetz.model.TestModel;
+import org.nustaq.machnetz.model.rlxchange.Order;
+import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.RealLive;
 import org.nustaq.reallive.Subscription;
 import org.nustaq.reallive.queries.JSQuery;
@@ -11,6 +14,8 @@ import org.nustaq.reallive.sys.messages.Invocation;
 import org.nustaq.reallive.sys.messages.InvocationCallback;
 import org.nustaq.reallive.sys.messages.QueryTuple;
 import org.nustaq.serialization.FSTConfiguration;
+import org.nustaq.serialization.minbin.MBPrinter;
+import org.nustaq.serialization.minbin.MinBin;
 import org.nustaq.webserver.ClientSession;
 
 import java.io.Serializable;
@@ -28,7 +33,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     private static final Object NO_RESULT = "NO_RESULT";
     static FSTConfiguration conf = FSTConfiguration.createCrossPlatformConfiguration();
     static {
-        conf.registerCrossPlatformClassMappingUseSimpleName(new SysMeta().getClasses());
+        conf.registerCrossPlatformClassMappingUseSimpleName(new TestModel().getClasses());
     }
 
     protected MachNetz server; // FIXME: iface
@@ -63,7 +68,15 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     final MethodType rpctype = MethodType.methodType(Object.class,Invocation.class);
     public void $onBinaryMessage(ChannelHandlerContext ctx, byte[] buffer) {
 //        System.out.println("minmsg");
-        final Object msg = conf.asObject(buffer);
+        final Object msg;
+        try {
+            msg = conf.asObject(buffer);
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+            System.out.println("received:");
+            MBPrinter.printMessage(buffer);
+            return;
+        }
 //        System.out.println("  minmsg "+msg);
         if (msg instanceof Invocation) {
             final Invocation inv = (Invocation) msg;
@@ -98,6 +111,18 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     Object streamTable(Invocation inv) {
         getRLDB().stream("" + inv.getArgument()).each((change) -> sendReply(inv, change));
+        return NO_RESULT;
+    }
+
+    Object addOrder(Invocation inv) {
+        RLTable<Order> order = getRLDB().getTable("Order");
+        Order toAdd = (Order) inv.getArgument();
+        if ( "stop".equals(toAdd.getText() ) ) {
+            MachNetz.stopFeed();
+            return NO_RESULT;
+        }
+        toAdd.setCreationTime(System.currentTimeMillis());
+        order.$addGetId(toAdd).then((orderId,e)->sendReply(inv,orderId==null ? e:orderId));
         return NO_RESULT;
     }
 

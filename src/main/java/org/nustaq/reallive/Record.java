@@ -194,25 +194,33 @@ public class Record implements Serializable {
     }
 
     public FSTClazzInfo getClassInfo() {
+        if ( getRealLive() == null )
+            return null;
         return getRealLive().getConf().getClassInfo(getClass());
     }
 
     public RealLive getRealLive() {
+        if ( table == null )
+            return null;
         return table.getRealLive();
     }
 
     public String toString() {
         String res = "["+getClass().getSimpleName()+" ";
-        FSTClazzInfo.FSTFieldInfo[] fieldInfo = getClassInfo().getFieldInfo();
-        for (int i = 0; i < fieldInfo.length; i++) {
-            FSTClazzInfo.FSTFieldInfo fstFieldInfo = fieldInfo[i];
-            try {
-                res += fstFieldInfo.getField().getName()+": "+fstFieldInfo.getField().get(this) + ", ";
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
+        if ( getClassInfo() == null ) {
+            return "[Record key:"+getRecordKey()+"]";
+        } else {
+            FSTClazzInfo.FSTFieldInfo[] fieldInfo = getClassInfo().getFieldInfo();
+            for (int i = 0; i < fieldInfo.length; i++) {
+                FSTClazzInfo.FSTFieldInfo fstFieldInfo = fieldInfo[i];
+                try {
+                    res += fstFieldInfo.getField().getName() + ": " + fstFieldInfo.getField().get(this) + ", ";
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
             }
+            return res + " ]";
         }
-        return res+" ]";
     }
 
     public String[] toFieldNames(int fieldIndex[]) {
