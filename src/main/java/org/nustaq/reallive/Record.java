@@ -2,7 +2,7 @@ package org.nustaq.reallive;
 
 import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
-import org.nustaq.reallive.sys.annotations.Order;
+import org.nustaq.reallive.sys.annotations.ColOrder;
 import org.nustaq.serialization.FSTClazzInfo;
 
 import java.io.Serializable;
@@ -20,9 +20,9 @@ public class Record implements Serializable {
     }
     transient Mode mode = Mode.NONE;
 
-    @Order(-2)
+    @ColOrder(-2)
     String recordKey;
-    @Order(-1)
+    @ColOrder(-1)
     int version;
 
     transient Record originalRecord;

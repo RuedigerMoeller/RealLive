@@ -149,7 +149,7 @@ public class MachNetz extends WebSocketHttpServer {
         public void $feed( RealLive rl ) {
             RLTable<Instrument> instr = rl.getTable("Instrument");
             instr.stream().each((change) -> {
-                if ( orderCount > 1000 ) {
+                if ( orderCount > 500 ) {
                     RLTable orTable = rl.getTable("Order");
                     orTable.stream().each((delChange) -> {
                         if ( delChange.isAdd() ) {
@@ -170,12 +170,12 @@ public class MachNetz extends WebSocketHttpServer {
                         boolean isBuy = Math.random() > .5;
                         if ( isBuy ) {
                             newOrder.setBuy(isBuy);
-                            newOrder.setQty((int) (Math.random() * 7 + 5));
-                            newOrder.setLimitPrice((int) (Math.random() * 15 + 5));
+                            newOrder.setQty((int) (Math.random() * 70 + 50));
+                            newOrder.setLimitPrice((int) (Math.random() * 1500 + 500));
                         } else {
                             newOrder.setBuy(isBuy);
-                            newOrder.setQty((int) (Math.random() * 13 + 5));
-                            newOrder.setLimitPrice((int) (Math.random() * 15 + 10));
+                            newOrder.setQty((int) (Math.random() * 70 + 50));
+                            newOrder.setLimitPrice((int) (Math.random() * 1500 + 1000));
                         }
                         switch ((int)(Math.random()*3)) {
                             case 0:

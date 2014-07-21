@@ -78,6 +78,8 @@ public class InstrumentMatcher {
 
     public void match() {
         checkThread();
+        int matchPrc = 0;
+        int matchQty = 0;
         if ( market.getRecordKey().equals("Germany")) {
             dumpOB();
         }
@@ -104,6 +106,8 @@ public class InstrumentMatcher {
                 int trdqty = Math.min(bestBuy.getQty(),bestSell.getQty());
                 forAdd.setTradePrice(trdprice);
                 forAdd.setTradeQty(trdqty);
+                matchQty = trdqty;
+                matchPrc = trdprice;
 
                 bestBuy.setQty(bestBuy.getQty()-trdqty);
                 if ( bestBuy.getQty() == 0) {
@@ -131,7 +135,7 @@ public class InstrumentMatcher {
                 break; // nothing to match
             }
         }
-        updateBstBidAsk();
+        updateBstBidAsk(matchPrc,matchQty);
     }
 
     private void dumpOB() {
@@ -146,7 +150,7 @@ public class InstrumentMatcher {
         }
     }
 
-    private void updateBstBidAsk() {
+    private void updateBstBidAsk(int matchPrc, int matchQty) {
         // compute top of book
         int buyQuan = 0;
         int buyPrc = 0;
@@ -169,6 +173,10 @@ public class InstrumentMatcher {
                 sellQuan += next.getQty();
             } else
                 break;
+        }
+        if ( matchPrc > 0 ) {
+            market.setLastPrc(matchPrc);
+            market.setLastQty(matchQty);
         }
         market.setAsk(sellPrc);
         market.setAskQty(sellQuan);

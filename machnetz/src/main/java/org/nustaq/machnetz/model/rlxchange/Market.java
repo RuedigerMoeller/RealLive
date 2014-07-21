@@ -1,18 +1,28 @@
 package org.nustaq.machnetz.model.rlxchange;
 
 import org.nustaq.reallive.Record;
+import org.nustaq.reallive.sys.annotations.BGColor;
+import org.nustaq.reallive.sys.annotations.ColOrder;
+import org.nustaq.reallive.sys.annotations.DisplayWidth;
+import org.nustaq.reallive.sys.annotations.RenderStyle;
 
 /**
  * Created by ruedi on 18.07.14.
  */
 public class Market extends Record {
 
+    @RenderStyle("Price") @BGColor("rgba(0,0,255,0.2)") @DisplayWidth("80px") @ColOrder(2)
     int bid;
+    @RenderStyle("Price") @BGColor("rgba(255,0,0,0.2)") @DisplayWidth("80px") @ColOrder(3)
     int ask;
+    @RenderStyle("Qty") @ColOrder(1)
     int bidQty;
+    @RenderStyle("Qty") @ColOrder(4)
     int askQty;
 
+    @RenderStyle("Price") @ColOrder(5)
     int lastPrc;
+    @RenderStyle("Qty") @ColOrder(6)
     int lastQty;
 
     long lastMatch;

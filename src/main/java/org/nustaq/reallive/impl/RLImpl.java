@@ -14,9 +14,6 @@ import org.nustaq.reallive.sys.metadata.TableMeta;
 import org.nustaq.reallive.sys.tables.SysTable;
 import org.nustaq.serialization.FSTClazzInfo;
 
-import static java.util.Arrays.*;
-
-import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -92,7 +89,7 @@ public class RLImpl extends RealLive {
                 cm.setDisplayName(decamel(cm.getName()));
             }
 
-            Order ord = (Order) fi.getField().getAnnotation(Order.class);
+            ColOrder ord = (ColOrder) fi.getField().getAnnotation(ColOrder.class);
             if ( ord != null ) {
                 cm.setOrder(ord.value());
             } else {
@@ -102,6 +99,16 @@ public class RLImpl extends RealLive {
             Align al = fi.getField().getAnnotation(Align.class);
             if ( al != null ) {
                 cm.setAlign(al.value());
+            }
+
+            BGColor bg = fi.getField().getAnnotation(BGColor.class);
+            if ( bg != null ) {
+                cm.setBgColor(bg.value());
+            }
+
+            DisplayWidth dw = fi.getField().getAnnotation(DisplayWidth.class);
+            if ( dw != null ) {
+                cm.setDisplayWidth(dw.value());
             }
 
             RenderStyle rs = fi.getField().getAnnotation(RenderStyle.class);

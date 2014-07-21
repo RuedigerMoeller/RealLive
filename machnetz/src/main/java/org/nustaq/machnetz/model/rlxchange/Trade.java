@@ -1,6 +1,7 @@
 package org.nustaq.machnetz.model.rlxchange;
 
 import org.nustaq.reallive.Record;
+import org.nustaq.reallive.sys.annotations.RenderStyle;
 
 /**
  * Created by ruedi on 18.07.14.
@@ -11,7 +12,9 @@ public class Trade extends Record {
     String sellOrderId;
 
     long tradeTime;
+    @RenderStyle("Price")
     int tradePrice;
+    @RenderStyle("Qty")
     int tradeQty;
 
     String tradeTimeStringUTC; // js ...

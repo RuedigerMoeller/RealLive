@@ -14,7 +14,17 @@ public class ColumnMeta implements Serializable{
     String description;
     String align;
     String renderStyle;
+    String bgColor;
     int order;
+    private String displayWidth;
+
+    public String getBgColor() {
+        return bgColor;
+    }
+
+    public void setBgColor(String bgColor) {
+        this.bgColor = bgColor;
+    }
 
     public ColumnMeta() {
     }
@@ -95,5 +105,13 @@ public class ColumnMeta implements Serializable{
 
     public void setRenderStyle(String renderStyle) {
         this.renderStyle = renderStyle;
+    }
+
+    public void setDisplayWidth(String displayWidth) {
+        this.displayWidth = displayWidth;
+    }
+
+    public String getDisplayWidth() {
+        return displayWidth;
     }
 }

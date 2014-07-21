@@ -172,15 +172,23 @@ app.directive('rlTable', function() {
                         var recKey = change.recordKey;
                         for (var i = 0; i < fieldList.length; i++) {
                             var elementId = recKey + '#row.entity.' + fieldList[i];
+                            var elementById = document.getElementById(elementId);
+                            if ( elementById ) {
+                                var cell = angular.element(elementById).scope();
+                                if (cell)
+                                    cell.$digest();
+                            }
                             RealLive.highlightElem(elementId);
                         }
+//                        $scope.$digest();
                     }
-                    if (snapFin) {
+                    if (change.type == RL_SNAPSHOT_DONE) {
                         $scope.$digest();
                     }
                     if (change.type == RL_ADD) {
                         var elementId = 'row#' + change.recordKey;
                         RealLive.highlightElem(elementId);
+                        $scope.$digest();
                     }
                 };
                 RealLive.subscribeSet($attrs.table, $attrs.rlQuery ? $attrs.rlQuery : "true", $scope.rlset, null); //$scope);
@@ -262,23 +270,7 @@ app.controller('RLAdmin', function ($scope,$modal) {
                         loginuser.focus();
                 },1000);
                 $scope.size = 'sm';
-                $scope.reallive = 'All data ..',
-                window.setTimeout(function() {
-                    $scope.reallive='in RealTime';
-                    $scope.$digest();
-                    window.setTimeout(function() {
-                        $scope.reallive='.';
-                        $scope.$digest();
-                        window.setTimeout(function() {
-                            $scope.reallive='..';
-                            $scope.$digest();
-                            window.setTimeout(function() {
-                                $scope.reallive='RealLive';
-                                $scope.$digest();
-                            }, 3000);
-                        }, 2000);
-                    }, 2000);
-                }, 3000);
+                $scope.reallive = 'RealLive',
                 $scope.doLogin = function() {
                     var self = this;
                     RealLive.subscribeKey('Trader', this.user, function(change) {

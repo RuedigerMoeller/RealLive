@@ -1,6 +1,7 @@
 package org.nustaq.machnetz.model.rlxchange;
 
 import org.nustaq.reallive.Record;
+import org.nustaq.reallive.sys.annotations.RenderStyle;
 
 import java.util.Date;
 
@@ -14,9 +15,12 @@ public class Order extends Record {
 
     String instrumentKey;
 
+    @RenderStyle("BS")
     boolean buy; // else sell
 
+    @RenderStyle("Price")
     int limitPrice;
+    @RenderStyle("Qty")
     int qty;
 
     String traderKey;

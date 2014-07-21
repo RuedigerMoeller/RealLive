@@ -77,6 +77,11 @@ var RealLive = new function() {
 
     this.lastSeq = 0;
 
+    this.renderStyles = {
+        "Price": "<b>{{COL_FIELD/100|number:2}}</b>",
+        "Qty"  : "{{COL_FIELD|number:0}}"
+    };
+
     this.doConnect = function (host,port,websocketDir) {
         var self = this;
 
@@ -105,6 +110,20 @@ var RealLive = new function() {
                         for ( col in  cols ) {
                             if ( col != '__typeInfo' && ! col.hidden ) {
                                 var align = '';
+                                var bgColor = null;
+                                var fieldExpr = '{{COL_FIELD}}';
+
+                                if ( cols[col].renderStyle ) {
+                                    var expr = self.renderStyles[cols[col].renderStyle];
+                                    if ( expr ) {
+                                        fieldExpr = expr;
+                                    }
+                                }
+
+                                if ( cols[col].bgColor ) {
+                                    bgColor = cols[col].bgColor;
+                                }
+
                                 if ( cols[col].align ) {
                                     align = cols[col].align;
                                 } else {
@@ -116,20 +135,25 @@ var RealLive = new function() {
                                         case 'double':
                                         case 'float':
                                         case 'integer':
-                                            align = 'right'; break;
+                                            align = 'right';
+                                            break;
                                         default: align='left';
                                     }
+                                }
+                                var colWidth = (cols[col].name.length*14).toString()+"px";
+                                if ( cols[col].displayWidth) {
+                                    colWidth = cols[col].displayWidth;
                                 }
                                 colConf.push(
                                     {   field: cols[col].name,
                                         displayName: cols[col].displayName,
-                                        width: (cols[col].name.length*12).toString()+"px",
+                                        width:  colWidth,
                                         groupable: false,
 //                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()" id="{{row.entity.recordKey}}#COL_FIELD"><span ng-cell-text>{{COL_FIELD}}</span></div>'
                                         cellTemplate:
-                                           '<div class="ngCellText" style="text-align: '+align + ';" ' +
-                                            'ng-class="col.colIndex()"><span style="border-radius: 4px; transition: background-color .2s ease-out; padding: 4px;" ' +
-                                            'ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">{{COL_FIELD}}</span></div>'
+                                           '<div class="ngCellText" style="text-align: '+align + '; '+(bgColor?'background-color:'+bgColor+';':'')+'"'+
+                                            'ng-class="col.colIndex()"><span style="border-radius: 4px; transition: background-color .2s ease-out; padding: 4px; " ' +
+                                            'ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">'+fieldExpr+'</span></div>'
                                     }
                                 );
                                 indexToFieldName[cols[col].fieldId] = cols[col].name;
@@ -161,7 +185,8 @@ var RealLive = new function() {
             if ( typeof message.data == 'string' ) {
             } else {
                 fr.onloadend = function (event) {
-                    try {
+//                    try
+                    {
                         var msg = MinBin.decode(event.target.result);
                         if (msg instanceof JInvocationCallback) {
                             if ( _thisWS.lastSeq != 0 ) {
@@ -186,9 +211,10 @@ var RealLive = new function() {
                         }
 //                    var strMsg = MinBin.prettyPrint(msg);
 //                    // handle message
-                    } catch (ex) {
-                        console.log(ex.stack);
                     }
+//                    catch (ex) {
+//                        console.log(ex);
+//                    }
                 };
                 // error handling is missing
                 fr.readAsArrayBuffer(message.data);
@@ -234,9 +260,6 @@ var RealLive = new function() {
         console.log("** SUBSCRIBE "+tableName+" query:"+queryString);
         var cb = function(change) {
             resultset.push(change);
-            if ( scope != null ) {
-                scope.$apply(function () {});
-            }
             return false;
         };
         resultset.subsId = this.callStreaming(
@@ -253,7 +276,6 @@ var RealLive = new function() {
         this.callStreaming("streamTable", queryId, function(change) {
             resultset.push(change);
             if ( change.type == RL_SNAPSHOT_DONE ) {
-                scope.$apply(function () {});
                 return true;
             }
             return false;

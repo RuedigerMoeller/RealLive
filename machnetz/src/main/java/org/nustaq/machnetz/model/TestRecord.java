@@ -1,8 +1,8 @@
 package org.nustaq.machnetz.model;
 
 import org.nustaq.reallive.Record;
+import org.nustaq.reallive.sys.annotations.ColOrder;
 import org.nustaq.reallive.sys.annotations.Description;
-import org.nustaq.reallive.sys.annotations.Order;
 
 /**
  * Created by ruedi on 11.07.14.
@@ -10,11 +10,11 @@ import org.nustaq.reallive.sys.annotations.Order;
 @Description("Person Records")
 public class TestRecord extends Record {
 
-    @Order(0) String name;
-    @Order(10) String preName;
-    @Order(20) int yearOfBirth;
-    @Order(17) String sex;
-    @Order(15) String profession;
+    @ColOrder(0) String name;
+    @ColOrder(10) String preName;
+    @ColOrder(20) int yearOfBirth;
+    @ColOrder(17) String sex;
+    @ColOrder(15) String profession;
 
     public TestRecord() {
     }
