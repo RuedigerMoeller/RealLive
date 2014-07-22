@@ -36,6 +36,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     public void $init( String tableId, RealLive realLive, Class<T> clz, SingleNodeStream streamActor ) {
         Thread.currentThread().setName("TableImpl:"+tableId);
+        checkThread();
         this.clazz = clz;
         this.tableId = tableId;
         this.realLive = realLive;
@@ -78,7 +79,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     public T createForAddWith(Class<? extends Record> clazz) {
         try {
             T res = (T) clazz.newInstance();
-            res._setTable(this);
+            res._setTable(self());
             res._setMode(Record.Mode.ADD);
             return res;
         } catch (InstantiationException e) {
@@ -115,7 +116,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         T res = null;
         try {
             res = (T) record.getClass().newInstance();
-            res._setTable(this);
+            res._setTable(self());
             record._setMode(Record.Mode.UPDATE);
             record.copyTo(res);
             record._setOriginalRecord(res);
@@ -133,6 +134,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public Future<String> $addGetId(T object, int originator) {
+        checkThread();
         String nextKey = idgen.nextid();
         object._setId(nextKey);
         put(nextKey, object);
@@ -142,6 +144,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public void $add(T object, int originator) {
+        checkThread();
         String nextKey = idgen.nextid();
         object._setId(nextKey);
         put(nextKey, object);
@@ -150,6 +153,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public void $put(String key, T object, int originator) {
+        checkThread();
         object._setId(key);
         if ( storage.contains(key) ) {
             broadCastRemove(storage.get(key),originator);
@@ -160,6 +164,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public void $update(RecordChange<String,T> change, boolean addIfNotPresent ) {
+        checkThread();
         T t = get(change.getId());
         if ( t != null ) {
             RecordChange appliedChange = change.apply(t);
@@ -176,12 +181,14 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public void $remove(String key, int originator) {
+        checkThread();
         Record record = storage.removeAndGet(key);
         if ( record != null )
             broadCastRemove(record,originator);
     }
 
     public void $reportStats() {
+        checkThread();
         SysTable sysTable = (SysTable) getRealLive().getTable("SysTable").createForUpdate(tableId, true);
         sysTable.setNumElems(storage.size());
         sysTable.setSizeMB(storage.getSizeMB());
@@ -229,11 +236,12 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
 
     public void $filter(Predicate<T> doProcess, Predicate<T> terminate, Callback<T> resultReceiver) {
+        checkThread();
         Iterator<Record> vals = storage.values();
         while( vals.hasNext() ) {
             try {
                 T t = (T) vals.next();
-                t._setTable(this);
+                t._setTable(self());
                 if (doProcess == null || doProcess.test(t)) {
                     resultReceiver.receiveResult(t, null);
                 }
@@ -268,7 +276,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         T res = (T) storage.get(key);
         if ( res == null )
             return null;
-        res._setTable(this);
+        res._setTable(self());
         return res;
     }
 

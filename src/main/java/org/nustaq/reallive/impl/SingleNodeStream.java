@@ -21,8 +21,9 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     public SingleNodeStream() {
     }
 
-    public void $init(RLTableImpl<T> tableActor) {
-        Thread.currentThread().setName("SNStream:"+tableActor.getTableId());
+    public void $init(String name, RLTableImpl<T> tableActor) {
+        Thread.currentThread().setName("SNStream:"+name);
+        checkThread();
         this.tableActor = tableActor;
     }
 
@@ -39,6 +40,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     @Override
     public void filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
         tableActor.$filter(matches,terminateQuery, (r,e) -> {
+            checkThread();
             if ( e == RLTable.FIN ) {
                 resultReceiver.onChangeReceived( ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0));
             } else if ( e == null ) {
@@ -76,11 +78,13 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     public void $subscribe(SubscriptionImpl subs) { // fixme: inthread missing, not possible
+        checkThread();
         subscribers.add(subs);
         if ( subs.getFilter() instanceof SubscriptionImpl.KeyPredicate ) {
             tableActor.$get( ((SubscriptionImpl.KeyPredicate) subs.getFilter()).getKey())
                 .then(
                     (record,e) -> {
+                        checkThread();
                         if ( record == null ) {
                             ChangeBroadcast changeBC = ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0);
                             subs.getChangeReceiver().onChangeReceived(changeBC);
@@ -92,6 +96,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
             return;
         }
         tableActor.$filter(subs.getFilter(),null, (r,e) -> {
+            checkThread();
             if ( e == null ) {
                 subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewAdd(tableActor.getTableId(), r,0));
             } else if ( e == RLTable.FIN ) {
@@ -113,6 +118,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
 
     @Override
     public void onChangeReceived(ChangeBroadcast<T> changeBC) {
+        checkThread();
         if ( changeBC.isARU() ) {
             changeBC.getRecord()._setTable(tableActor);
         }

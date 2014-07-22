@@ -156,7 +156,7 @@ public class RLImpl extends RealLive {
     protected void pureCreateTable(String name, Class<? extends Record> clazz) {
         RLTableImpl table = Actors.AsActor( RLTableImpl.class, new ElasticScheduler(1), CHANGE_Q_SIZE );
         SingleNodeStream stream = Actors.AsActor(SingleNodeStream.class,new ElasticScheduler(1), FILTER_Q_SIZE);
-        stream.$init(table);
+        stream.$init(name,table);
         table.$init(name, this, clazz, stream);
         CountDownLatch latch = new CountDownLatch(1);
         table.$sync().then( (r,e) -> latch.countDown() );

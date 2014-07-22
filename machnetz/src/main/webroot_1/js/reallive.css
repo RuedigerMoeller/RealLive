@@ -1,3 +1,39 @@
+.arrow-up {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+
+    border-bottom: 5px solid black;
+}
+
+.arrow-down {
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+
+    border-top: 6px solid #eee;
+}
+
+.arrow-right {
+    width: 0;
+    height: 0;
+    border-top: 60px solid transparent;
+    border-bottom: 60px solid transparent;
+
+    border-left: 60px solid green;
+}
+
+.arrow-left {
+    width: 0;
+    height: 0;
+    border-top: 10px solid transparent;
+    border-bottom: 10px solid transparent;
+
+    border-right:10px solid blue;
+}
+
 .gridStyle {
     border: 1px solid rgb(212,212,212);
     height: 300px;
@@ -26,6 +62,10 @@
     transition: background-color 2s ease-out;
 }
 
+.rllightbg {
+    background-color: #f0f0f0;
+    border: 1px solid rgb(212,212,212);
+}
 td {
     padding: 4px;
 }

@@ -217,6 +217,7 @@ app.controller('OrderEntry', function($scope) {
         $scope.order.buy = buy;
         $scope.order.traderKey = $scope.user.recordKey;
         var transmittedOrder = new JOrder($scope.order);
+        transmittedOrder.limitPrice = (transmittedOrder.limitPrice*100)|0;
         RealLive.call("addOrder", transmittedOrder, function(result) {
             console.log("Order sucess "+result);
         });

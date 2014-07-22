@@ -23,18 +23,7 @@ public class Matcher extends Actor<Matcher> {
     RLTable<Order> orders;
     RLTable<Trade> trades;
     RLTable<Instrument> instruments;
-    ReplicatedSet<Instrument> instrSet;
     HashMap<String,InstrumentMatcher> matcherMap = new HashMap<>();
-
-    Thread t = null;
-
-    void checkThread() {
-        if ( t == null )
-            t = Thread.currentThread();
-        else
-            if ( t != Thread.currentThread() )
-                throw new RuntimeException("wrong thread");
-    }
 
     public void $init(RealLive rl) {
         Thread.currentThread().setName("Matcher");
@@ -46,18 +35,17 @@ public class Matcher extends Actor<Matcher> {
         RLTable<Market> market = rl.getTable("Market");
         instruments = rl.getTable("Instrument");
 
-        instrSet = new ReplicatedSet<Instrument>();
 
         // sharding could be done using an instrument level filter below
         instruments.stream().each((change) -> {
             checkThread();
-            instrSet.onChangeReceived(change); // forward to instr set
             if (change.isAdd()) {
                 Instrument inst = change.getRecord();
                 market.$get(inst.getRecordKey()).then((m, e) -> {
                     checkThread();
                     if (m != null) {
                         market.prepareForUpdate(m);
+                        instruments.prepareForUpdate(inst);
                         matcherMap.put(change.getRecordKey(), new InstrumentMatcher(inst, orders, trades, m));
                         System.out.println("PUT MATCHER size: "+matcherMap.size()+" id "+System.identityHashCode(matcherMap));
                     }

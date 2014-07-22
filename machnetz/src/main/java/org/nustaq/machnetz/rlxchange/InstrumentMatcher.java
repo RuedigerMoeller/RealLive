@@ -109,6 +109,10 @@ public class InstrumentMatcher {
                 matchQty = trdqty;
                 matchPrc = trdprice;
 
+                instrument.setVolumeTraded(instrument.getVolumeTraded()+matchQty*trdprice);
+                instrument.setContractsTraded(instrument.getContractsTraded()+matchQty);
+                instrument.$apply(Matcher.MATCHER_ID);
+
                 bestBuy.setQty(bestBuy.getQty()-trdqty);
                 if ( bestBuy.getQty() == 0) {
                     orders.$remove(bestBuy.getRecordKey(), Matcher.MATCHER_ID);
@@ -139,7 +143,7 @@ public class InstrumentMatcher {
     }
 
     private void dumpOB() {
-        System.out.println("-------------------------------------------------------");
+        System.out.println("-------------------------------------------------------"+Thread.currentThread().getName());
         System.out.println("Orderbook for "+market.getRecordKey());
         List<Order> buys = new ArrayList<>(buySet.getTreeSet());
         List<Order> sells = new ArrayList<>(sellSet.getTreeSet());

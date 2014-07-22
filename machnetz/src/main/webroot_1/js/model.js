@@ -274,7 +274,9 @@ var JInvocation = function(obj) {
 
 var JInstrument = function(obj) {
     this.__typeInfo = 'Instrument';
+    this.j_contractsTraded = function() { return parseInt(this.contractsTraded,10); };
     this.j_version = function() { return parseInt(this.version,10); };
+    this.j_volumeTraded = function() { return parseInt(this.volumeTraded,10); };
     this.j_expiryDate = function() { return parseInt(this.expiryDate,10); };
     this.j_description = function() { return this.description; };
     this.j_expiryDateString = function() { return this.expiryDateString; };

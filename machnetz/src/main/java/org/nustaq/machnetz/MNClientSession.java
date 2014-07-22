@@ -40,6 +40,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     MethodHandles.Lookup lookup;
 
     public void $init(MachNetz machNetz, int sessionId) {
+        Thread.currentThread().setName("MNClientSession"+sessionId);
         server = machNetz;
         lookup = MethodHandles.lookup();
     }
