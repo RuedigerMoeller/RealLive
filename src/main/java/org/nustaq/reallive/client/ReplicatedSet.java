@@ -1,23 +1,39 @@
 package org.nustaq.reallive.client;
 
+import org.nustaq.heapoff.bytez.ByteSource;
+import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.Promise;
-import org.nustaq.reallive.ChangeBroadcast;
-import org.nustaq.reallive.ChangeBroadcastReceiver;
-import org.nustaq.reallive.Record;
+import org.nustaq.reallive.*;
+import org.nustaq.reallive.impl.SubscriptionImpl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Created by ruedi on 06.07.14.
  */
-public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<T> {
+public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<T>, RLStream<T> {
 
     protected HashMap<String,T> map = new HashMap<>();
     protected Promise snapFin;
-    boolean snaphotFinished = false;
+    protected String tableId = "replicated";
+    protected boolean snaphotFinished = false;
 
     public ReplicatedSet() {
         snapFin = new Promise();
+    }
+    protected List<MySubscription> subscribers;
+
+    public ReplicatedSet(String tableId) {
+        this();
+        this.tableId = tableId;
+    }
+
+    public void setTableId(String tableId) {
+        this.tableId = tableId;
     }
 
     @Override
@@ -40,7 +56,65 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
             case ChangeBroadcast.ERROR:
             default:
         }
+        if ( subscribers != null ) {
+            processSubscribers(changeBC);
+        }
 
+    }
+
+    public void processSubscribers(ChangeBroadcast<T> changeBC) { // FIXME mostly copied from SingleNodeStream
+        switch (changeBC.getType()) {
+            case ChangeBroadcast.ADD:
+                for (int i = 0; i < subscribers.size(); i++) {
+                    MySubscription<T> subs = (MySubscription<T>) subscribers.get(i);
+                    if (subs.getFilter().test(changeBC.getRecord())) {
+                        subs.getReceiver().onChangeReceived(changeBC);
+                    }
+                }
+                break;
+            case ChangeBroadcast.REMOVE:
+                for (int i = 0; i < subscribers.size(); i++) {
+                    MySubscription<T> subs = (MySubscription<T>) subscribers.get(i);
+                    if (subs.getFilter().test(changeBC.getRecord())) {
+                        subs.getReceiver().onChangeReceived(changeBC);
+                    }
+                }
+                break;
+            case ChangeBroadcast.UPDATE:
+                changeBC.toOld();
+                for (int i = 0; i < subscribers.size(); i++) {
+                    MySubscription<T> subs = (MySubscription<T>) subscribers.get(i);
+                    subs.__matched(subs.getFilter().test(changeBC.getRecord()));
+                }
+                changeBC.toNew();
+                for (int i = 0; i < subscribers.size(); i++) {
+                    MySubscription<T> subs = (MySubscription<T>) subscribers.get(i);
+                    boolean matchesOld = subs.__matched();
+                    boolean matchesNew = subs.getFilter().test(changeBC.getRecord());
+                    if (matchesOld && matchesNew) {
+                        subs.getReceiver().onChangeReceived(changeBC); // directly forward change
+                    } else if (matchesOld && !matchesNew) {
+                        subs.getReceiver().onChangeReceived(
+                            ChangeBroadcast.NewRemove(
+                                changeBC.getTableId(),
+                                changeBC.getRecord(),
+                                changeBC.getOriginator()
+                                                     ));
+                    } else if (!matchesOld && matchesNew) {
+                        subs.getReceiver().onChangeReceived(
+                            ChangeBroadcast.NewAdd(
+                                changeBC.getTableId(),
+                                changeBC.getRecord(),
+                                changeBC.getOriginator()
+                        ));
+                    } else {
+                        // silent
+                    }
+                }
+                break;
+            default:
+                throw new RuntimeException("not implemented");
+        }
     }
 
     protected void handleUpdate(ChangeBroadcast<T> changeBC) {
@@ -100,5 +174,128 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
         map.put(r.getRecordKey(),r);
     }
 
+    @Override
+    public void each(ChangeBroadcastReceiver<T> resultReceiver) {
+        map.values().forEach((record) -> {
+            resultReceiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId, record, 0));
+        });
+        resultReceiver.onChangeReceived(ChangeBroadcast.NewSnapFin(tableId, 0));
+    }
+
+    @Override
+    public void filter(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
+        map.values().forEach((record) -> {
+            if ( matches.test(record) )
+                resultReceiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId,record,0));
+        });
+        resultReceiver.onChangeReceived(ChangeBroadcast.NewSnapFin(tableId, 0));
+    }
+
+    @Override
+    public void filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver) {
+        map.values().forEach((record) -> {
+            boolean terminate = terminateQuery.test(record);
+            if ( matches.test(record) && !terminate)
+                resultReceiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId,record,0));
+        });
+        resultReceiver.onChangeReceived(ChangeBroadcast.NewSnapFin(tableId, 0));
+    }
+
+    @Override
+    public void filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback<ByteSource> resultReceiver) {
+        throw new RuntimeException("unsupported for replicated sets");
+    }
+
+    static abstract class MySubscription<T extends Record> implements Subscription<T> {
+        boolean matched;
+        public boolean __matched() {
+            return matched;
+        }
+        public void __matched(boolean b) {
+            matched = b;
+        }
+
+        public abstract ChangeBroadcastReceiver<T> getReceiver();
+    }
+
+    protected List getSubscribers() {
+        if ( subscribers == null ) {
+            subscribers = new ArrayList<>();
+        }
+        return subscribers;
+    }
+
+    @Override
+    public Subscription<T> subscribeKey(String key, ChangeBroadcastReceiver<T> resultReceiver) {
+        Predicate filter = new Predicate() {
+            @Override
+            public boolean test(Object o) {
+                return ((Record)o).getRecordKey().equals(key);
+            }
+        };
+        MySubscription subs = new MySubscription() {
+            public ChangeBroadcastReceiver<T> getReceiver() {
+                return resultReceiver;
+            }
+            @Override
+            public String getTableKey() {
+                return tableId;
+            }
+            @Override
+            public Predicate getFilter() {
+                return filter;
+            }
+        };
+        if ( map.get(key) != null ) {
+            resultReceiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId, map.get(key), 0));
+        }
+        resultReceiver.onChangeReceived(ChangeBroadcast.NewSnapFin(tableId, 0));
+        getSubscribers().add(subs);
+        return subs;
+    }
+
+    @Override
+    public Subscription<T> subscribe(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
+        MySubscription subs = new MySubscription() {
+            public ChangeBroadcastReceiver<T> getReceiver() {
+                return resultReceiver;
+            }
+            @Override
+            public String getTableKey() {
+                return tableId;
+            }
+            @Override
+            public Predicate getFilter() {
+                return matches;
+            }
+        };
+        getSubscribers().add(subs);
+        filter(matches,resultReceiver);
+        return subs;
+    }
+
+    @Override
+    public Subscription<T> listen(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver) {
+        MySubscription subs = new MySubscription() {
+            public ChangeBroadcastReceiver<T> getReceiver() {
+                return resultReceiver;
+            }
+            @Override
+            public String getTableKey() {
+                return tableId;
+            }
+            @Override
+            public Predicate getFilter() {
+                return matches;
+            }
+        };
+        getSubscribers().add(subs);
+        return subs;
+    }
+
+    @Override
+    public void unsubscribe(Subscription<T> subs) {
+        getSubscribers().remove(subs);
+    }
 }
 

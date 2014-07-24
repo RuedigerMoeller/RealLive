@@ -40,11 +40,29 @@ public class RecordChange<K, T extends Record> implements Serializable {
         this.originator = originator;
     }
 
-    public void setChanges(List<FSTClazzInfo.FSTFieldInfo> fieldInfos, List<Object> value ) {
+    public void setChanges(List<FSTClazzInfo.FSTFieldInfo> fieldInfos, List<Object> value, Record oldRecord ) {
         newVal = value.toArray();
+        if ( oldRecord != null ) {
+            oldVals = new Object[newVal.length];
+        }
         fieldIndex = new int[newVal.length];
         for (int i = 0; i < fieldIndex.length; i++) {
             fieldIndex[i] = fieldInfos.get(i).getIndexId();
+            if ( oldRecord != null ) {
+                oldVals[i] = oldRecord.getField(fieldIndex[i]);
+            }
+        }
+    }
+
+    public void setChanges(String[] fieldNames, Object anOldVals[], Record newRec, FSTClazzInfo inf ) {
+        fieldIndex = new int[fieldNames.length];
+        newVal = new Object[fieldNames.length];
+        oldVals = new Object[fieldNames.length];
+        for (int i = 0; i < fieldIndex.length; i++) {
+            int fidx = inf.getFieldInfo(fieldNames[i],null).getIndexId();
+            fieldIndex[i] = fidx;
+            oldVals[i] = anOldVals[i];
+            newVal[i] = newRec.getField(fidx);
         }
     }
 

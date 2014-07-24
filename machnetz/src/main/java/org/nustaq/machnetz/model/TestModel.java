@@ -21,6 +21,7 @@ public class TestModel extends SysMeta {
         classes.add(Order.class);
         classes.add(Trade.class);
         classes.add(Trader.class);
+        classes.add(Position.class);
 
         return classes;
     }

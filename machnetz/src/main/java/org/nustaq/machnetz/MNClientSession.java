@@ -5,14 +5,16 @@ import org.nustaq.kontraktor.annotations.*;
 import io.netty.channel.ChannelHandlerContext;
 import org.nustaq.machnetz.model.TestModel;
 import org.nustaq.machnetz.model.rlxchange.Order;
-import org.nustaq.reallive.RLTable;
-import org.nustaq.reallive.RealLive;
-import org.nustaq.reallive.Subscription;
+import org.nustaq.machnetz.model.rlxchange.Position;
+import org.nustaq.machnetz.model.rlxchange.Trade;
+import org.nustaq.reallive.*;
+import org.nustaq.reallive.client.ReplicatedSet;
 import org.nustaq.reallive.impl.SubscriptionImpl;
 import org.nustaq.reallive.queries.JSQuery;
 import org.nustaq.reallive.sys.messages.Invocation;
 import org.nustaq.reallive.sys.messages.InvocationCallback;
 import org.nustaq.reallive.sys.messages.QueryTuple;
+import org.nustaq.serialization.FSTClazzInfo;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.minbin.MBPrinter;
 import org.nustaq.webserver.ClientSession;
@@ -21,6 +23,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -38,15 +41,18 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     int sessionId;
     MethodHandles.Lookup lookup;
+    RealLive realLive;
+    String traderKey;
 
     public void $init(MachNetz machNetz, int sessionId) {
         Thread.currentThread().setName("MNClientSession"+sessionId);
         server = machNetz;
         lookup = MethodHandles.lookup();
+        realLive = new RealLiveClientWrapper(server.getRealLive());
     }
 
     protected RealLive getRLDB() {
-        return server.getRealLive();
+        return realLive;
     }
 
     @CallerSideMethod
@@ -57,7 +63,9 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     }
 
     public void $onClose(ChannelHandlerContext ctx) {
+        subscriptions.keySet().forEach((subsid) -> unsubscribe(subsid));
         self().$stop();
+        server.removeSession(ctx);
     }
 
     public void $onTextMessage(ChannelHandlerContext ctx, String text) {
@@ -113,6 +121,82 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         return NO_RESULT;
     }
 
+    Object login(Invocation inv) {
+        if ( traderKey != null )
+        {
+            sendReply(inv, "session already logged in.");
+        }
+        try {
+            List argument = (List) inv.getArgument();
+            realLive.getTable("Trader").$get((String) argument.get(0)).then((rec, e) -> {
+                try {
+                    if (rec != null) {
+                        traderKey = ((Record) rec).getRecordKey();
+                        if (traderKey != null) {
+                            initPositionStream();
+                            sendReply(inv, "success");
+                        }
+                    } else {
+                        sendReply(inv, "Invalid user or password.");
+                    }
+                } catch (Exception ee) {
+                    ee.printStackTrace();
+                    sendReply(inv, "Login failure "+ee.getMessage());
+                }
+            });
+        } catch (Exception ex) {
+            sendReply(inv, "Invalid user or password [EX].");
+        }
+        return NO_RESULT;
+    }
+
+    HashMap<String,Position> positionMap = new HashMap<>();
+    private void initPositionStream() {
+        ReplicatedSet<Position> myPosition = new ReplicatedSet<>();
+        realLive.createVirtualStream("Position",myPosition);
+        FSTClazzInfo classInfo = realLive.getConf().getClassInfo(Position.class);
+        // subscribe + install virtual streams
+        realLive.stream("Trade").subscribe(
+            (record) -> {
+                Trade trade = (Trade) record;
+                boolean isBuyer = trade.getBuyTraderKey().equals(traderKey);
+                boolean isSeller = trade.getSellTraderKey().equals(traderKey);
+                return ( isBuyer || isSeller );
+            },
+            (change) -> {
+                if (change.isAdd()) {
+                    Trade trade = (Trade) change.getRecord();
+                    boolean isBuyer = trade.getBuyTraderKey().equals(traderKey);
+                    boolean isSeller = trade.getSellTraderKey().equals(traderKey);
+                    if (isBuyer || isSeller) {
+                        Position p = positionMap.get(trade.getInstrumentKey());
+                        if (p == null) {
+                            p = new Position();
+                            p.setInstrKey(trade.getInstrumentKey());
+                            positionMap.put(trade.getInstrumentKey(), p);
+                            p._setId(trade.getInstrumentKey() + "#" + traderKey);
+                            p.prepareForUpdate(false, classInfo);
+                            myPosition.onChangeReceived(ChangeBroadcast.NewAdd("Position", p, 0));
+                        }
+                        int oldQty = p.getQty();
+                        int oldSum = p.getSumPrice();
+                        if (isBuyer) {
+                            p.setQty(oldQty + trade.getTradeQty());
+                            p.setSumPrice(oldSum + trade.getTradeQty()*trade.getTradePrice());
+                        } else {
+                            p.setQty(oldQty - trade.getTradeQty());
+                            p.setSumPrice(oldSum - trade.getTradeQty()*trade.getTradePrice());
+                        }
+                        p.updateAvg();
+                        myPosition.onChangeReceived(p.computeBcast("Position", 0));
+                    }
+                } else if (!change.isSnapshotDone()) {
+                    throw new RuntimeException("Wat ?");
+                }
+            }
+        );
+    }
+
     Object addOrder(Invocation inv) {
         RLTable<Order> order = getRLDB().getTable("Order");
         Order toAdd = (Order) inv.getArgument();
@@ -121,8 +205,16 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
             return NO_RESULT;
         }
         toAdd.setCreationTime(System.currentTimeMillis());
-        order.$addGetId(toAdd,0).then((orderId,e)->sendReply(inv,orderId==null ? e:orderId));
+        order.$addGetId(toAdd, 0).then((orderId, e) -> sendReply(inv, orderId == null ? e : orderId));
         return NO_RESULT;
+    }
+
+    private void unsubscribe(String subsId) {
+        Subscription subs = subscriptions.get(subsId);
+        if ( subs != null ) {
+            getRLDB().stream(subs.getTableKey()).unsubscribe(subs);
+            subscriptions.remove(subsId);
+        }
     }
 
     //////////// stream api ///////////////////////////////////////////////////////////////
@@ -131,11 +223,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     Object unsubscribe(Invocation<String> inv) {
         String subsId = inv.getArgument();
-        Subscription subs = subscriptions.get(subsId);
-        if ( subs != null ) {
-            getRLDB().stream(subs.getTableKey()).unsubscribe(subs);
-            subscriptions.remove(subsId);
-        }
+        unsubscribe(subsId);
         return NO_RESULT;
     }
 

@@ -119,9 +119,35 @@ var JTrade = function(obj) {
     this.j_version = function() { return parseInt(this.version,10); };
     this.j_tradeTime = function() { return parseInt(this.tradeTime,10); };
     this.j_buyOrderId = function() { return this.buyOrderId; };
+    this.j_buyTraderKey = function() { return this.buyTraderKey; };
+    this.j_instrumentKey = function() { return this.instrumentKey; };
     this.j_recordKey = function() { return this.recordKey; };
     this.j_sellOrderId = function() { return this.sellOrderId; };
+    this.j_sellTraderKey = function() { return this.sellTraderKey; };
     this.j_tradeTimeStringUTC = function() { return this.tradeTimeStringUTC; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'j_'.concat(key);
+            if ( this.hasOwnProperty(setter) ) {
+                this[key] = obj[key];
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
+var JPosition = function(obj) {
+    this.__typeInfo = 'Position';
+    this.j_avgPrice = function() { return parseInt(this.avgPrice,10); };
+    this.j_qty = function() { return parseInt(this.qty,10); };
+    this.j_sumPrice = function() { return parseInt(this.sumPrice,10); };
+    this.j_version = function() { return parseInt(this.version,10); };
+    this.j_instrKey = function() { return this.instrKey; };
+    this.j_recordKey = function() { return this.recordKey; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
             var setter = 'j_'.concat(key);
@@ -357,6 +383,7 @@ switch (clzname) {
         case 'SysTable': return new JSysTable();
         case 'TestRecord': return new JTestRecord();
         case 'Trade': return new JTrade();
+        case 'Position': return new JPosition();
         case 'TableMeta': return new JTableMeta();
         case 'Market': return new JMarket();
         case 'Metadata': return new JMetadata();

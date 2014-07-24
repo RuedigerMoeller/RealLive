@@ -155,7 +155,7 @@ app.directive('rlTable', function() {
                 rowHeight: 27,
                 enableColumnReordering:false,
                 rowTemplate:
-                    '<span id="row#{{row.entity.recordKey}}" style="border-radius: 4px; transition: background-color .2s ease-out; padding: 4px;">'+
+                    '<span id="row#{{row.entity.recordKey}}" style="transition: background-color .2s ease-out; padding: 3px;">'+
                     "<div ng-style=\"{ 'cursor': row.cursor }\" ng-repeat=\"col in renderedColumns\" ng-class=\"col.colIndex()\" class=\"ngCell {{col.cellClass}}\">" +
                     "\n" +
                     "\t<div class=\"ngVerticalBar\" ng-style=\"{height: rowHeight}\" ng-class=\"{ ngVerticalBarVisible: !$last }\">&nbsp;</div>\r" +
@@ -264,6 +264,7 @@ app.controller('RLAdmin', function ($scope,$modal) {
             reallive:'reallive',
             user: '',
             loggedin: false,
+            loginunderway: false,
             controller: function($scope) {
                 window.setTimeout( function() {
                     var loginuser = document.getElementById("loginuser");
@@ -273,20 +274,31 @@ app.controller('RLAdmin', function ($scope,$modal) {
                 $scope.size = 'sm';
                 $scope.reallive = 'RealLive',
                 $scope.doLogin = function() {
+                    if ( $scope.loginunderway )
+                        return;
                     var self = this;
-                    RealLive.subscribeKey('Trader', this.user, function(change) {
-                        if ( change.type == RL_ADD ) {
-                            self.loggedIn = true;
-                            $scope.$parent.user = change.newRecord;
-                            instance.close(true);
-                            document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,0)';
-                            setTimeout(function() {document.getElementById('rl-app-overlay').style.display='none';}, 2000);
-                        } else {
-                            if (!self.loggedIn) {
-                                self.msg = "Invalid user or password. retry.";
-                                $scope.$digest();
-                            }
+                    $scope.loginunderway = true;
+                    RealLive.call( "login", MinBin.jlist([self.user,self.pwd]), function(result) {
+                        $scope.loginunderway = false;
+                        if ( result.indexOf("success") < 0 ) {
+                            self.msg = result;
+                            return;
                         }
+                        var subsId = RealLive.subscribeKey('Trader', self.user, function(change) {
+                            if ( change.type == RL_ADD ) {
+                                self.loggedIn = true;
+                                $scope.$parent.user = change.newRecord;
+                                instance.close(true);
+                                document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,0)';
+                                setTimeout(function() {document.getElementById('rl-app-overlay').style.display='none';}, 2000);
+                            } else {
+                                if (!self.loggedIn) {
+                                    self.msg = "Invalid user or password. retry.";
+                                    RealLive.unsubscribe(subsId);
+                                    $scope.$digest();
+                                }
+                            }
+                        });
                     });
                 }
             }

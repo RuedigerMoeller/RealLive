@@ -94,18 +94,21 @@ public class InstrumentMatcher {
                 return;
             }
             if ( bestBuy.getLimitPrice() >= bestSell.getLimitPrice() ) {
-                Trade forAdd = trades.createForAdd();
+                Trade newTrade = trades.createForAdd();
                 orders.prepareForUpdate(bestBuy); // mutates record !
                 orders.prepareForUpdate(bestSell);
 
-                forAdd.setTradeTime(System.currentTimeMillis());
-                forAdd.setBuyOrderId(bestBuy.getRecordKey());
-                forAdd.setSellOrderId(bestSell.getRecordKey());
+                newTrade.setInstrumentKey(instrument.getRecordKey());
+                newTrade.setBuyTraderKey(bestBuy.getTraderKey());
+                newTrade.setSellTraderKey(bestSell.getTraderKey());
+                newTrade.setTradeTime(System.currentTimeMillis());
+                newTrade.setBuyOrderId(bestBuy.getRecordKey());
+                newTrade.setSellOrderId(bestSell.getRecordKey());
 
                 int trdprice = Math.min(bestBuy.getLimitPrice(), bestSell.getLimitPrice());
                 int trdqty = Math.min(bestBuy.getQty(),bestSell.getQty());
-                forAdd.setTradePrice(trdprice);
-                forAdd.setTradeQty(trdqty);
+                newTrade.setTradePrice(trdprice);
+                newTrade.setTradeQty(trdqty);
                 matchQty = trdqty;
                 matchPrc = trdprice;
 
@@ -130,7 +133,7 @@ public class InstrumentMatcher {
                     bestSell.$apply(Matcher.MATCHER_ID);
                     // order is modified locally anyway => cache in sync
                 }
-                forAdd.$apply(Matcher.MATCHER_ID);
+                newTrade.$apply(Matcher.MATCHER_ID);
                 tradesCreated++;
 //                if ( tradesCreated > 1000 )
 //                    System.out.println("POK");

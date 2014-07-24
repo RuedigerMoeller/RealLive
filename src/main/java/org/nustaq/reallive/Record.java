@@ -4,6 +4,7 @@ import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.reallive.sys.annotations.ColOrder;
 import org.nustaq.serialization.FSTClazzInfo;
+import org.nustaq.serialization.util.FSTUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ public class Record implements Serializable {
         NONE, UPDATE_OR_ADD,
     }
     transient Mode mode = Mode.NONE;
+    transient FSTClazzInfo clazzInfo;
 
     @ColOrder(-2)
     String recordKey;
@@ -72,12 +74,13 @@ public class Record implements Serializable {
         return recordKey;
     }
 
-    public void copyTo( Record other ) {
+    public void copyTo( Record other) {
+        FSTClazzInfo classInfo = getClassInfo();
         if ( other.getClass() != getClass() )
             throw new RuntimeException("other record must be of same type");
-        FSTClazzInfo classInfo = getClassInfo();
         FSTClazzInfo.FSTFieldInfo[] fieldInfo = classInfo.getFieldInfo();
         other.table = table;
+        other.clazzInfo = clazzInfo;
 
         for (int i = 0; i < fieldInfo.length; i++) {
             FSTClazzInfo.FSTFieldInfo fi = fieldInfo[i];
@@ -119,10 +122,16 @@ public class Record implements Serializable {
     }
 
     /**
+     * Important: this method works only if the record was prepared/created by the
+     * createXX/prepareXX methods of a RLTable.
+     *
      * persist an add or update of a record. The id given is added to a resulting change broadcast, so a
      * process is capable to identify changes caused by itself.
      */
     public Future<String> $apply(int mutatorId) {
+        if ( table == null ) {
+            throw new RuntimeException("no table reference. use createForXX/prepareXX methods at RLTable to get valid instances.");
+        }
         if ( mode == Mode.ADD ) {
             return table.$addGetId(this,mutatorId);
         } else
@@ -140,7 +149,32 @@ public class Record implements Serializable {
             throw new RuntimeException("wrong mode. Use table.create* and table.prepare* methods.");
     }
 
+    public ChangeBroadcast computeBcast(String tableId, int originator) {
+        if ( originalRecord == null )
+            throw new RuntimeException("record not prepared");
+        if ( mode == Mode.ADD ) {
+            return ChangeBroadcast.NewAdd(tableId, this, originator);
+        }
+        if ( mode == Mode.UPDATE || mode == Mode.UPDATE_OR_ADD ) {
+            if ( originalRecord == null )
+                throw new RuntimeException("original record must not be null for update");
+            if ( recordKey == null )
+                throw new RuntimeException("recordKey must not be null on update");
+            RecordChange recordChange = computeDiff(true);
+            recordChange.setOriginator(originator);
+            copyTo(originalRecord); // nil all diffs. Once prepared, record can be reused for updateing
+            return ChangeBroadcast.NewUpdate(tableId, this, recordChange);
+        } else
+            throw new RuntimeException("wrong mode");
+    }
+
     public RecordChange computeDiff() {
+        return computeDiff(false);
+    }
+    /**
+     * @return a record change containing newFieldValues and changed fields
+     */
+    public RecordChange computeDiff(boolean withOld) {
         FSTClazzInfo classInfo = getClassInfo();
         FSTClazzInfo.FSTFieldInfo[] fieldInfo = classInfo.getFieldInfo();
 
@@ -191,14 +225,18 @@ public class Record implements Serializable {
                 e.printStackTrace();
             }
         }
-        change.setChanges(changedFields,changedValues);
+        change.setChanges(changedFields, changedValues, withOld ? originalRecord : null);
         return change;
     }
 
     public FSTClazzInfo getClassInfo() {
         if ( getRealLive() == null )
-            return null;
+            return clazzInfo;
         return getRealLive().getConf().getClassInfo(getClass());
+    }
+
+    public void setClazzInfo(FSTClazzInfo clazzInfo) {
+        this.clazzInfo = clazzInfo;
     }
 
     public RealLive getRealLive() {
@@ -257,5 +295,19 @@ public class Record implements Serializable {
     }
     public void incVersion() {
         version++;
+    }
+
+    public void prepareForUpdate(boolean addIfNotPresent, FSTClazzInfo info) {
+        if (info != null) {
+            clazzInfo = info;
+        }
+        try {
+            Record record = getClass().newInstance();
+            _setMode(addIfNotPresent ? Record.Mode.UPDATE_OR_ADD : Record.Mode.UPDATE);
+            copyTo(record);
+            _setOriginalRecord(record);
+        } catch (Exception e) {
+            FSTUtil.rethrow(e);
+        }
     }
 }

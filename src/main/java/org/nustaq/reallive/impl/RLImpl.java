@@ -7,6 +7,7 @@ import org.nustaq.reallive.RLStream;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.Record;
 import org.nustaq.reallive.RealLive;
+import org.nustaq.reallive.client.ReplicatedSet;
 import org.nustaq.reallive.sys.annotations.*;
 import org.nustaq.reallive.sys.metadata.ColumnMeta;
 import org.nustaq.reallive.sys.metadata.Metadata;
@@ -51,6 +52,11 @@ public class RLImpl extends RealLive {
     @Override
     public void createTable(Class<? extends Record> recordClass) {
         createTable(recordClass.getSimpleName(),recordClass);
+    }
+
+    @Override
+    public void createVirtualStream(String name, ReplicatedSet set) {
+        throw new RuntimeException("not supported in core implementation");
     }
 
     private void addToSysTable(String name, Class rowClass) {

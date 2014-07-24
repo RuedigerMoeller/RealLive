@@ -77,7 +77,8 @@ public class MachNetz extends WebSocketHttpServer {
                 Market.class,
                 Order.class,
                 Trade.class,
-                Trader.class
+                Trader.class,
+                Position.class
             }
         ).forEach( (clz) -> realLive.createTable(clz) );
 
@@ -115,6 +116,13 @@ public class MachNetz extends WebSocketHttpServer {
             new Trader("Angela", "hans@wurst.de", 11),
             new Trader("Mutti", "hans@wurst.de", 10),
         }).forEach((trader) -> realLive.getTable("Trader").$put(trader.getRecordKey(),trader,0));
+
+        realLive.stream("Trader").each( (change) -> {
+            if ( change.isAdd() ) {
+                Trader t = (Trader) change.getRecord();
+
+            }
+        });
 
         realLive.getTable("Instrument").$sync().then((r,e) -> {
 

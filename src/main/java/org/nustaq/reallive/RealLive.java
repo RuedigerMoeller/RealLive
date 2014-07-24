@@ -1,7 +1,10 @@
 package org.nustaq.reallive;
 
+import org.nustaq.reallive.client.ReplicatedSet;
 import org.nustaq.reallive.sys.metadata.Metadata;
 import org.nustaq.serialization.FSTConfiguration;
+
+import java.util.function.Predicate;
 
 /**
  * Created by ruedi on 21.06.14.
@@ -15,14 +18,6 @@ public abstract class RealLive {
         return conf;
     }
 
-//    public byte[] toByte( Object o ) {
-//        return conf.asByteArray((java.io.Serializable) o);
-//    }
-//
-//    public Object fromByte( byte b[] ) {
-//        return conf.asObject(b);
-//    }
-
     public String getDataDirectory() {
         return dataDirectory;
     }
@@ -35,6 +30,8 @@ public abstract class RealLive {
     public abstract RLStream stream(String tableId);
     public abstract Metadata getMetadata();
 
-    public abstract void createTable(String mkt, Class<? extends Record> recordClass);
+    public abstract void createTable(String name, Class<? extends Record> recordClass);
     public abstract void createTable(Class<? extends Record> recordClass);
+    public abstract void createVirtualStream(String name, ReplicatedSet set);
+
 }

@@ -1,5 +1,7 @@
 package org.nustaq.reallive;
 
+import org.nustaq.serialization.FSTClazzInfo;
+
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -25,6 +27,13 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
 
     public static <T extends Record> ChangeBroadcast<T> NewAdd(String tableId, T record, int origin) {
         return new ChangeBroadcast<>(ADD,tableId,record.getRecordKey(),record,null,origin);
+    }
+
+    public static <T extends Record> ChangeBroadcast<T> NewUpdate(String tableId, T t, String[] fieldNames, Object[] oldValues, FSTClazzInfo inf, int origin) {
+        ChangeBroadcast changeBroadcast = new ChangeBroadcast(UPDATE, tableId, t.getRecordKey(), t, null, origin);
+        changeBroadcast.appliedChange = new RecordChange(t.getRecordKey());
+        changeBroadcast.appliedChange.setChanges(fieldNames,oldValues,t,inf);
+        return changeBroadcast;
     }
 
     public static <T extends Record> ChangeBroadcast<T> NewError(String tableId, Object e, int origin) {
@@ -127,4 +136,5 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
     public boolean isARU() {
         return type == ADD || type == UPDATE || type == REMOVE;
     }
+
 }

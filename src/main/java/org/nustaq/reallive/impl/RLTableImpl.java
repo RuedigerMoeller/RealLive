@@ -9,6 +9,7 @@ import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.reallive.*;
 import org.nustaq.reallive.impl.storage.BinaryStorage;
 import org.nustaq.reallive.impl.storage.FSTBinaryStorage;
+import org.nustaq.reallive.sys.annotations.KeyLen;
 import org.nustaq.reallive.sys.tables.SysTable;
 
 import java.io.File;
@@ -41,17 +42,22 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         this.tableId = tableId;
         this.realLive = realLive;
         new File(realLive.getDataDirectory()).mkdirs();
-        idgen = new StringIdGen(tableId+":");
+        idgen = new StringIdGen(tableId.substring(0,2)+":");
         this.streamActor = streamActor;
         this.receiver = streamActor;
         try {
             FSTBinaryStorage<Record> recordFSTBinaryStorage = new FSTBinaryStorage<>();
             storage = recordFSTBinaryStorage;
+            int keyLen = 16;
+            KeyLen ks = clz.getAnnotation(KeyLen.class);
+            if ( ks != null ) {
+                keyLen = Math.max(ks.value(),keyLen);
+            }
             recordFSTBinaryStorage.init(
                 realLive.getDataDirectory() + File.separator + tableId+".mmf",
                 DEFAULT_TABLE_MEM_MB, // 1 GB init size
                 100000, // num records
-                20, // keylen
+                keyLen, // keylen
                 clz);
             idgen.setState(storage.getCustomStorage());
         } catch (Exception e) {

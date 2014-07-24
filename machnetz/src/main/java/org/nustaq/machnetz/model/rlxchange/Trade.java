@@ -1,6 +1,7 @@
 package org.nustaq.machnetz.model.rlxchange;
 
 import org.nustaq.reallive.Record;
+import org.nustaq.reallive.sys.annotations.Hidden;
 import org.nustaq.reallive.sys.annotations.RenderStyle;
 
 /**
@@ -8,10 +9,26 @@ import org.nustaq.reallive.sys.annotations.RenderStyle;
  */
 public class Trade extends Record {
 
+    @Hidden
+    String buyTraderKey;
+    @Hidden
+    String sellTraderKey;
+
     String buyOrderId;
     String sellOrderId;
 
     long tradeTime;
+
+    String instrumentKey;
+
+    public String getInstrumentKey() {
+        return instrumentKey;
+    }
+
+    public void setInstrumentKey(String instrumentKey) {
+        this.instrumentKey = instrumentKey;
+    }
+
     @RenderStyle("Price")
     int tradePrice;
     @RenderStyle("Qty")
@@ -65,5 +82,21 @@ public class Trade extends Record {
 
     public void setTradeQty(int tradeQty) {
         this.tradeQty = tradeQty;
+    }
+
+    public String getBuyTraderKey() {
+        return buyTraderKey;
+    }
+
+    public void setBuyTraderKey(String buyTraderKey) {
+        this.buyTraderKey = buyTraderKey;
+    }
+
+    public String getSellTraderKey() {
+        return sellTraderKey;
+    }
+
+    public void setSellTraderKey(String sellTraderKey) {
+        this.sellTraderKey = sellTraderKey;
     }
 }
