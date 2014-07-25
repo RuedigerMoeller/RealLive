@@ -122,6 +122,13 @@ public class RLImpl extends RealLive {
                 cm.setRenderStyle(rs.value());
             }
 
+            Hidden hid = fi.getField().getAnnotation(Hidden.class);
+            if ( hid != null ) {
+                cm.setHidden(true);
+            } else {
+                cm.setHidden(false);
+            }
+
             cm.setJavaType(fi.getType().getSimpleName());
 
             tableMeta.putColumn(cm.getName(),cm);

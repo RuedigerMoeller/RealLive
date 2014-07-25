@@ -258,8 +258,8 @@ var JOrder = function(obj) {
     this.j_qty = function() { return parseInt(this.qty,10); };
     this.j_version = function() { return parseInt(this.version,10); };
     this.j_creationTime = function() { return parseInt(this.creationTime,10); };
+    this.j_creationTimeString = function() { return this.creationTimeString; };
     this.j_instrumentKey = function() { return this.instrumentKey; };
-    this.j_originatingOrderId = function() { return this.originatingOrderId; };
     this.j_recordKey = function() { return this.recordKey; };
     this.j_text = function() { return this.text; };
     this.j_traderKey = function() { return this.traderKey; };
@@ -348,6 +348,7 @@ var JChangeBroadcast = function(obj) {
 
 var JColumnMeta = function(obj) {
     this.__typeInfo = 'ColumnMeta';
+    this.j_hidden = function() { return this.hidden?1:0; };
     this.j_fieldId = function() { return parseInt(this.fieldId,10); };
     this.j_order = function() { return parseInt(this.order,10); };
     this.j_align = function() { return this.align; };

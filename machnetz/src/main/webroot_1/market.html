@@ -1,97 +1,63 @@
-<table width="100%" class="rllightbg">
-    <tr>
-        <td style="background-color: #000000; color: #ffffff;" width="100%"><b>Market</b></td>
-        <td align="right" style="background-color: #000000; color: #ffffff;" >
-            <button ng-click="isMarketCollapsed = !isMarketCollapsed" style="background-color: #000; border: none; padding: 0px;">
-                <img src="img/arrow-down-128.png" width="20" height="20">
-            </button>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="2" width="100%">
-            <div collapse="isMarketCollapsed">
-                <rl-table table="Market" height="400px" rl-exclude="lastMatch,version"></rl-table>
-            </div>
-        </td>
-    </tr>
-</table>
-<br>
-<table width="100%" class="rllightbg">
-    <tr>
-        <td style="background-color: #000000; color: #ffffff;" width="100%"><b>Order Entry</b></td>
-        <td align="right" style="background-color: #000000; color: #ffffff;" >
-            <button ng-click="isOECollapsed = !isOECollapsed" style="background-color: #000;  border: none;  padding: 0px;">
-                <img src="img/arrow-down-128.png" width="20" height="20">
-            </button>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="2" width="100%">
-            <div collapse="isOECollapsed">
-                <div ng-controller="OrderEntry">
-                    <form class="simple-form">
-                        <table width="100%">
-                            <tr>
-                                <td colspan="3">
-                                    <input style="width: 30%;" type="text" ng-model="order.instrumentKey" class="form-control" placeholder="Instrument" required/>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="3">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="width: 100px;">
-                                    <input type="number" ng-model="order.limitPrice" class="form-control" placeholder="Limit" step="any" required/>
-                                </td>
-                                <td style="width: 100px;">
-                                    <input type="number" ng-model="order.qty" class="form-control" placeholder="Quantity" required/>
-                                </td>
-                                <td>
-                                    <input type="text" ng-model="order.text" class="form-control" placeholder="Text"/>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="3">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="3" align="right">
-                                    <table>
-                                        <tr>
-                                            <td style="padding-right: 6px; ">
-                                                <submit style="min-width: 80px;" class="btn btn-primary pull-right" ng-click="doOrder(true)">Buy</submit>
-                                            </td>
-                                            <td>
-                                                <submit style="min-width: 80px;" class="btn btn-danger pull-right" ng-click="doOrder(false)">Sell</submit>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                    </form>
+<table width="100%">
+<tr align="top">
+    <td style="vertical-align:top;">
+        <table class="rllightbg" width="100%">
+            <tr>
+                <td style="background-color: #000000; color: #ffffff;"><b>Market</b></td>
+                <td align="right" style="background-color: #000000; color: #ffffff;" >
+                    <button ng-click="isMarketCollapsed = !isMarketCollapsed" style="background-color: #000; border: none; padding: 0px;">
+                        <img src="img/arrow-down-128.png" width="18" height="18">
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <div collapse="isMarketCollapsed">
+                        <rl-table table="Market" height="400px" rl-exclude="lastMatch,version"></rl-table>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        <button rl-popover template="oepopover.html" >Click here</button>
+        <br>
+        <ng-include src="'orderentry.html'"></ng-include>
+        <br>
+        <table width="100%" class="rllightbg">
+            <tr>
+                <td style="background-color: #000000; color: #ffffff;" width="100%"><b>Orders</b></td>
+                <td align="right" style="background-color: #000000; color: #ffffff;" >
+                    <button ng-click="isOrderCollapsed = !isOrderCollapsed" style="background-color: #000; border: none; padding: 0px;">
+                        <img src="img/arrow-down-128.png" width="20" height="20">
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" width="100%">
+                    <div collapse="isOrderCollapsed">
+                        <rl-table table="Order" rl-query="it.traderKey=='{{user.recordKey}}'" height="200px" rl-exclude="version"></rl-table>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+    </td>
+
+    <td style="vertical-align:top; padding: 0px; padding-left: 8px;">
+        <div>
+            <div style="overflow-y:auto; min-width: 150px; max-height: 600px; padding: 0px;">
+                <div ng-repeat="position in positions.list" >
+                    <div style="padding-right: 12px; padding-bottom: 4px;"></div>
+                    <ng-include src="'position.html'"></ng-include>
                 </div>
             </div>
-        </td>
-    </tr>
+        </div>
+    </td>
+
+    <td width="40px">&nbsp;</td>
+
+</tr>
+
 </table>
-<br>
-<table width="100%" class="rllightbg">
-    <tr>
-        <td style="background-color: #000000; color: #ffffff;" width="100%"><b>Orders</b></td>
-        <td align="right" style="background-color: #000000; color: #ffffff;" >
-            <button ng-click="isOrderCollapsed = !isOrderCollapsed" style="background-color: #000; border: none; padding: 0px;">
-                <img src="img/arrow-down-128.png" width="20" height="20">
-            </button>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="2" width="100%">
-            <div collapse="isOrderCollapsed">
-                <rl-table table="Order" rl-query="it.traderKey=='{{user.recordKey}}'" height="200px" rl-exclude="version"></rl-table>
-            </div>
-        </td>
-    </tr>
-</table>
+
+
 

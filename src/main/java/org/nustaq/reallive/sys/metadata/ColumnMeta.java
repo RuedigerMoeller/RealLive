@@ -17,6 +17,15 @@ public class ColumnMeta implements Serializable{
     String bgColor;
     int order;
     private String displayWidth;
+    boolean hidden;
+
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
+    }
 
     public String getBgColor() {
         return bgColor;

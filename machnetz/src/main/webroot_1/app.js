@@ -22,7 +22,27 @@ app .config(['$routeProvider',
             });
     }]);
 
+app.directive('rlPopover', function ($compile,$templateCache,$http) {
 
+    return {
+        //restrict: "E",
+        link: function (scope, element, $attrs) {
+            $http.get($attrs.template,{cache:true}).success(function(data, status) {
+                var options = {
+                    content: data,
+                    placement: "right",
+                    html: true,
+                    animation: true,
+//                    viewport: {selector: '#viewport', padding: 0},
+//                trigger: 'hover',
+                    date: scope.date,
+                    template: "<div class='popover' style='border-radius: 3px; padding: 8px;'><div class='arrow'></div><div style='padding: 0px;' class='popover-content'></div></div>"
+                };
+                $(element).popover(options);
+            });
+        }
+    };
+});
 
 app.directive('rlHi', function() {
     var rl_elemid = 1;
@@ -226,6 +246,7 @@ app.controller('OrderEntry', function($scope) {
 
 app.controller('RLAdmin', function ($scope,$modal) {
 
+    var mainScope = $scope;
     $scope.isOECollapsed = true;
 
     $scope.loggedIn = false;
@@ -253,6 +274,12 @@ app.controller('RLAdmin', function ($scope,$modal) {
             });
         };
         RealLive.doConnect($scope.host, $scope.port,$scope.websocketDir);
+    };
+
+    $scope.onLoggedIn = function() {
+        mainScope.loggedIn = true;
+        mainScope.positions = new RLResultSet();
+        RealLive.subscribeSet("Position", 'true', mainScope.positions);
     };
 
     $scope.openLogin = function() {
@@ -286,11 +313,11 @@ app.controller('RLAdmin', function ($scope,$modal) {
                         }
                         var subsId = RealLive.subscribeKey('Trader', self.user, function(change) {
                             if ( change.type == RL_ADD ) {
-                                self.loggedIn = true;
-                                $scope.$parent.user = change.newRecord;
-                                instance.close(true);
+                                mainScope.user = change.newRecord;
+                                mainScope.onLoggedIn();
                                 document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,0)';
-                                setTimeout(function() {document.getElementById('rl-app-overlay').style.display='none';}, 2000);
+                                setTimeout(function() {document.getElementById('rl-app-overlay').style.display='none';}, 1000);
+                                instance.close(true);
                             } else {
                                 if (!self.loggedIn) {
                                     self.msg = "Invalid user or password. retry.";
@@ -305,6 +332,7 @@ app.controller('RLAdmin', function ($scope,$modal) {
         })
 
     };
+
     $scope.doConnect();
 
 });

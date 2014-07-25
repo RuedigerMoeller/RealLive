@@ -1,0 +1,18 @@
+<table class="rllightbg" style="border: solid black 1px; padding: 4px;" width="100%">
+    <tr>
+        <td colspan="2" align="center" style="border-bottom: solid black 1px; padding: 4px; color: #fff; background-color: {{position.qty<0 ? '#711' : '#117'}};">
+            <b>{{position.instrKey}}</b>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 3px;" align="right">Qty:</td>
+        <td style="padding: 3px;" align="right"><div rl-hi>{{position.qty}}</div></td></tr>
+    <tr>
+        <td style="padding: 3px;" align="right">AvgPrice:&nbsp;</td>
+        <td style="padding: 3px;" align="right"><div rl-hi>{{position.avgPrice/100|number:2}}</div></td>
+    </tr>
+    <tr>
+        <td style="padding: 3px;" align="right">Sum:</td>
+        <td style="padding: 3px;" align="right"><div rl-hi>{{position.sumPrice/100|number:2}}</div></td>
+    </tr>
+</table>

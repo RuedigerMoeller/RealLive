@@ -1,8 +1,9 @@
 package org.nustaq.machnetz.model.rlxchange;
 
 import org.nustaq.reallive.Record;
-import org.nustaq.reallive.sys.annotations.RenderStyle;
+import org.nustaq.reallive.sys.annotations.*;
 
+import java.text.DateFormat;
 import java.util.Date;
 
 /**
@@ -13,22 +14,30 @@ import java.util.Date;
  */
 public class Order extends Record {
 
+    @ColOrder(2) @DisplayWidth("120px")
     String instrumentKey;
 
-    @RenderStyle("BS")
+    @ColOrder(1)
+    @RenderStyle("BS") @DisplayWidth("60px") @DisplayName("B/S")
     boolean buy; // else sell
 
-    @RenderStyle("Price")
+    @ColOrder(3)
+    @RenderStyle("Price") @DisplayWidth("80px")
     int limitPrice;
+    @ColOrder(4)
     @RenderStyle("Qty")
     int qty;
 
-    String traderKey;
-    String originatingOrderId; // partial matches
     String text;
 
+    @Hidden
+    String traderKey;
+
+    @Hidden
     long creationTime;
-    transient String creationTimeString;
+
+    String creationTimeString;
+
 
     public long getCreationTime() {
         return creationTime;
@@ -36,12 +45,15 @@ public class Order extends Record {
 
     public void setCreationTime(long creationTime) {
         this.creationTime = creationTime;
+        setTimeStringFrom(creationTime);
     }
 
     public String getCreationTimeString() {
-        if ( creationTimeString == null )
-            creationTimeString = new Date(creationTime).toString();
         return creationTimeString;
+    }
+
+    public void setCreationTimeString(String creationTimeString) {
+        this.creationTimeString = creationTimeString;
     }
 
     public String getText() {
@@ -92,11 +104,7 @@ public class Order extends Record {
         this.traderKey = traderKey;
     }
 
-    public String getOriginatingOrderId() {
-        return originatingOrderId;
-    }
-
-    public void setOriginatingOrderId(String originatingOrderId) {
-        this.originatingOrderId = originatingOrderId;
+    public void setTimeStringFrom(long timeStringFrom) {
+        this.creationTimeString = DateFormat.getDateTimeInstance().format(new Date(timeStringFrom));
     }
 }
