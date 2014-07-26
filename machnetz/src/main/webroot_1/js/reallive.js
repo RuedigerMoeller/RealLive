@@ -150,11 +150,14 @@ var RealLive = new function() {
                                         displayName: cols[col].displayName,
                                         width:  colWidth,
                                         groupable: false,
+                                        _fieldExpr: fieldExpr,
+                                        _align: align,
+                                        _bgColor: bgColor
 //                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()" id="{{row.entity.recordKey}}#COL_FIELD"><span ng-cell-text>{{COL_FIELD}}</span></div>'
-                                        cellTemplate:
-                                           '<div class="ngCellText" style="text-align: '+align + '; '+(bgColor?'background-color:'+bgColor+';':'')+'"'+
-                                            'ng-class="col.colIndex()"><span style="transition: background-color .2s ease-out; padding: 3px; " ' +
-                                            'ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">'+fieldExpr+'</span></div>'
+//                                        cellTemplate:
+//                                           '<div class="ngCellText" style="text-align: '+align + '; '+(bgColor?'background-color:'+bgColor+';':'')+'"'+
+//                                            'ng-class="col.colIndex()"><span style="transition: background-color .2s ease-out; padding: 3px; " ' +
+//                                            'ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">'+fieldExpr+'</span></div>'
                                     }
                                 );
                                 indexToFieldName[cols[col].fieldId] = cols[col].name;

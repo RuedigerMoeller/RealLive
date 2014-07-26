@@ -1,3 +1,4 @@
+
 var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid', 'ngRoute']);
 
 app .config(['$routeProvider',
@@ -29,7 +30,9 @@ app.directive('rlPopover', function ($compile,$templateCache,$http) {
         link: function (scope, element, $attrs) {
             $http.get($attrs.template,{cache:true}).success(function(data, status) {
                 var options = {
-                    content: data,
+                    content: function() {
+                        return $compile(data)(scope);
+                    },
                     placement: "right",
                     html: true,
                     animation: true,
@@ -132,18 +135,23 @@ app.directive('rlTable', function() {
     return {
         restrict: 'E',
         scope: true,
-        exclude: {},
         controller: function( $scope, $attrs ) {
             $scope.rlset = new RLResultSet();
             $scope.height = '300px';
+            $scope.exclude = {};
+            $scope.links = {};
+
             if ( $attrs.rlExclude ) {
                 var list = $attrs.rlExclude.split(",");
-                $scope.exclude = {};
                 for ( var i = 0; i < list.length; i++ )
                     $scope.exclude[list[i]] = true;
-            } else {
-                $scope.exclude = {};
             }
+            if ( $attrs.links ) {
+                var list = $attrs.links.split(",");
+                for ( var i = 0; i < list.length; i++ )
+                    $scope.links[list[i]] = true;
+            }
+
             if ( $attrs.height ) {
                 $scope.height = $attrs.height;
             }
@@ -162,7 +170,15 @@ app.directive('rlTable', function() {
                 for (var i=0; i < cols.length; i++ ) {
                     var col = cols[i];
                     if ( ! $scope.exclude[col.field] ) {
-                        res.push(col);
+                        var copiedCol = JSON.parse(JSON.stringify(col));
+                        if ( $scope.links[col.field] ) {
+                            copiedCol._fieldExpr = '<span class="rlhover" ng-click="cellClicked(\''+$attrs.table+'\',\''+col.field+'\' ,row.entity.recordKey,row.entity.'+col.field+',$event)">'+copiedCol._fieldExpr+"</span>";
+                        }
+                        copiedCol.cellTemplate =
+                           '<div class="ngCellText" style="text-align: '+copiedCol._align + '; '+(copiedCol._bgColor?'background-color:'+copiedCol._bgColor+';':'')+'"'+
+                            'ng-class="col.colIndex()"><span style="transition: background-color .2s ease-out; padding: 3px; " ' +
+                            'ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">'+copiedCol._fieldExpr+'</span></div>';
+                        res.push(copiedCol);
                     }
                 }
                 return res;
@@ -244,7 +260,7 @@ app.controller('OrderEntry', function($scope) {
     }
 });
 
-app.controller('RLAdmin', function ($scope,$modal) {
+app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
 
     var mainScope = $scope;
     $scope.isOECollapsed = true;
@@ -261,6 +277,38 @@ app.controller('RLAdmin', function ($scope,$modal) {
         columnDefs: 'model.tables.SysTable.columnsNGTableConf',
         enableColumnResize: true,
         multiSelect: false
+    };
+
+    $scope.cellClicked = function(table,field,recordkey, value, event) {
+        console.log("clicked "+table+' '+field+' '+recordkey+" "+value);
+        if ( 'Market' == table && field == 'ask' ) {
+            $http.get("oepopover.html",{cache:true}).success(function(data, status) {
+                var options = {
+                    content: $compile(data)($scope),
+                    placement: "bottom",
+                    container: 'body',
+                    html: true,
+                    animation: true,
+                    date: $scope.date,
+                    template: "<div class='popover' style='border-radius: 3px; padding: 8px;'><div class='arrow'></div><div style='padding: 0px;' class='popover-content'></div></div>"
+                };
+                var elem = $(event.target);
+//                var elem = $(document.body);
+//                if ($scope.lastPop )
+//                    $scope.lastPop.popover('hide');
+//                window.setTimeout(function() {
+                    elem.popover(options);
+                    elem.popover('show');
+                    document.getElementById('rl-app-overlay').style.display='block';
+                    document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,.2)';
+                    document.getElementById('rl-app-overlay').onclick = function() {
+                        elem.popover('hide');
+                        document.getElementById('rl-app-overlay').style.display='none';
+                        document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,0)';
+                    };
+//                },500);
+            });
+        }
     };
 
     $scope.doConnect = function () {
