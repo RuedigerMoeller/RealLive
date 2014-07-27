@@ -2,6 +2,7 @@
 var JTrader = function(obj) {
     this.__typeInfo = 'Trader';
     this.j_cashBalance = function() { return parseInt(this.cashBalance,10); };
+    this.j_margined = function() { return parseInt(this.margined,10); };
     this.j_version = function() { return parseInt(this.version,10); };
     this.j_email = function() { return this.email; };
     this.j_recordKey = function() { return this.recordKey; };

@@ -6,22 +6,21 @@
                 <td style="background-color: #000000; color: #ffffff;"><b>Market</b></td>
                 <td align="right" style="background-color: #000000; color: #ffffff;" >
                     <button ng-click="isMarketCollapsed = !isMarketCollapsed" style="background-color: #000; border: none; padding: 0px;">
-                        <img src="img/arrow-down-128.png" width="18" height="18">
+                        <img src="img/arrow-down-128.png" width="18" height="20">
                     </button>
                 </td>
             </tr>
             <tr>
                 <td colspan="2">
                     <div collapse="isMarketCollapsed">
-                        <rl-table table="Market" height="400px" rl-exclude="lastMatch,version" links="ask,bid"></rl-table>
+                        <rl-table table="Market" height="400px" rl-exclude="lastMatch,version" links="ask,bid,askQty,bidQty"></rl-table>
                     </div>
                 </td>
             </tr>
         </table>
-        <button rl-popover template="oepopover.html" >Click here</button>
         <br>
-        <ng-include src="'orderentry.html'"></ng-include>
-        <br>
+        <!--<ng-include src="'orderentry.html'"></ng-include>-->
+        <!--<br>-->
         <table width="100%" class="rllightbg">
             <tr>
                 <td style="background-color: #000000; color: #ffffff;" width="100%"><b>Orders</b></td>

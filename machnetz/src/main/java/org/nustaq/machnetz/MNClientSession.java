@@ -59,10 +59,11 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     public int getSessionId() { return getActor().sessionId; }
 
     public void $onOpen(ChannelHandlerContext ctx) {
-
+        checkThread();
     }
 
     public void $onClose(ChannelHandlerContext ctx) {
+        checkThread();
         subscriptions.keySet().forEach((subsid) -> unsubscribe(subsid));
         self().$stop();
         server.removeSession(ctx);
@@ -74,6 +75,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     final MethodType rpctype = MethodType.methodType(Object.class,Invocation.class);
     public void $onBinaryMessage(ChannelHandlerContext ctx, byte[] buffer) {
+        checkThread();
 //        System.out.println("minmsg");
         final Object msg;
         try {
@@ -168,33 +170,40 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
                     Trade trade = (Trade) change.getRecord();
                     boolean isBuyer = trade.getBuyTraderKey().equals(traderKey);
                     boolean isSeller = trade.getSellTraderKey().equals(traderKey);
-                    if (isBuyer || isSeller) {
-                        Position p = positionMap.get(trade.getInstrumentKey());
-                        if (p == null) {
-                            p = new Position();
-                            p.setInstrKey(trade.getInstrumentKey());
-                            positionMap.put(trade.getInstrumentKey(), p);
-                            p._setId(trade.getInstrumentKey() + "#" + traderKey);
-                            p.prepareForUpdate(false, classInfo);
-                            myPosition.onChangeReceived(ChangeBroadcast.NewAdd("Position", p, 0));
-                        }
-                        int oldQty = p.getQty();
-                        int oldSum = p.getSumPrice();
-                        if (isBuyer) {
-                            p.setQty(oldQty + trade.getTradeQty());
-                            p.setSumPrice(oldSum + trade.getTradeQty()*trade.getTradePrice());
-                        } else {
-                            p.setQty(oldQty - trade.getTradeQty());
-                            p.setSumPrice(oldSum - trade.getTradeQty()*trade.getTradePrice());
-                        }
-                        p.updateAvg();
-                        myPosition.onChangeReceived(p.computeBcast("Position", 0));
+                    if (isBuyer) {
+                        processBSPosition(myPosition, classInfo, trade, isBuyer);
+                    }
+                    if ( isSeller ) {
+                        processBSPosition(myPosition, classInfo, trade, !isSeller);
                     }
                 } else if (!change.isSnapshotDone()) {
                     throw new RuntimeException("Wat ?");
                 }
             }
         );
+    }
+
+    private void processBSPosition(ReplicatedSet<Position> myPosition, FSTClazzInfo classInfo, Trade trade, boolean isBuyer) {
+        Position p = positionMap.get(trade.getInstrumentKey());
+        if (p == null) {
+            p = new Position();
+            p.setInstrKey(trade.getInstrumentKey());
+            positionMap.put(trade.getInstrumentKey(), p);
+            p._setId(trade.getInstrumentKey() + "#" + traderKey);
+            p.prepareForUpdate(false, classInfo);
+            myPosition.onChangeReceived(ChangeBroadcast.NewAdd("Position", p, 0));
+        }
+        int oldQty = p.getQty();
+        int oldSum = p.getSumPrice();
+        if (isBuyer) {
+            p.setQty(oldQty + trade.getTradeQty());
+            p.setSumPrice(oldSum - trade.getTradeQty()*trade.getTradePrice());
+        } else {
+            p.setQty(oldQty - trade.getTradeQty());
+            p.setSumPrice(oldSum + trade.getTradeQty()*trade.getTradePrice());
+        }
+        p.updateAvg();
+        myPosition.onChangeReceived(p.computeBcast("Position", 0));
     }
 
     Object addOrder(Invocation inv) {
@@ -205,7 +214,9 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
             return NO_RESULT;
         }
         toAdd.setCreationTime(System.currentTimeMillis());
-        order.$addGetId(toAdd, 0).then((orderId, e) -> sendReply(inv, orderId == null ? e : orderId));
+        server.getMatcher().$addOrder(toAdd).then( (r,e) -> {
+            sendReply(inv, r != null ? r : "");
+        });
         return NO_RESULT;
     }
 

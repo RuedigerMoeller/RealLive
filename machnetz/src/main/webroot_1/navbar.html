@@ -31,7 +31,10 @@
         <ul class="nav nav-pills pull-right">
             <li>
                 <div style="padding-top: 14px; padding-right: 24px; ">
-                    Welcome <b>{{user.recordKey}}</b>, your balance is <span rl-hi><b>{{user.cashBalance}}€</b></span>
+                    Welcome <b>{{user.recordKey}}</b>,
+                    available:<span rl-hi><b>{{(user.cashBalance-user.margined)/100|number:2}}€</b></span>
+                    blocked:<span rl-hi><b>{{user.margined/100|number:2}}€</b></span>
+                    overall:<span rl-hi><b>{{user.cashBalance/100|number:2}}€</b></span>
                 </div>
             </li>
         </ul>

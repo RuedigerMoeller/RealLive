@@ -41,6 +41,7 @@ public class MachNetz extends WebSocketHttpServer {
 
     Scheduler clientScheduler = new ElasticScheduler(MAX_THREADS, CLIENTQ_SIZE);
     private RealLive realLive;
+    Matcher matcher;
 
     public MachNetz(File contentRoot) {
         super(contentRoot);
@@ -49,6 +50,10 @@ public class MachNetz extends WebSocketHttpServer {
 
     public RealLive getRealLive() {
         return realLive;
+    }
+
+    public Matcher getMatcher() {
+        return matcher;
     }
 
     protected void initServer() {
@@ -108,13 +113,15 @@ public class MachNetz extends WebSocketHttpServer {
         });
 
         Arrays.stream( new Trader[] {
-            new Trader("Hans", "hans@wurst.de", 100),
-            new Trader("Hubert", "hans@wurst.de", 300),
-            new Trader("Ruedi", "hans@wurst.de", 200),
-            new Trader("Hara", "hans@wurst.de", 2000),
-            new Trader("Kiri", "hans@wurst.de", 3000),
-            new Trader("Angela", "hans@wurst.de", 11),
-            new Trader("Mutti", "hans@wurst.de", 10),
+            new Trader("Hans", "hans@wurst.de", 100000),
+            new Trader("Hubert", "hans@wurst.de", 300000),
+            new Trader("Ruedi", "hans@wurst.de", 200000),
+            new Trader("Hara", "hans@wurst.de", 2000000),
+            new Trader("Kiri", "hans@wurst.de", 3000000),
+            new Trader("Angela", "hans@wurst.de", 11000),
+            new Trader("Mutti", "hans@wurst.de", 100000),
+            new Trader("Feed0", "hans@wurst.de", Integer.MAX_VALUE),
+            new Trader("Feed1", "hans@wurst.de", Integer.MAX_VALUE),
         }).forEach((trader) -> realLive.getTable("Trader").$put(trader.getRecordKey(),trader,0));
 
         realLive.stream("Trader").each( (change) -> {
@@ -128,11 +135,11 @@ public class MachNetz extends WebSocketHttpServer {
 
             realLive.getTable("Instrument").stream().each( change -> {
                 if ( change.isSnapshotDone() ) {
-                    Matcher matcher = Actors.AsActor(Matcher.class);
+                    matcher = Actors.AsActor(Matcher.class);
                     matcher.$init(realLive);
 
                     Feeder feeder = Actors.AsActor(Feeder.class);
-                    feeder.$feed0(realLive);
+                    feeder.$feed0(realLive,matcher);
                 } else {
                     System.out.println("instr change "+change.getRecord());
                 }
@@ -148,15 +155,18 @@ public class MachNetz extends WebSocketHttpServer {
     }
     public static class Feeder extends Actor<Feeder> {
 
-        public void $feed0( RealLive rl ) {
+        public void $feed0( RealLive rl, Matcher m ) {
             Thread.currentThread().setName("Feeder");
-            delayed(5000, () -> self().$feed(rl));
+            delayed(5000, () -> self().$feed(rl,m));
         }
 
         int orderCount = 0;
-        public void $feed( RealLive rl ) {
+        public void $feed( RealLive rl, Matcher m ) {
             RLTable<Instrument> instr = rl.getTable("Instrument");
             instr.stream().each((change) -> {
+                if ("USA".equals(change.getRecordKey())) {
+                    return;
+                }
                 if ( orderCount > 500 ) {
                     RLTable orTable = rl.getTable("Order");
                     orTable.stream().each((delChange) -> {
@@ -173,27 +183,25 @@ public class MachNetz extends WebSocketHttpServer {
                 } else {
                     if ( change.isAdd() ) {
                         Instrument instrument = change.getRecord();
-                        Order newOrder = (Order) rl.getTable("Order").createForAdd();
+//                        Order newOrder = (Order) rl.getTable("Order").createForAdd();
+                        Order newOrder = new Order();
                         newOrder.setInstrumentKey(instrument.getRecordKey());
                         boolean isBuy = Math.random() > .5;
                         if ( isBuy ) {
                             newOrder.setBuy(isBuy);
                             newOrder.setQty((int) (Math.random() * 70 + 50));
-                            newOrder.setLimitPrice((int) (Math.random() * 1500 + 500));
+                            newOrder.setLimitPrice((int) (Math.random() * 888 + 1));
                         } else {
                             newOrder.setBuy(isBuy);
                             newOrder.setQty((int) (Math.random() * 70 + 50));
-                            newOrder.setLimitPrice((int) (Math.random() * 1500 + 1000));
+                            newOrder.setLimitPrice((int) (Math.random() * 500 + 500));
                         }
-                        switch ((int)(Math.random()*3)) {
+                        switch ((int)(Math.random()*2)) {
                             case 0:
-                                newOrder.setTraderKey("Hara");
+                                newOrder.setTraderKey("Feed0");
                                 break;
                             case 1:
-                                newOrder.setTraderKey("Hubert");
-                                break;
-                            case 2:
-                                newOrder.setTraderKey("Kiri");
+                                newOrder.setTraderKey("Feed1");
                                 break;
                         }
                         newOrder.setCreationTime(System.currentTimeMillis());
@@ -202,13 +210,14 @@ public class MachNetz extends WebSocketHttpServer {
                         for ( int i = 0; i < len; i++)
                             t+=" poaskdpaokds";
                         newOrder.setText(t);
-                        newOrder.$apply(2);
+//                        newOrder.$apply(2);
+                        m.$addOrder(newOrder);
                         orderCount++;
                     }
                 }
             });
             if ( ! stopF ) {
-                delayed(2000, () -> self().$feed(rl));
+                delayed(2000, () -> self().$feed(rl,m));
             }
         }
 

@@ -8,6 +8,7 @@ import org.nustaq.serialization.util.FSTUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.function.Predicate;
 
 /**
  * Created by ruedi on 01.06.14.
@@ -74,6 +75,17 @@ public class Record implements Serializable {
         return recordKey;
     }
 
+    public <T extends Record> T createCopy() {
+        T record = null;
+        try {
+            record = (T) getClass().newInstance();
+        } catch (Exception e) {
+            FSTUtil.rethrow(e);
+        }
+        copyTo(record);
+        return record;
+    }
+
     public void copyTo( Record other) {
         FSTClazzInfo classInfo = getClassInfo();
         if ( other.getClass() != getClass() )
@@ -119,6 +131,21 @@ public class Record implements Serializable {
                 e.printStackTrace();
             }
         }
+    }
+
+    public Future<Boolean> $applyCAS(Predicate condition, int mutatorId) {
+        if ( mode == Mode.UPDATE ) {
+            if ( originalRecord == null )
+                throw new RuntimeException("original record must not be null for update");
+            if ( recordKey == null )
+                throw new RuntimeException("recordKey must not be null on update");
+            RecordChange recordChange = computeDiff();
+            recordChange.setOriginator(mutatorId);
+            Future result = table.$updateCAS(recordChange, condition);
+            copyTo(originalRecord); // nil all diffs. Once prepared, record can be reused for updateing
+            return result;
+        } else
+            throw new RuntimeException("wrong mode. applyCAS only possible for update of existing records");
     }
 
     /**

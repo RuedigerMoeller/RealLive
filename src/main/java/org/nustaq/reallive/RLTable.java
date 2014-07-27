@@ -2,6 +2,8 @@ package org.nustaq.reallive;
 
 import org.nustaq.kontraktor.Future;
 
+import java.util.function.Predicate;
+
 /**
  * Created by ruedi on 21.06.14.
  */
@@ -75,6 +77,12 @@ public interface RLTable<T extends Record> {
      * @param addIfNotPresent
      */
     public void $update(RecordChange<String,T> change, boolean addIfNotPresent );
+
+    /**
+     * update a given record. Usually done calling record.apply().
+     * @param change
+     */
+    public Future<Boolean> $updateCAS(RecordChange<String,T> change, Predicate<T> condition);
 
     /**
      * when the resulting future is triggered, all operations that have been sent before are guaranteed to

@@ -36,6 +36,8 @@ td {
 
 .rlhover:hover {
     outline: 1px dotted #444;
+    text-decoration: underline;
+    color: #77f;
 }
 
 .popover {

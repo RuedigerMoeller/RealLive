@@ -22,7 +22,7 @@ public class Instrument extends Record {
     String expiryDateString;
     @RenderStyle("Qty") @ColOrder(1) @BGColor("rgba(0,0,0,0.2)") @DisplayWidth("110px")
     int contractsTraded;
-    @RenderStyle("Price") @ColOrder(2) @BGColor("rgba(0,255,0,0.2)") @DisplayWidth("110px")
+    @RenderStyle("Price") @ColOrder(2) @BGColor("rgba(0,0,255,0.2)") @DisplayWidth("110px")
     int volumeTraded;
 
     public Instrument() {

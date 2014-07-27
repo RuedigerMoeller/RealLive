@@ -186,6 +186,19 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override
+    public Future<Boolean> $updateCAS(RecordChange<String, T> change, Predicate<T> condition) {
+        T t = get(change.getId());
+        if ( t == null ) {
+            return new Promise<>(false);
+        }
+        boolean success = condition.test(t);
+        if ( success ) {
+            $update(change,false);
+        }
+        return new Promise<>(true);
+    }
+
+    @Override
     public void $remove(String key, int originator) {
         checkThread();
         Record record = storage.removeAndGet(key);

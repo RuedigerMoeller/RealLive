@@ -2,12 +2,14 @@
     <tr>
         <td colspan="2" width="100%">
             <div>
-                <div ng-controller="OrderEntry">
+                <div rl-order="OrderEntry">
                     <form class="simple-form">
                         <table width="100%">
                             <tr>
                                 <td colspan="3">
-                                    <b style="font-size: 16px;">Place <span style="padding: 6px; border-radius: 2px; color: #fff; background-color: #117;">Buy</span> order on <span style="padding: 6px; border-radius: 2px; background-color: #eee;">Germany</span><br>&nbsp;</b>
+                                    <b style="font-size: 16px;">Place <span style="padding: 4px; border-radius: 2px; color: #fff; background-color: {{ctx.order.buy==0?'#711':'#117'}};">
+                                        {{ctx.order.buy==0?'Sell':'Buy'}}
+                                    </span> order on <span style="padding: 6px; border-radius: 2px; background-color: #eee;">{{ctx.order.instrumentKey}}</span><br>&nbsp;</b>
                                 </td>
                             </tr>
                             <tr>
@@ -16,13 +18,13 @@
                             </tr>
                             <tr>
                                 <td style="width: 100px;">
-                                    <input type="number" ng-model="order.limitPrice" class="form-control" placeholder="Limit" step="any" required autofocus/>
+                                    <input type="number" ng-model="ctx.order.limitPrice" class="form-control" placeholder="Limit" step="any" required autofocus/>
                                 </td>
                                 <td style="width: 100px;">
-                                    <input type="number" ng-model="order.qty" class="form-control" placeholder="Quantity" required/>
+                                    <input type="number" ng-model="ctx.order.qty" class="form-control" placeholder="Quantity" required/>
                                 </td>
                                 <td>
-                                    <input type="text" ng-model="order.text" class="form-control" placeholder="Text"/>
+                                    <input type="text" ng-model="ctx.order.text" class="form-control" placeholder="Text"/>
                                 </td>
                             </tr>
                             <tr>
@@ -31,7 +33,7 @@
                             </tr>
                             <tr>
                                 <td colspan="3" align="right">
-                                    <submit style="min-width: 80px;" class="btn btn-success pull-right" ng-click="doOrder(false)">Submit</submit>
+                                    <submit style="min-width: 80px;" class="btn btn-success pull-right" ng-click="doOrder()" ng-disabled="ctx.orderUnderway">Submit</submit>
                                 </td>
                             </tr>
                         </table>

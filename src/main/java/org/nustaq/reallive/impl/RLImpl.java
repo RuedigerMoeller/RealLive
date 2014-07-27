@@ -51,6 +51,8 @@ public class RLImpl extends RealLive {
 
     @Override
     public void createTable(Class<? extends Record> recordClass) {
+        if ( recordClass.getAnnotation(Virtual.class) != null )
+            return;
         createTable(recordClass.getSimpleName(),recordClass);
     }
 

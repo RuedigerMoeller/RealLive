@@ -102,18 +102,21 @@ app.directive( 'rlRecord', function()  {
                RealLive.subscribeKey($scope.table,$scope.recordKey,function(change) {
                    switch ( change.type ) {
                        case RL_ADD: {
-                           $scope.record = change.newRecord;
+                           $scope.$apply(function() {
+                               $scope.record = change.newRecord;
+                           });
                        } break;
                        case RL_REMOVE: {
                            $scope.record = null;
                        } break;
                        case RL_SNAPSHOT_DONE:
                            $scope.snapFin = true;
+//                           scope.$digest();
                            break;
                        case RL_UPDATE: {
-                           $scope.$apply( function() {
-                               var rec = $scope.record;
-                               if ( rec ) {
+                           var rec = $scope.record;
+                           if ( rec ) {
+                               $scope.$apply(function() {
                                    var changeArray = change.appliedChange.fieldIndex;
                                    for ( var i = 0; i < changeArray.length; i++ ) {
                                        var fieldId = changeArray[i];
@@ -121,8 +124,9 @@ app.directive( 'rlRecord', function()  {
                                        var fieldName = RealLive.getFieldName(change.tableId,fieldId);
                                        rec[fieldName] = newValue;
                                    }
-                               }
-                           });
+                                   $scope.record = JSON.parse(JSON.stringify(rec));
+                               });
+                           }
                        } break;
                    }
                });
@@ -172,7 +176,7 @@ app.directive('rlTable', function() {
                     if ( ! $scope.exclude[col.field] ) {
                         var copiedCol = JSON.parse(JSON.stringify(col));
                         if ( $scope.links[col.field] ) {
-                            copiedCol._fieldExpr = '<span class="rlhover" ng-click="cellClicked(\''+$attrs.table+'\',\''+col.field+'\' ,row.entity.recordKey,row.entity.'+col.field+',$event)">'+copiedCol._fieldExpr+"</span>";
+                            copiedCol._fieldExpr = '<span class="rlhover" ng-click="cellClicked(\''+$attrs.table+'\',\''+col.field+'\' ,row.entity,$event)">'+copiedCol._fieldExpr+"</span>";
                         }
                         copiedCol.cellTemplate =
                            '<div class="ngCellText" style="text-align: '+copiedCol._align + '; '+(copiedCol._bgColor?'background-color:'+copiedCol._bgColor+';':'')+'"'+
@@ -217,11 +221,16 @@ app.directive('rlTable', function() {
                             RealLive.highlightElem(elementId);
                         }
 //                        $scope.$digest();
-                    }
+                    } else
                     if (change.type == RL_SNAPSHOT_DONE) {
                         $scope.$digest();
-                    }
-                    if (change.type == RL_ADD) {
+                    } else
+                    if (change.type == RL_ADD && $scope.rlset.snapFin ) {
+                        var elementId = 'row#' + change.recordKey;
+                        RealLive.highlightElem(elementId);
+                        $scope.$digest();
+                    } else
+                    if (change.type == RL_REMOVE && $scope.rlset.snapFin ) {
                         var elementId = 'row#' + change.recordKey;
                         RealLive.highlightElem(elementId);
                         $scope.$digest();
@@ -230,7 +239,6 @@ app.directive('rlTable', function() {
                 RealLive.subscribeSet($attrs.table, $attrs.rlQuery ? $attrs.rlQuery : "true", $scope.rlset, null); //$scope);
             };
 
-            $scope.$watch('rlset.list.length');
             $attrs.$observe('rlQuery', function() {
                 $scope.rlset.unsubscribe();
                 RealLive.onModelLoaded(subscribe);
@@ -245,19 +253,19 @@ app.directive('rlTable', function() {
     }
 });
 
-app.controller('OrderEntry', function($scope) {
-    $scope.order = new JOrder();
-    $scope.order.instrumentKey = 'Germany';
+var rlGlobalOrderContext;
 
-    $scope.doOrder = function(buy) {
-        $scope.order.buy = buy;
-        $scope.order.traderKey = $scope.user.recordKey;
-        var transmittedOrder = new JOrder($scope.order);
-        transmittedOrder.limitPrice = (transmittedOrder.limitPrice*100)|0;
-        RealLive.call("addOrder", transmittedOrder, function(result) {
-            console.log("Order sucess "+result);
-        });
-    }
+app.directive('rlOrder', function() {
+    return {
+        scope: false,
+        controller: function($scope) {
+
+            $scope.ctx = rlGlobalOrderContext;
+            $scope.doOrder = function() {
+                rlGlobalOrderContext.doOrder();
+            }
+        }
+    };
 });
 
 app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
@@ -272,6 +280,7 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
     $scope.socketConnected = false;
 
     $scope.model = null;
+    $scope.alertmsg = null;
     $scope.gridOptions = {
         data: 'systables.list',
         columnDefs: 'model.tables.SysTable.columnsNGTableConf',
@@ -279,9 +288,62 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
         multiSelect: false
     };
 
-    $scope.cellClicked = function(table,field,recordkey, value, event) {
-        console.log("clicked "+table+' '+field+' '+recordkey+" "+value);
-        if ( 'Market' == table && field == 'ask' ) {
+    $scope.showAlert = function(message,style) {
+        $scope.alertmsg = message;
+        if ( ! style ) {
+            style = 'warning';
+        }
+        $scope.alertstyle = style;
+    };
+
+    $scope.hideAlert = function() {
+        $scope.alertmsg = null;
+    };
+
+    $scope.cellClicked = function(table,field,row, event) {
+        var recordkey = row.recordKey;
+        console.log("clicked "+table+' '+field+' '+recordkey+" "+row);
+        if ( 'Market' == table && (field == 'ask' || field == 'bid' || field == 'bidQty' || field == 'askQty' ) ) {
+            var isBuy = field == 'ask' || field == 'askQty';
+            if ( ! rlGlobalOrderContext )
+                rlGlobalOrderContext = { order: new JOrder(), orderUnderway:false, ordermsg: '' };
+
+            rlGlobalOrderContext.order.instrumentKey = recordkey;
+            rlGlobalOrderContext.order.limitPrice = (isBuy ? row.ask : row.bid) /100;
+            rlGlobalOrderContext.order.buy = isBuy ? 1 : 0;
+            rlGlobalOrderContext.order.qty = field == 'bidQty' ? row.bidQty : field == 'askQty' ? row.askQty : 1;
+
+            rlGlobalOrderContext.ordermsg = '';
+
+            rlGlobalOrderContext.doOrder = function() {
+                rlGlobalOrderContext.order.traderKey = $scope.user.recordKey;
+                var transmittedOrder = new JOrder(rlGlobalOrderContext.order);
+                transmittedOrder.limitPrice = (transmittedOrder.limitPrice*100)|0;
+                rlGlobalOrderContext.orderUnderway = true;
+                RealLive.call("addOrder", transmittedOrder, function(result) {
+                    if ( result == '' ) {
+                        $scope.showAlert("Placed " + (transmittedOrder.buy ? 'Buy' : 'Sell') + " Order for " + transmittedOrder.instrumentKey + " " + transmittedOrder.qty + "@" + transmittedOrder.limitPrice / 100 + "€");
+                    } else {
+                        $scope.showAlert(result+"   [ " + (transmittedOrder.buy ? 'Buy' : 'Sell') + " Order for " + transmittedOrder.instrumentKey + " " + transmittedOrder.qty + "@" + transmittedOrder.limitPrice / 100 + "€ ]", "danger");
+                    }
+                    rlGlobalOrderContext.orderUnderway = false;
+                    rlGlobalOrderContext.elem.popover('destroy');
+                    document.getElementById('rl-app-overlay').style.display='none';
+                    document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,0)';
+                    $scope.$digest();
+                });
+                setTimeout(function() {
+                    if ( rlGlobalOrderContext.orderUnderway ) {
+                        $scope.showAlert( "no system response in time. Check order overview.", "danger" );
+                        rlGlobalOrderContext.orderUnderway = false;
+                        rlGlobalOrderContext.elem.popover('destroy');
+                        document.getElementById('rl-app-overlay').style.display='none';
+                        document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,0)';
+                    }
+                    $scope.$digest();
+                },5000)
+            };
+
             $http.get("oepopover.html",{cache:true}).success(function(data, status) {
                 var options = {
                     content: $compile(data)($scope),
@@ -292,21 +354,19 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
                     date: $scope.date,
                     template: "<div class='popover' style='border-radius: 3px; padding: 8px;'><div class='arrow'></div><div style='padding: 0px;' class='popover-content'></div></div>"
                 };
+
+
                 var elem = $(event.target);
-//                var elem = $(document.body);
-//                if ($scope.lastPop )
-//                    $scope.lastPop.popover('hide');
-//                window.setTimeout(function() {
-                    elem.popover(options);
-                    elem.popover('show');
-                    document.getElementById('rl-app-overlay').style.display='block';
-                    document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,.2)';
-                    document.getElementById('rl-app-overlay').onclick = function() {
-                        elem.popover('hide');
-                        document.getElementById('rl-app-overlay').style.display='none';
-                        document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,0)';
-                    };
-//                },500);
+                rlGlobalOrderContext.elem = elem;
+                elem.popover(options);
+                elem.popover('show');
+                document.getElementById('rl-app-overlay').style.display='block';
+                document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,.2)';
+                document.getElementById('rl-app-overlay').onclick = function() {
+                    elem.popover('destroy');
+                    document.getElementById('rl-app-overlay').style.display='none';
+                    document.getElementById('rl-app-overlay').style.background='rgba(0,0,0,0)';
+                };
             });
         }
     };
@@ -327,7 +387,8 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
     $scope.onLoggedIn = function() {
         mainScope.loggedIn = true;
         mainScope.positions = new RLResultSet();
-        RealLive.subscribeSet("Position", 'true', mainScope.positions);
+        RealLive.subscribeSet("Position", 'it.qty!=0', mainScope.positions);
+        mainScope.positions.postChangeHook = function(change, snapfin) { if ( snapfin ) $scope.$digest(); };
     };
 
     $scope.openLogin = function() {
@@ -367,10 +428,13 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
                                 setTimeout(function() {document.getElementById('rl-app-overlay').style.display='none';}, 1000);
                                 instance.close(true);
                             } else {
-                                if (!self.loggedIn) {
+                                if (!mainScope.loggedIn) {
                                     self.msg = "Invalid user or password. retry.";
                                     RealLive.unsubscribe(subsId);
                                     $scope.$digest();
+                                } else if (change.newRecord) {
+                                    mainScope.user = change.newRecord;
+                                    mainScope.$digest();
                                 }
                             }
                         });

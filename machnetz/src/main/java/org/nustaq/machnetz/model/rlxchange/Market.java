@@ -1,31 +1,33 @@
 package org.nustaq.machnetz.model.rlxchange;
 
 import org.nustaq.reallive.Record;
-import org.nustaq.reallive.sys.annotations.BGColor;
-import org.nustaq.reallive.sys.annotations.ColOrder;
-import org.nustaq.reallive.sys.annotations.DisplayWidth;
-import org.nustaq.reallive.sys.annotations.RenderStyle;
+import org.nustaq.reallive.sys.annotations.*;
+
+import java.text.DateFormat;
+import java.util.Date;
 
 /**
  * Created by ruedi on 18.07.14.
  */
 public class Market extends Record {
 
-    @RenderStyle("Price") @BGColor("rgba(0,0,255,0.2)") @DisplayWidth("80px") @ColOrder(2)
+    @RenderStyle("Price") @BGColor("rgba(0,0,255,0.2)") @DisplayWidth("60px") @ColOrder(2)
     int bid;
-    @RenderStyle("Price") @BGColor("rgba(255,0,0,0.2)") @DisplayWidth("80px") @ColOrder(3)
+    @RenderStyle("Price") @BGColor("rgba(255,0,0,0.2)") @DisplayWidth("60px") @ColOrder(3)
     int ask;
-    @RenderStyle("Qty") @ColOrder(1)
+    @RenderStyle("Qty") @ColOrder(1) @DisplayWidth("60px")
     int bidQty;
-    @RenderStyle("Qty") @ColOrder(4)
+    @RenderStyle("Qty") @ColOrder(4) @DisplayWidth("60px")
     int askQty;
 
-    @RenderStyle("Price") @ColOrder(5)
+    @RenderStyle("Price") @ColOrder(5) @DisplayWidth("60px")
     int lastPrc;
-    @RenderStyle("Qty") @ColOrder(6)
+    @RenderStyle("Qty") @ColOrder(6) @DisplayWidth("60px")
     int lastQty;
 
+    @Hidden
     long lastMatch;
+    @DisplayWidth("150px") @DisplayName("Time")
     String lastMatchTimeUTC;
     String state = "TRADE";
 
@@ -105,7 +107,7 @@ public class Market extends Record {
     }
 
     public void setLastMatch(long lastMatch) {
-        this.lastMatch = lastMatch;
+        this.lastMatch = lastMatch; setLastTradeStringFrom(lastMatch);
     }
 
     public String getLastMatchTimeUTC() {
@@ -115,4 +117,9 @@ public class Market extends Record {
     public void setLastMatchTimeUTC(String lastMatchTimeUTC) {
         this.lastMatchTimeUTC = lastMatchTimeUTC;
     }
+
+    public void setLastTradeStringFrom(long timeStringFrom) {
+        this.lastMatchTimeUTC = DateFormat.getDateTimeInstance().format(new Date(timeStringFrom));
+    }
+
 }

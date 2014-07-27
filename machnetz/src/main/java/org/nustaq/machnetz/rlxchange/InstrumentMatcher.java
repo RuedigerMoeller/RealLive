@@ -1,11 +1,12 @@
 package org.nustaq.machnetz.rlxchange;
 
-import org.nustaq.machnetz.model.rlxchange.Instrument;
-import org.nustaq.machnetz.model.rlxchange.Market;
-import org.nustaq.machnetz.model.rlxchange.Order;
-import org.nustaq.machnetz.model.rlxchange.Trade;
+import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.Promise;
+import org.nustaq.machnetz.model.rlxchange.*;
 import org.nustaq.reallive.ChangeBroadcast;
 import org.nustaq.reallive.RLTable;
+import org.nustaq.reallive.RealLive;
+import org.nustaq.reallive.Record;
 import org.nustaq.reallive.client.SortedReplicatedSet;
 
 import java.util.ArrayList;
@@ -24,8 +25,10 @@ public class InstrumentMatcher {
     Instrument instrument;
     SortedReplicatedSet<Order> buySet;
     SortedReplicatedSet<Order> sellSet;
+    Matcher matcher;
 
-    public InstrumentMatcher(Instrument record, RLTable<Order> orders, RLTable<Trade> trades, Market market) {
+    public InstrumentMatcher(Matcher matcher, Instrument record, RLTable<Order> orders, RLTable<Trade> trades, Market market) {
+        this.matcher = matcher;
         this.instrument = record;
         this.orders = orders;
         this.trades = trades;
@@ -52,9 +55,9 @@ public class InstrumentMatcher {
         checkThread();
         // filter out self induced stuff
         if ( change.getOriginator() != Matcher.MATCHER_ID ) {
-            if ( change.getOriginator() != 2 ) {
-                System.out.println("unexpected change source "+change);
-            }
+//            if ( change.getOriginator() != 2 ) {
+//                System.out.println("unexpected change source "+change);
+//            }
             if ( change.getRecord().isBuy() ) {
                 buySet.onChangeReceived(change);
             } else {
@@ -80,7 +83,7 @@ public class InstrumentMatcher {
         checkThread();
         int matchPrc = 0;
         int matchQty = 0;
-        if ( market.getRecordKey().equals("Germany")) {
+        if ( market.getRecordKey().equals("USA")) {
             dumpOB();
         }
         while ( buySet.getSize() > 0 && sellSet.getSize() > 0 ) {
@@ -134,6 +137,17 @@ public class InstrumentMatcher {
                     // order is modified locally anyway => cache in sync
                 }
                 newTrade.$apply(Matcher.MATCHER_ID);
+                int volume = newTrade.getTradeQty() * newTrade.getTradePrice();
+                matcher.$updateBalance(new Matcher.TraderBalanceTransaction(
+                    volume,
+                    -(1000-bestSell.getLimitPrice())*newTrade.getTradeQty(),
+                    newTrade.getSellTraderKey())
+                );
+                matcher.$updateBalance(new Matcher.TraderBalanceTransaction(
+                    -volume,
+                    -bestBuy.getLimitPrice()*newTrade.getTradeQty(),
+                    newTrade.getBuyTraderKey())
+                );
                 tradesCreated++;
 //                if ( tradesCreated > 1000 )
 //                    System.out.println("POK");
@@ -184,6 +198,7 @@ public class InstrumentMatcher {
         if ( matchPrc > 0 ) {
             market.setLastPrc(matchPrc);
             market.setLastQty(matchQty);
+            market.setLastMatch(System.currentTimeMillis());
         }
         market.setAsk(sellPrc);
         market.setAskQty(sellQuan);
@@ -200,4 +215,5 @@ public class InstrumentMatcher {
             match();
         }
     }
+
 }
