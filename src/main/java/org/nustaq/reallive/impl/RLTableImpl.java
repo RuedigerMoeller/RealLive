@@ -161,6 +161,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     public void $put(String key, T object, int originator) {
         checkThread();
         object._setId(key);
+        // fixme: compute diff instead !!!!!!!!!
         if ( storage.contains(key) ) {
             broadCastRemove(storage.get(key),originator);
         }

@@ -89,30 +89,6 @@ var JSysTable = function(obj) {
 };
 
 
-var JTestRecord = function(obj) {
-    this.__typeInfo = 'TestRecord';
-    this.j_version = function() { return parseInt(this.version,10); };
-    this.j_yearOfBirth = function() { return parseInt(this.yearOfBirth,10); };
-    this.j_name = function() { return this.name; };
-    this.j_preName = function() { return this.preName; };
-    this.j_profession = function() { return this.profession; };
-    this.j_recordKey = function() { return this.recordKey; };
-    this.j_sex = function() { return this.sex; };
-    this.fromObj = function(obj) {
-        for ( var key in obj ) {
-            var setter = 'j_'.concat(key);
-            if ( this.hasOwnProperty(setter) ) {
-                this[key] = obj[key];
-            }
-        }
-        return this;
-    };
-    if ( obj != null ) {
-        this.fromObj(obj);
-    }
-};
-
-
 var JTrade = function(obj) {
     this.__typeInfo = 'Trade';
     this.j_tradePrice = function() { return parseInt(this.tradePrice,10); };
@@ -255,7 +231,9 @@ var JQueryTuple = function(obj) {
 var JOrder = function(obj) {
     this.__typeInfo = 'Order';
     this.j_buy = function() { return this.buy?1:0; };
+    this.j_cashMargin = function() { return parseInt(this.cashMargin,10); };
     this.j_limitPrice = function() { return parseInt(this.limitPrice,10); };
+    this.j_positionMargin = function() { return parseInt(this.positionMargin,10); };
     this.j_qty = function() { return parseInt(this.qty,10); };
     this.j_version = function() { return parseInt(this.version,10); };
     this.j_creationTime = function() { return parseInt(this.creationTime,10); };
@@ -264,6 +242,27 @@ var JOrder = function(obj) {
     this.j_recordKey = function() { return this.recordKey; };
     this.j_text = function() { return this.text; };
     this.j_traderKey = function() { return this.traderKey; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'j_'.concat(key);
+            if ( this.hasOwnProperty(setter) ) {
+                this[key] = obj[key];
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
+var JAsset = function(obj) {
+    this.__typeInfo = 'Asset';
+    this.j_margined = function() { return parseInt(this.margined,10); };
+    this.j_qty = function() { return parseInt(this.qty,10); };
+    this.j_version = function() { return parseInt(this.version,10); };
+    this.j_recordKey = function() { return this.recordKey; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
             var setter = 'j_'.concat(key);
@@ -383,7 +382,6 @@ switch (clzname) {
         case 'InvocationCallback': return new JInvocationCallback();
         case 'RecordChange': return new JRecordChange();
         case 'SysTable': return new JSysTable();
-        case 'TestRecord': return new JTestRecord();
         case 'Trade': return new JTrade();
         case 'Position': return new JPosition();
         case 'TableMeta': return new JTableMeta();
@@ -391,6 +389,7 @@ switch (clzname) {
         case 'Metadata': return new JMetadata();
         case 'QueryTuple': return new JQueryTuple();
         case 'Order': return new JOrder();
+        case 'Asset': return new JAsset();
         case 'Invocation': return new JInvocation();
         case 'Instrument': return new JInstrument();
         case 'ChangeBroadcast': return new JChangeBroadcast();

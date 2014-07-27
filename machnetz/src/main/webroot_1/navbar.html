@@ -32,9 +32,13 @@
             <li>
                 <div style="padding-top: 14px; padding-right: 24px; ">
                     Welcome <b>{{user.recordKey}}</b>,
-                    available:<span rl-hi><b>{{(user.cashBalance-user.margined)/100|number:2}}€</b></span>
-                    blocked:<span rl-hi><b>{{user.margined/100|number:2}}€</b></span>
-                    overall:<span rl-hi><b>{{user.cashBalance/100|number:2}}€</b></span>
+                    <!--available:<span rl-hi><b>{{(user.cashBalance-user.margined)/100|number:2}}€</b></span>-->
+                    <!--blocked:<span rl-hi><b>{{user.margined/100|number:2}}€</b></span>-->
+                    <!--overall:<span rl-hi><b>{{user.cashBalance/100|number:2}}€</b></span>-->
+                    <rl-record table="Asset" record-key="Ruedi#cash">
+                        <span rl-hi>{{record.qty}}</span>
+                        <span rl-hi>{{record.margined}}</span>
+                    </rl-record>
                 </div>
             </li>
         </ul>

@@ -138,16 +138,8 @@ public class InstrumentMatcher {
                 }
                 newTrade.$apply(Matcher.MATCHER_ID);
                 int volume = newTrade.getTradeQty() * newTrade.getTradePrice();
-                matcher.$updateBalance(new Matcher.TraderBalanceTransaction(
-                    volume,
-                    -(1000-bestSell.getLimitPrice())*newTrade.getTradeQty(),
-                    newTrade.getSellTraderKey())
-                );
-                matcher.$updateBalance(new Matcher.TraderBalanceTransaction(
-                    -volume,
-                    -bestBuy.getLimitPrice()*newTrade.getTradeQty(),
-                    newTrade.getBuyTraderKey())
-                );
+                matcher.$processMatch(bestSell, matchQty, matchPrc );
+                matcher.$processMatch(bestBuy, matchQty, matchPrc );
                 tradesCreated++;
 //                if ( tradesCreated > 1000 )
 //                    System.out.println("POK");

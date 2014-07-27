@@ -3,6 +3,8 @@ package org.nustaq.machnetz.rlxchange;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
+import org.nustaq.kontraktor.util.FutureLatch;
+import org.nustaq.kontraktor.util.TicketMachine;
 import org.nustaq.machnetz.model.rlxchange.*;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.RealLive;
@@ -25,6 +27,7 @@ public class Matcher extends Actor<Matcher> {
     RLTable<Trade> trades;
     RLTable<Instrument> instruments;
     HashMap<String,InstrumentMatcher> matcherMap = new HashMap<>();
+    TicketMachine tickets = new TicketMachine();
 
     public void $init(RealLive rl) {
         Thread.currentThread().setName("Matcher");
@@ -78,152 +81,125 @@ public class Matcher extends Actor<Matcher> {
             return new Promise("Invalid OrderPrice or Quantity");
         }
         Promise<String> result = new Promise<>();
-        // if there are unfinished transactions for this trader, delay next order
-        if ( traderUpdateSerializer.get(ord.getTraderKey()) != null ) {
-            // note: a reject would take place here ..
-            delayed(5, () -> {
-                self().$addOrder(ord).then((r, e) -> result.receiveResult(r, e));
-            });
-            return result;
-        }
-        // dummy ta for locking
-        addToTraderTaQ(new TraderBalanceTransaction(0,0,ord.getTraderKey()));
+        String positionKey = ord.getTraderKey() + "#" + ord.getInstrumentKey();
 
-        rl.getTable("Trader").$get(ord.getTraderKey()).then((trader, error) -> {
-            try {
-                if (error != null) {
-                    result.receiveResult("Trader " + ord.getTraderKey() + " not found.", null);
+        tickets.getTicket(ord.getTraderKey()).then((finished, error) -> {
+
+            FutureLatch latch = new FutureLatch(finished);
+
+            Future<Asset> cash = rl.getTable("Asset").$get(ord.getTraderKey() + "#cash");
+            Future<Asset> position = rl.getTable("Asset").$get(positionKey);
+
+            yield(cash, position).then( (r,e) -> {
+
+                Asset cashAsset = cash.getResult();
+                Asset posAsset = position.getResult();
+
+                if ( cashAsset == null ) {
+                    result.receiveResult("fatal: no cash asset found",null);
+                    finished.signal();
                     return;
                 }
-                Trader tr = (Trader) trader;
-                int money = tr.getAvaiableCash();
-                if (!ord.isBuy()) {
-                    if (money < ord.getQty() * (1000-ord.getLimitPrice())) {
+                if ( posAsset == null ) {
+                    posAsset = new Asset(positionKey,0);
+                }
+
+                if (ord.isBuy()) {
+                    if ( cashAsset.getAvaiable() < ord.getQty() * ord.getLimitPrice() ) // no need to check position
+                    {
+                        result.receiveResult("Not enough cash to place buy order", null);
+                        finished.signal();
+                        return;
+                    }
+                    // add margin
+                    cashAsset.setMargined(cashAsset.getMargined()+ord.getQty() * ord.getLimitPrice());
+                    ord.setCashMargin(ord.getQty() * ord.getLimitPrice());
+
+                    rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
+                    orders.$add(ord, 0);
+
+                    result.receiveResult(null, null);
+                    finished.signal();
+
+                } else { // Sell order
+                    int positionQty = Math.max(0,posAsset.getAvaiable());
+                    int sellOrdQty = ord.getQty(); // is NOT negative, fixme: should flag with negative qty instead isBuy
+                    int toCashMarginQty = Math.max(sellOrdQty-positionQty,0);
+                    int toInstrMarginQty = Math.max(sellOrdQty-toCashMarginQty,0);
+
+                    if (cashAsset.getAvaiable() < toCashMarginQty * (1000-ord.getLimitPrice())) {
                         result.receiveResult("Not enough cash to cover short", null);
                         return;
                     }
-                    addToTraderTaQ(new TraderBalanceTransaction(0, ord.getQty() * (1000-ord.getLimitPrice()), tr.getRecordKey()));
-                    rl.getTable("Order").$add(ord, 0);
-                    result.receiveResult(null, null);
-                } else {
-                    if (money < ord.getQty() * ord.getLimitPrice()) {
-                        result.receiveResult("Not enough cash to place buy order", null);
-                        return;
+
+                    if ( toCashMarginQty > 0 ) {
+                        int cashMargin = toCashMarginQty * (1000-ord.getLimitPrice());
+                        // lock cash margined part of order
+                        cashAsset.setMargined( cashAsset.getMargined() + toCashMarginQty );
+                        ord.setCashMargin( cashMargin );
+                        rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
                     }
-                    addToTraderTaQ(new TraderBalanceTransaction(0, ord.getQty() * ord.getLimitPrice(), tr.getRecordKey()));
-                    rl.getTable("Order").$add(ord, 0);
+                    if ( toInstrMarginQty > 0 ) {
+                        // lock asset margined part of order
+                        posAsset.setMargined(posAsset.getMargined()+toCashMarginQty);
+                        ord.setPositionMargin(toInstrMarginQty);
+                        rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
+                    }
+
+                    orders.$add(ord, 0);
+
                     result.receiveResult(null, null);
+                    finished.signal();
                 }
-            } finally {
-                rawUpdateBalance(ord.getTraderKey()); // clears lock
-            }
+
+            });
+
         });
 
         return result;
+    }
+
+    public void $processMatch( Order ord, int matchedQty, int matchPrice ) {
+        tickets.getTicket(ord.getTraderKey()).then( (finished,e) -> {
+
+            String positionKey = ord.getTraderKey() + "#" + ord.getInstrumentKey();
+
+            Future<Asset> cash = rl.getTable("Asset").$get(ord.getTraderKey()+"#cash");
+            Future<Asset> position = rl.getTable("Asset").$get(positionKey);
+
+            yield(cash, position).then( (r,e1) -> {
+
+                Asset cashAsset = cash.getResult();
+                Asset posAsset = position.getResult();
+
+                if ( cashAsset == null ) {
+                    throw new RuntimeException("FATAL ERROR, cash asset not found.");
+                }
+                if ( posAsset == null ) {
+                    posAsset = new Asset(positionKey,0);
+                }
+
+                if ( ord.isBuy() ) {
+                    posAsset.setQty( posAsset.getQty() + matchedQty );
+                    // release margin
+                    cashAsset.setMargined( cashAsset.getMargined() - matchedQty * ord.getLimitPrice() );
+                    // subtract price of match from cash
+                    cashAsset.setQty( cashAsset.getQty() - matchedQty * matchPrice );
+
+                    rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
+                    rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
+
+                    finished.signal();
+                } else {
+                    finished.signal();
+                }
+
+            });
+        });
     }
 
     public Future<String> $delOrder( Order ord ) {
         return new Promise("void");
     }
 
-    public static class TraderBalanceTransaction {
-        int amountToAdd;
-        int marginToAdd;
-        String traderKey;
-
-        public TraderBalanceTransaction(int amountToAdd, int marginToAdd, String traderKey) {
-            this.amountToAdd = amountToAdd;
-            this.marginToAdd = marginToAdd;
-            this.traderKey = traderKey;
-        }
-
-        public int getAmountToAdd() {
-            return amountToAdd;
-        }
-
-        public void setAmountToAdd(int amountToAdd) {
-            this.amountToAdd = amountToAdd;
-        }
-
-        public String getTraderKey() {
-            return traderKey;
-        }
-
-        public void setTraderKey(String traderKey) {
-            this.traderKey = traderKey;
-        }
-
-        public int getMarginToAdd() {
-            return marginToAdd;
-        }
-
-        public void setMarginToAdd(int marginToAdd) {
-            this.marginToAdd = marginToAdd;
-        }
-
-        @Override
-        public String toString() {
-            return "TraderBalanceTransaction{" +
-                "amountToAdd=" + amountToAdd +
-                ", marginToAdd=" + marginToAdd +
-                ", traderKey='" + traderKey + '\'' +
-                '}';
-        }
-    }
-
-
-    HashMap<String,List<TraderBalanceTransaction>> traderUpdateSerializer = new HashMap<>();
-    public void $updateBalance(TraderBalanceTransaction newTrade) {
-        checkThread();
-        if (addToTraderTaQ(newTrade))
-            return;
-        String traderKey = newTrade.getTraderKey();
-        rawUpdateBalance(traderKey);
-    }
-
-    private void rawUpdateBalance(String traderKey) {
-        rl.getTable("Trader").$get(traderKey).then((tr,err) -> {
-            Trader trader = (Trader) tr;
-            if ( tr == null ) {
-                System.out.println("SEVERE ERROR: TRADER NOT FOUND "+ traderKey);
-            } else {
-                rl.getTable("Trader").prepareForUpdate(trader);
-                int prevBlocked = trader.getMargined();
-                int prevCash = trader.getCashBalance();
-                boolean dump = trader.getRecordKey().equals("Ruedi");
-                if ( dump ) {
-                    System.out.println("PRE LOOP blocked/cash "+prevBlocked+" "+prevCash);
-                }
-                List<TraderBalanceTransaction> tasProc = traderUpdateSerializer.get(trader.getRecordKey());
-                if ( tasProc != null && tasProc.size() > 0 ) {
-                    for (int i = 0; i < tasProc.size(); i++) {
-                        TraderBalanceTransaction trade = tasProc.get(i);
-                        if ( dump ) {
-                            System.out.println("PROCESS TA "+trade);
-                        }
-                        trader.setCashBalance(trade.getAmountToAdd() + trader.getCashBalance());
-                        trader.setMargined(trade.getMarginToAdd() + trader.getMargined());
-                    }
-                    trader.$apply(0);
-                    traderUpdateSerializer.remove(trader.getRecordKey());
-                }
-                if ( dump ) {
-                    System.out.println("POST LOOP blocked/cash " + trader.getMargined() + " " + trader.getCashBalance());
-                }
-            }
-        });
-    }
-
-    private boolean addToTraderTaQ(TraderBalanceTransaction newTrade) {
-        List<TraderBalanceTransaction> tas = traderUpdateSerializer.get(newTrade.getTraderKey());
-        if ( tas != null ) {
-            tas.add(newTrade);
-            return true;
-        } else {
-            tas = new ArrayList<>();
-            tas.add(newTrade);
-            traderUpdateSerializer.put(newTrade.getTraderKey(),tas);
-        }
-        return false;
-    }
 }

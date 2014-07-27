@@ -51,7 +51,10 @@ var RealLive = new function() {
     };
 
     this.getFieldName = function(tableId,fieldId) {
-        return this.getTableMeta( tableId).fieldId2Name[fieldId];
+        if ( this.getTableMeta( tableId) ) {
+            return this.getTableMeta(tableId).fieldId2Name[fieldId];
+        }
+        console.log("unknown table "+tableId+" "+fieldId);
     };
 
     this.onModelLoaded = function(func) {

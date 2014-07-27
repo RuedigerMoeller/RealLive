@@ -9,7 +9,6 @@ import org.nustaq.kontraktor.Scheduler;
 import org.nustaq.kontraktor.impl.DispatcherThread;
 import io.netty.channel.ChannelHandlerContext;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
-import org.nustaq.machnetz.model.TestRecord;
 import org.nustaq.machnetz.model.rlxchange.*;
 import org.nustaq.machnetz.rlxchange.Matcher;
 import org.nustaq.netty2go.NettyWSHttpServer;
@@ -59,7 +58,6 @@ public class MachNetz extends WebSocketHttpServer {
     protected void initServer() {
         realLive = new RLImpl();
 
-        initTestTable();
         initRLExchange();
         openMarket();
     }
@@ -77,13 +75,13 @@ public class MachNetz extends WebSocketHttpServer {
 
     private void initRLExchange() {
         Arrays.stream( new Class[] {
-                TestRecord.class,
                 Instrument.class,
                 Market.class,
                 Order.class,
                 Trade.class,
                 Trader.class,
-                Position.class
+                Position.class,
+                Asset.class
             }
         ).forEach( (clz) -> realLive.createTable(clz) );
 
@@ -122,7 +120,10 @@ public class MachNetz extends WebSocketHttpServer {
             new Trader("Mutti", "hans@wurst.de", 100000),
             new Trader("Feed0", "hans@wurst.de", Integer.MAX_VALUE),
             new Trader("Feed1", "hans@wurst.de", Integer.MAX_VALUE),
-        }).forEach((trader) -> realLive.getTable("Trader").$put(trader.getRecordKey(),trader,0));
+        }).forEach((trader) -> {
+            realLive.getTable("Trader").$put(trader.getRecordKey(),trader,0);
+            realLive.getTable("Asset").$put(trader.getRecordKey()+"#cash",new Asset(trader.getRecordKey()+"#cash",30000),0);
+        });
 
         realLive.stream("Trader").each( (change) -> {
             if ( change.isAdd() ) {
@@ -139,7 +140,7 @@ public class MachNetz extends WebSocketHttpServer {
                     matcher.$init(realLive);
 
                     Feeder feeder = Actors.AsActor(Feeder.class);
-                    feeder.$feed0(realLive,matcher);
+//                    feeder.$feed0(realLive,matcher);
                 } else {
                     System.out.println("instr change "+change.getRecord());
                 }
@@ -221,40 +222,6 @@ public class MachNetz extends WebSocketHttpServer {
             }
         }
 
-    }
-
-    private void initTestTable() {
-        realLive.createTable( "person", TestRecord.class );
-        RLTable person = realLive.getTable("person");
-        for ( int i = 0; i < 100; i++ ) {
-            person.$put("ruedi"+i, new TestRecord("Möller", "Rüdiger", 1968, "m", "Key Business Management Consulting Agent (KBMCA)"),0);
-            person.$put("other"+i, new TestRecord("Huber", "Heinz", 1988, "m", "Project Office Support Consultant"),0);
-            person.$put("another"+i, new TestRecord("Huber", "Heinz", 1988, "m", "Back Office Facility Management Officer"),0);
-        }
-        ArrayList<String> keys = new ArrayList<>();
-        person.stream().each( (change) -> {
-            if ( change.isSnapshotDone() ) {
-                Collections.shuffle(keys);
-                new Thread(() -> {
-                    while( true ) {
-                        keys.stream().forEach((key) -> {
-                            if (key.indexOf("ruedi") >= 0) {
-                                TestRecord forUpdate = (TestRecord) getRealLive().getTable("person").createForUpdate(key, false);
-                                forUpdate.setYearOfBirth((int) (1900 + Math.random() * 99));
-                                forUpdate.setPreName("POK " + (int) (Math.random() * 5));
-                                forUpdate.setName("Name " + (int) (Math.random() * 5));
-                                forUpdate.$apply(0);
-//                                LockSupport.parkNanos(1000*1000*100);
-                                LockSupport.parkNanos(1000 * 1000 * 200);
-                            }
-                        });
-                        LockSupport.parkNanos(1000*1000*100);
-                    }
-                }).start();
-            } else {
-                keys.add(change.getRecordKey());
-            }
-        });
     }
 
     @Override
