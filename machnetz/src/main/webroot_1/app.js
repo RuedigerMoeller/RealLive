@@ -93,46 +93,64 @@ app.directive( 'rlRecord', function()  {
 //       transclude: true,
 //       template:'<span ng-transclude></span>',
        link: function( $scope, $element, $attrs) {
+           $scope.subsId = 0;
            $scope.table = $attrs.table;
            $scope.recordKey = $attrs.recordKey;
            if ( $attrs.hilight ) {
                $scope.hilight = $attrs.hilight;
            }
-           RealLive.onModelLoaded(function() {
-               RealLive.subscribeKey($scope.table,$scope.recordKey,function(change) {
-                   switch ( change.type ) {
-                       case RL_ADD: {
-                           $scope.$apply(function() {
+           $attrs.$observe('recordKey', function(data) {
+               console.log("Updated record key ", data);
+               $scope.recordKey = data;
+               if ( RealLive.socketConnected ) {
+                   RealLive.unsubscribe($scope.subsId);
+                   $scope.subsribeKey();
+               }
+           }, true);
+
+           $scope.subsribeKey = function() {
+               $scope.subsId = RealLive.subscribeKey($scope.table, $scope.recordKey, function (change) {
+                   switch (change.type) {
+                       case RL_ADD:
+                       {
+                           $scope.$apply(function () {
                                $scope.record = change.newRecord;
                            });
-                       } break;
-                       case RL_REMOVE: {
+                       }
+                           break;
+                       case RL_REMOVE:
+                       {
                            $scope.record = null;
-                       } break;
+                       }
+                           break;
                        case RL_SNAPSHOT_DONE:
                            $scope.snapFin = true;
 //                           scope.$digest();
                            break;
-                       case RL_UPDATE: {
+                       case RL_UPDATE:
+                       {
                            var rec = $scope.record;
-                           if ( rec ) {
-                               $scope.$apply(function() {
+                           if (rec) {
+                               $scope.$apply(function () {
                                    var changeArray = change.appliedChange.fieldIndex;
-                                   for ( var i = 0; i < changeArray.length; i++ ) {
+                                   for (var i = 0; i < changeArray.length; i++) {
                                        var fieldId = changeArray[i];
                                        var newValue = change.appliedChange.newVal[i];
-                                       var fieldName = RealLive.getFieldName(change.tableId,fieldId);
+                                       var fieldName = RealLive.getFieldName(change.tableId, fieldId);
                                        rec[fieldName] = newValue;
                                    }
                                    $scope.record = JSON.parse(JSON.stringify(rec));
                                });
                            }
-                       } break;
+                       }
+                        break;
                    }
-               });
-           });
+               })
+           };
+
+           RealLive.onModelLoaded( $scope.subsribeKey );
        }
-   };
+   }
 });
 
 app.directive('rlTable', function() {

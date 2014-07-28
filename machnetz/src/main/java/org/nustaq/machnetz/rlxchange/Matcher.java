@@ -135,13 +135,13 @@ public class Matcher extends Actor<Matcher> {
                     if ( toCashMarginQty > 0 ) {
                         int cashMargin = toCashMarginQty * (1000-ord.getLimitPrice());
                         // lock cash margined part of order
-                        cashAsset.setMargined( cashAsset.getMargined() + toCashMarginQty );
+                        cashAsset.setMargined( cashAsset.getMargined() + cashMargin );
                         ord.setCashMargin( cashMargin );
                         rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
                     }
                     if ( toInstrMarginQty > 0 ) {
                         // lock asset margined part of order
-                        posAsset.setMargined(posAsset.getMargined()+toCashMarginQty);
+                        posAsset.setMargined(posAsset.getMargined()+toInstrMarginQty);
                         ord.setPositionMargin(toInstrMarginQty);
                         rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
                     }
@@ -159,6 +159,7 @@ public class Matcher extends Actor<Matcher> {
         return result;
     }
 
+    // order must not be changed, just as input
     public void $processMatch( Order ord, int matchedQty, int matchPrice ) {
         tickets.getTicket(ord.getTraderKey()).then( (finished,e) -> {
 
@@ -180,17 +181,48 @@ public class Matcher extends Actor<Matcher> {
                 }
 
                 if ( ord.isBuy() ) {
+                    int preMatchPosQty = posAsset.getQty();
                     posAsset.setQty( posAsset.getQty() + matchedQty );
-                    // release margin
+                    // release cash margin of order
                     cashAsset.setMargined( cashAsset.getMargined() - matchedQty * ord.getLimitPrice() );
                     // subtract price of match from cash
                     cashAsset.setQty( cashAsset.getQty() - matchedQty * matchPrice );
+                    // has a short position margin reduced ?
+                    if ( preMatchPosQty < 0 ) {
+                        int qty2Release = -preMatchPosQty - matchedQty;
+                        if ( qty2Release < 0 ) { // only release for negative qty
+                            qty2Release = -preMatchPosQty;
+                        }
+                        cashAsset.setMargined(cashAsset.getMargined()-1000*qty2Release);
+                    }
 
                     rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
                     rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
 
                     finished.signal();
                 } else {
+                    // add cash gained
+                    cashAsset.setQty( cashAsset.getQty() + matchedQty * matchPrice );
+
+                    // compute margins to free
+                    int marginQty2Free = matchedQty;
+                    if ( posAsset.getQty() >= matchedQty ) { // is completely margined by asset
+                        posAsset.setMargined(posAsset.getMargined()-matchedQty);
+                        marginQty2Free = 0;
+                    } else {
+                        marginQty2Free -= posAsset.getMargined();
+                        posAsset.setMargined(0);
+                        // free part of initally reserved margin when order was added
+                        cashAsset.setMargined( cashAsset.getMargined() - (1000-ord.getLimitPrice()) * marginQty2Free );
+                        // add new cash margin
+                        cashAsset.setMargined( cashAsset.getMargined() + 1000 * marginQty2Free );
+                    }
+
+                    // adjust asset position
+                    posAsset.setQty( posAsset.getQty() - matchedQty );
+
+                    rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
+                    rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
                     finished.signal();
                 }
 
