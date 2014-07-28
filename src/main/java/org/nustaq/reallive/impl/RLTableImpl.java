@@ -11,6 +11,7 @@ import org.nustaq.reallive.impl.storage.BinaryStorage;
 import org.nustaq.reallive.impl.storage.FSTBinaryStorage;
 import org.nustaq.reallive.sys.annotations.KeyLen;
 import org.nustaq.reallive.sys.tables.SysTable;
+import org.nustaq.serialization.FSTClazzInfo;
 
 import java.io.File;
 import java.util.Iterator;
@@ -158,15 +159,27 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override
-    public void $put(String key, T object, int originator) {
+    public void $put(String key, T newRec, int originator) {
         checkThread();
-        object._setId(key);
-        // fixme: compute diff instead !!!!!!!!!
-        if ( storage.contains(key) ) {
-            broadCastRemove(storage.get(key),originator);
+        if ( newRec == null ) {
+            $remove(key,originator);
+            return;
         }
-        storage.put(key,object);
-        broadCastAdd(object,originator);
+        Record record = storage.get(key);
+        newRec._setId(key);
+        if ( record != null ) {
+            record.setClazzInfo(getClazzInfo(record));
+            newRec.setClazzInfo(getClazzInfo(newRec));
+            RecordChange recordChange = newRec.computeDiff(record, true);
+            $update(recordChange, false);
+        } else {
+            storage.put(key, newRec);
+            broadCastAdd(newRec, originator);
+        }
+    }
+
+    private FSTClazzInfo getClazzInfo(Record record) {
+        return getRealLive().getConf().getClazzInfo(record.getClass());
     }
 
     @Override
@@ -232,9 +245,9 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             receiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId, t, originator));
     }
 
-    private void broadCastUpdate(RecordChange appliedChange, T t) {
+    private void broadCastUpdate(RecordChange appliedChange, T newRecord) {
         if ( receiver != null )
-            receiver.onChangeReceived(ChangeBroadcast.NewUpdate(tableId, t, appliedChange));
+            receiver.onChangeReceived(ChangeBroadcast.NewUpdate(tableId, newRecord, appliedChange));
     }
 
 

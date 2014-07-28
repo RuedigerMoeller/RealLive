@@ -21,8 +21,8 @@ public class ChangeBroadcast<T extends Record> implements Serializable {
         return new ChangeBroadcast(ChangeBroadcast.SNAPSHOT_DONE, tableId, null, null, null, origin);
     }
 
-    public static <T extends Record> ChangeBroadcast NewUpdate(String tableId, T t, RecordChange appliedChange) {
-        return new ChangeBroadcast(UPDATE,tableId,t.getRecordKey(),t,appliedChange, appliedChange.getOriginator());
+    public static <T extends Record> ChangeBroadcast NewUpdate(String tableId, T newRecord, RecordChange appliedChange) {
+        return new ChangeBroadcast(UPDATE,tableId,newRecord.getRecordKey(),newRecord,appliedChange, appliedChange.getOriginator());
     }
 
     public static <T extends Record> ChangeBroadcast<T> NewAdd(String tableId, T record, int origin) {

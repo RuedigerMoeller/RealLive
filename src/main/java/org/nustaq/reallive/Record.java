@@ -198,10 +198,15 @@ public class Record implements Serializable {
     public RecordChange computeDiff() {
         return computeDiff(false);
     }
+
+    public RecordChange computeDiff(boolean withOld) {
+        return computeDiff(originalRecord,withOld);
+    }
+
     /**
      * @return a record change containing newFieldValues and changed fields
      */
-    public RecordChange computeDiff(boolean withOld) {
+    public RecordChange computeDiff(Record oldRecord, boolean withOld) {
         FSTClazzInfo classInfo = getClassInfo();
         FSTClazzInfo.FSTFieldInfo[] fieldInfo = classInfo.getFieldInfo();
 
@@ -217,32 +222,32 @@ public class Record implements Serializable {
                 if ( fi.isPrimitive() ) {
                     switch (fi.getIntegralCode(fi.getType())) {
                         case FSTClazzInfo.FSTFieldInfo.BOOL:
-                            changed = fi.getBooleanValue(originalRecord) != fi.getBooleanValue(this);
+                            changed = fi.getBooleanValue(oldRecord) != fi.getBooleanValue(this);
                             break;
                         case FSTClazzInfo.FSTFieldInfo.BYTE:
-                            changed = fi.getByteValue(originalRecord) != fi.getByteValue(this);
+                            changed = fi.getByteValue(oldRecord) != fi.getByteValue(this);
                             break;
                         case FSTClazzInfo.FSTFieldInfo.CHAR:
-                            changed = fi.getCharValue(originalRecord) != fi.getCharValue(this);
+                            changed = fi.getCharValue(oldRecord) != fi.getCharValue(this);
                             break;
                         case FSTClazzInfo.FSTFieldInfo.SHORT:
-                            changed = fi.getShortValue(originalRecord) != fi.getShortValue(this);
+                            changed = fi.getShortValue(oldRecord) != fi.getShortValue(this);
                             break;
                         case FSTClazzInfo.FSTFieldInfo.INT:
-                            changed = fi.getIntValue(originalRecord) != fi.getIntValue(this);
+                            changed = fi.getIntValue(oldRecord) != fi.getIntValue(this);
                             break;
                         case FSTClazzInfo.FSTFieldInfo.LONG:
-                            changed = fi.getLongValue(originalRecord) != fi.getLongValue(this);
+                            changed = fi.getLongValue(oldRecord) != fi.getLongValue(this);
                             break;
                         case FSTClazzInfo.FSTFieldInfo.FLOAT:
-                            changed = fi.getFloatValue(originalRecord) != fi.getFloatValue(this);
+                            changed = fi.getFloatValue(oldRecord) != fi.getFloatValue(this);
                             break;
                         case FSTClazzInfo.FSTFieldInfo.DOUBLE:
-                            changed = fi.getDoubleValue(originalRecord) != fi.getDoubleValue(this);
+                            changed = fi.getDoubleValue(oldRecord) != fi.getDoubleValue(this);
                             break;
                     }
                 } else {
-                    changed = fi.getObjectValue(originalRecord) != fi.getObjectValue(this);
+                    changed = fi.getObjectValue(oldRecord) != fi.getObjectValue(this);
                 }
                 if ( changed ) {
                     changedFields.add(fi);
@@ -252,7 +257,7 @@ public class Record implements Serializable {
                 e.printStackTrace();
             }
         }
-        change.setChanges(changedFields, changedValues, withOld ? originalRecord : null);
+        change.setChanges(changedFields, changedValues, withOld ? oldRecord : null);
         return change;
     }
 

@@ -51,6 +51,70 @@ public class InstrumentMatcher {
 
     }
 
+    // return null or error
+    public Future<String> $addOrder(RLTable<Asset> assets, RLTable<Order> orders, Order order, Asset cashAsset, Asset positionAsset ) {
+        Promise<String> res = new Promise();
+
+        if ( order.isBuy() ) {
+            // cost of match must be added to cash margin
+            cashAsset.setMargined( cashAsset.getMargined() +  order.getQty() * order.getLimitPrice() );
+            // add to open order Qty
+            positionAsset.setOpenBuyQty( positionAsset.getOpenBuyQty() + order.getQty() );
+
+            // check if short position present, remove margin from risk calculation in case
+            int worstCaseAssetPosition = positionAsset.getAvaiable() - positionAsset.getOpenBuyQty();
+            int marginReduceQty = 0;
+            if (worstCaseAssetPosition < 0) {
+                marginReduceQty = Math.min(worstCaseAssetPosition, order.getQty());
+                marginReduceQty = Math.max(0,marginReduceQty);
+            }
+            int resultingAvail = cashAsset.getAvaiable() + marginReduceQty * 1000;
+            if ( resultingAvail < 0 ) {
+                res.receiveResult(null, "Not enough cash avaiable to place Buy order.");
+                return res;
+            }
+
+            // directly add
+            buySet.onChangeReceived( ChangeBroadcast.NewAdd("Order", order, 0) );
+            orders.$put( order.getRecordKey(), order, Matcher.MATCHER_ID ); // => will be ignored then
+
+            assets.$put(cashAsset.getRecordKey(),cashAsset, Matcher.MATCHER_ID);
+            assets.$put(positionAsset.getRecordKey(),positionAsset, Matcher.MATCHER_ID);
+
+            res.signal();
+
+        } else { // sell
+            // cost of match must be added to cash margin
+            cashAsset.setMargined( cashAsset.getMargined() +  order.getQty() * (1000-order.getLimitPrice()) );
+            // add to open order Qty
+            positionAsset.setOpenSellQty( positionAsset.getOpenSellQty() + order.getQty() );
+
+            // check if long position present, remove margin from risk calculation in case
+            int worstCaseAssetPosition = positionAsset.getAvaiable() - positionAsset.getOpenSellQty();
+            int marginReduceQty = 0;
+            if (worstCaseAssetPosition > 0) {
+                marginReduceQty = Math.min(worstCaseAssetPosition, order.getQty());
+                marginReduceQty = Math.max(0,marginReduceQty);
+            }
+            int resultingAvail = cashAsset.getAvaiable() + marginReduceQty * 1000;
+            if ( resultingAvail < 0 ) {
+                res.signal();
+                return res;
+            }
+
+            // directly add
+            sellSet.onChangeReceived( ChangeBroadcast.NewAdd("Order", order, 0) );
+            orders.$put( order.getRecordKey(), order, Matcher.MATCHER_ID ); // => will be ignored then
+
+            assets.$put(cashAsset.getRecordKey(),cashAsset, Matcher.MATCHER_ID);
+            assets.$put(positionAsset.getRecordKey(),positionAsset, Matcher.MATCHER_ID);
+
+            res.signal();
+        }
+
+        return res;
+    }
+
     public void onARUChange(ChangeBroadcast<Order> change) {
         checkThread();
         // filter out self induced stuff
@@ -138,8 +202,8 @@ public class InstrumentMatcher {
                 }
                 newTrade.$apply(Matcher.MATCHER_ID);
                 int volume = newTrade.getTradeQty() * newTrade.getTradePrice();
-                matcher.$processMatch(bestSell, matchQty, matchPrc );
-                matcher.$processMatch(bestBuy, matchQty, matchPrc );
+                matcher.$processMatch(bestSell, matchQty, matchPrc);
+                matcher.$processMatch(bestBuy, matchQty, matchPrc);
                 tradesCreated++;
 //                if ( tradesCreated > 1000 )
 //                    System.out.println("POK");

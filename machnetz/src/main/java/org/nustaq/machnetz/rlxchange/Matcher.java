@@ -29,6 +29,12 @@ public class Matcher extends Actor<Matcher> {
     HashMap<String,InstrumentMatcher> matcherMap = new HashMap<>();
     TicketMachine tickets = new TicketMachine();
 
+    long orderIdCnt = System.currentTimeMillis(); // FIXME: adjust after restart from persistence ?
+
+    String createOrderId() {
+        return "MA:"+orderIdCnt++;
+    }
+
     public void $init(RealLive rl) {
         Thread.currentThread().setName("Matcher");
         checkThread();
@@ -85,8 +91,6 @@ public class Matcher extends Actor<Matcher> {
 
         tickets.getTicket(ord.getTraderKey()).then((finished, error) -> {
 
-            FutureLatch latch = new FutureLatch(finished);
-
             Future<Asset> cash = rl.getTable("Asset").$get(ord.getTraderKey() + "#cash");
             Future<Asset> position = rl.getTable("Asset").$get(positionKey);
 
@@ -104,54 +108,12 @@ public class Matcher extends Actor<Matcher> {
                     posAsset = new Asset(positionKey,0);
                 }
 
-                if (ord.isBuy()) {
-                    if ( cashAsset.getAvaiable() < ord.getQty() * ord.getLimitPrice() ) // no need to check position
-                    {
-                        result.receiveResult("Not enough cash to place buy order", null);
+                ord._setId(createOrderId());
+                matcherMap.get(ord.getInstrumentKey()).$addOrder(rl.getTable("Asset"),orders,ord,cashAsset,posAsset)
+                    .then((res,err) -> {
+                        result.receiveResult(err != null ? err : res, null);
                         finished.signal();
-                        return;
-                    }
-                    // add margin
-                    cashAsset.setMargined(cashAsset.getMargined()+ord.getQty() * ord.getLimitPrice());
-                    ord.setCashMargin(ord.getQty() * ord.getLimitPrice());
-
-                    rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
-                    orders.$add(ord, 0);
-
-                    result.receiveResult(null, null);
-                    finished.signal();
-
-                } else { // Sell order
-                    int positionQty = Math.max(0,posAsset.getAvaiable());
-                    int sellOrdQty = ord.getQty(); // is NOT negative, fixme: should flag with negative qty instead isBuy
-                    int toCashMarginQty = Math.max(sellOrdQty-positionQty,0);
-                    int toInstrMarginQty = Math.max(sellOrdQty-toCashMarginQty,0);
-
-                    if (cashAsset.getAvaiable() < toCashMarginQty * (1000-ord.getLimitPrice())) {
-                        result.receiveResult("Not enough cash to cover short", null);
-                        return;
-                    }
-
-                    if ( toCashMarginQty > 0 ) {
-                        int cashMargin = toCashMarginQty * (1000-ord.getLimitPrice());
-                        // lock cash margined part of order
-                        cashAsset.setMargined( cashAsset.getMargined() + cashMargin );
-                        ord.setCashMargin( cashMargin );
-                        rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
-                    }
-                    if ( toInstrMarginQty > 0 ) {
-                        // lock asset margined part of order
-                        posAsset.setMargined(posAsset.getMargined()+toInstrMarginQty);
-                        ord.setPositionMargin(toInstrMarginQty);
-                        rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
-                    }
-
-                    orders.$add(ord, 0);
-
-                    result.receiveResult(null, null);
-                    finished.signal();
-                }
-
+                    });
             });
 
         });
@@ -189,12 +151,14 @@ public class Matcher extends Actor<Matcher> {
                     cashAsset.setQty( cashAsset.getQty() - matchedQty * matchPrice );
                     // has a short position margin reduced ?
                     if ( preMatchPosQty < 0 ) {
-                        int qty2Release = -preMatchPosQty - matchedQty;
-                        if ( qty2Release < 0 ) { // only release for negative qty
-                            qty2Release = -preMatchPosQty;
+                        int qty2Release = Math.min(-preMatchPosQty,matchedQty);
+                        if ( qty2Release > 0 ) { // only release for negative qty
+                            // free cashmargin for negative position
+                            cashAsset.setMargined(cashAsset.getMargined()-1000*qty2Release);
                         }
-                        cashAsset.setMargined(cashAsset.getMargined()-1000*qty2Release);
                     }
+
+                    posAsset.setOpenBuyQty(posAsset.getOpenBuyQty()-matchedQty);
 
                     rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
                     rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
@@ -204,22 +168,14 @@ public class Matcher extends Actor<Matcher> {
                     // add cash gained
                     cashAsset.setQty( cashAsset.getQty() + matchedQty * matchPrice );
 
-                    // compute margins to free
-                    int marginQty2Free = matchedQty;
-                    if ( posAsset.getQty() >= matchedQty ) { // is completely margined by asset
-                        posAsset.setMargined(posAsset.getMargined()-matchedQty);
-                        marginQty2Free = 0;
-                    } else {
-                        marginQty2Free -= posAsset.getMargined();
-                        posAsset.setMargined(0);
-                        // free part of initally reserved margin when order was added
-                        cashAsset.setMargined( cashAsset.getMargined() - (1000-ord.getLimitPrice()) * marginQty2Free );
-                        // add new cash margin
-                        cashAsset.setMargined( cashAsset.getMargined() + 1000 * marginQty2Free );
-                    }
+                    // free part of initally reserved margin when order was added
+                    cashAsset.setMargined( cashAsset.getMargined() - (1000-ord.getLimitPrice()) * matchedQty );
+                    // add new cash margin
+                    cashAsset.setMargined( cashAsset.getMargined() + 1000 * matchedQty );
 
                     // adjust asset position
                     posAsset.setQty( posAsset.getQty() - matchedQty );
+                    posAsset.setOpenSellQty( posAsset.getOpenSellQty() - matchedQty );
 
                     rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
                     rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );

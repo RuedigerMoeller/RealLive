@@ -86,7 +86,7 @@ public class RecordChange<K, T extends Record> implements Serializable {
     }
 
     /**
-     * apply change to a record thereby collecting original values to the oldVal array
+     * apply change to a record thereby collecting original values to the oldVal array.
      * @param rec
      * @return
      */

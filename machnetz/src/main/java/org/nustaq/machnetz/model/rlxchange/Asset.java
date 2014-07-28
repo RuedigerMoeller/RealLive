@@ -14,10 +14,28 @@ public class Asset extends Record {
 
     int qty;
     int margined;
+    int openBuyQty;
+    int openSellQty;
 
     public Asset(String key, int qty) {
         super(key);
         this.qty = qty;
+    }
+
+    public int getOpenBuyQty() {
+        return openBuyQty;
+    }
+
+    public void setOpenBuyQty(int openBuyQty) {
+        this.openBuyQty = openBuyQty;
+    }
+
+    public int getOpenSellQty() {
+        return openSellQty;
+    }
+
+    public void setOpenSellQty(int openSellQty) {
+        this.openSellQty = openSellQty;
     }
 
     public int getMargined() {
