@@ -98,7 +98,7 @@ public class InstrumentMatcher {
             }
             int resultingAvail = cashAsset.getAvaiable() + marginReduceQty * 1000;
             if ( resultingAvail < 0 ) {
-                res.signal();
+                res.receiveResult(null, "Not enough cash avaiable to place Sell order.");
                 return res;
             }
 
