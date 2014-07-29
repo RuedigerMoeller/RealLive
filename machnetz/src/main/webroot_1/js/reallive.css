@@ -34,13 +34,75 @@ td {
     padding: 2px;
 }
 
+.rlBuy {
+    color:#fff;
+    border-radius:2px;
+    padding: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background-color:#117;
+}
+
+.rlSell {
+    color:#fff;
+    border-radius:2px;
+    padding: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    background-color:#711;
+}
+
+.rlBuyBtn {
+    border-radius:2px;
+    padding: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    border: 1px solid lightgray;
+    background-color: rgba(0,0,255,0.2);
+}
+
+.rlSellBtn {
+    border-radius:2px;
+    padding: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    border: 1px solid lightgray;
+    background-color: rgba(255,0,0,0.2);
+}
+
+.rlBuyBtn:hover {
+    color:#fff;
+    background-color:#117;
+}
+
+.rlSellBtn:hover {
+    color:#fff;
+    background-color:#711;
+}
+
 .rlhover:hover {
     outline: 1px dotted #444;
     text-decoration: underline;
-    color: #77f;
+    /*border-radius: 3px;*/
+    /*border: solid 1px #222;*/
+    color: #22f;
+    /*padding: 4px;*/
+    /*background-color: #000;*/
 }
 
 .popover {
     max-width: 600px;
     width: auto;
+}
+
+.rlImgGrey {
+    opacity: 0.3;
+    filter: alpha(opacity=30); /* msie */
+    background-color: #fff;
+}
+
+.rlImgGrey:hover {
+    opacity: 0.9;
+    filter: alpha(opacity=90); /* msie */
+    background-color: #fff;
 }

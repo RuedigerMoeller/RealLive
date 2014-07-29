@@ -178,7 +178,72 @@ public class Matcher extends Actor<Matcher> {
     }
 
     public Future<String> $delOrder( Order ord ) {
-        return new Promise("void");
+        Promise result = new Promise();
+        tickets.getTicket(ord.getTraderKey()).then( (sigFin, e) -> {
+            matcherMap.get(ord.getInstrumentKey()).delOrder(ord).then((r,err) -> {
+                if ( r == null ) {
+                    result.receiveResult( "Order " + ord.getRecordKey() + " not found.", null );
+                    sigFin.signal();
+                    return;
+                }
+                if ( ord.getQty() != r.getQty() ) {
+                    result.receiveResult( "Partial Order deleted. Has already been matched partially: " + (ord.getQty()-r.getQty()), null );
+                    orders.$remove(ord.getRecordKey(),MATCHER_ID);
+                    orderDeletionBalanceUpdate(ord);
+                    sigFin.signal();
+                    return;
+                }
+                result.receiveResult( (ord.isBuy()?"Buy":"Sell")+" Order deleted. ["+ord.getInstrumentKey()+" "+ord.getQty()+"@"+(ord.getLimitPrice()/100)+"]", null );
+                orders.$remove(ord.getRecordKey(),MATCHER_ID);
+                orderDeletionBalanceUpdate(ord);
+                sigFin.signal();
+            });
+        });
+        return result;
+    }
+
+    private void orderDeletionBalanceUpdate(Order ord) {
+        String positionKey = ord.getTraderKey() + "#" + ord.getInstrumentKey();
+
+        Future<Asset> cash = rl.getTable("Asset").$get(ord.getTraderKey()+"#cash");
+        Future<Asset> position = rl.getTable("Asset").$get(positionKey);
+
+        yield(cash, position).then( (r,e1) -> {
+
+            Asset cashAsset = cash.getResult();
+            Asset posAsset = position.getResult();
+
+            if ( cashAsset == null ) {
+                throw new RuntimeException("FATAL ERROR, cash asset not found.");
+            }
+            if ( posAsset == null ) {
+                posAsset = new Asset(positionKey,0);
+            }
+
+            int prevQty = posAsset.getAvaiable();
+            if ( ord.isBuy() ) {
+                // release cash margin of order
+                cashAsset.setMargined( cashAsset.getMargined() - ord.getQty() * ord.getLimitPrice() );
+                // adjust open buy
+                posAsset.setOpenBuyQty(posAsset.getOpenBuyQty()-ord.getQty());
+            } else {
+                // free part of initally reserved margin when order was added
+                cashAsset.setMargined( cashAsset.getMargined() - (1000-ord.getLimitPrice()) * ord.getQty() );
+                // adjust asset position
+                posAsset.setOpenSellQty( posAsset.getOpenSellQty() - ord.getQty() );
+            }
+            int currMargin = cashAsset.getMargined();
+            if ( prevQty < 0 ) {
+                currMargin = currMargin - Math.abs(prevQty) * 1000;
+            }
+            if ( posAsset.getQty() < 0 ) {
+                currMargin = currMargin + Math.abs(posAsset.getQty()) * 1000;
+            }
+            cashAsset.setMargined(currMargin);
+
+            rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
+            rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
+        });
     }
 
 }

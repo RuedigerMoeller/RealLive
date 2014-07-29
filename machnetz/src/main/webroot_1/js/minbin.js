@@ -56,6 +56,13 @@ var MinBin = new function MinBin() {
         return res;
     };
 
+    this.parseIntOrNan = function(number) {
+        var tmp = parseInt(number,10);
+        if ( isNaN(tmp) )
+            return 0;
+        return tmp;
+    };
+
     this.i32 = function(array) {
         var res = new Int32Array(array.length);
         for ( var i = 0; i < array.length; i++) {
@@ -382,11 +389,11 @@ function MBOut() {
             this.writeIntPacked(o);
         } else if ( MinBin.isBuffer(o) ) {
             if ( this.writeRefIfApplicable(o) )
-                this.writeArray( o, 0, o.length);
+                this.writeArray( o, 0, o.length );
         } else if (o instanceof MBLong){
             this.writeOut(INT_64);
-            this.writeRawInt(INT_32, o.loInt);
-            this.writeRawInt(INT_32, o.hiInt);
+            this.writeRawInt( INT_32, o.loInt );
+            this.writeRawInt( INT_32, o.hiInt );
         } else {
             this.writeTag(o);
         }

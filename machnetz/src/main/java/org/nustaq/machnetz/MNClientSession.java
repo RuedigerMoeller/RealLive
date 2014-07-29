@@ -206,6 +206,12 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         myPosition.onChangeReceived(p.computeBcast("Position", 0));
     }
 
+    Object deleteOrder(Invocation inv) {
+        Order ord = (Order) inv.getArgument();
+        server.getMatcher().$delOrder(ord).then((r,e) -> sendReply(inv,r));
+        return NO_RESULT;
+    }
+
     Object addOrder(Invocation inv) {
         RLTable<Order> order = getRLDB().getTable("Order");
         Order toAdd = (Order) inv.getArgument();

@@ -81,7 +81,7 @@ var RealLive = new function() {
     this.lastSeq = 0;
 
     this.renderStyles = {
-        "BS": "<span style=\"color:#fff; border-radius:2px; padding: 4px; padding-left: 6px; padding-right: 6px; background-color: {{COL_FIELD==1?'#117':'#711'}};\">{{COL_FIELD==1?'Buy':'Sell'}}</span>",
+        "BS": "<span class=\"{{COL_FIELD==1?'rlBuy':'rlSell'}}\">{{COL_FIELD==1?'Buy':'Sell'}}</span>",
         "Price": "<b>{{COL_FIELD/100|number:2}}</b>",
         "Qty"  : "{{COL_FIELD|number:0}}"
     };

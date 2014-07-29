@@ -13,7 +13,15 @@
             <tr>
                 <td colspan="2">
                     <div collapse="isMarketCollapsed">
-                        <rl-table table="Market" height="400px" rl-exclude="lastMatch,version" links="ask,bid,askQty,bidQty"></rl-table>
+                        <rl-table
+                            table="Market"
+                            height="400px"
+                            rl-exclude="lastMatch,version"
+                            links="ask,bid,askQty,bidQty"
+                            action-width="40px"
+                            action="<span ng-click=&quot;cellClicked('Market', 'buyAction', row.entity, $event)&quot;><img class='rlImgGrey' src='img/appbar.add.png' width='16px'></span><span ng-click=&quot;cellClicked('Market', 'sellAction', row.entity, $event)&quot;><img class='rlImgGrey' width='16px' src='img/appbar.minus.png'></span>"
+                        >
+                        </rl-table>
                     </div>
                 </td>
             </tr>
@@ -33,7 +41,13 @@
             <tr>
                 <td colspan="2" width="100%">
                     <div collapse="isOrderCollapsed">
-                        <rl-table table="Order" rl-query="it.traderKey=='{{user.recordKey}}'" height="200px" rl-exclude="version"></rl-table>
+                        <rl-table
+                            table="Order"
+                            rl-query="it.traderKey=='{{user.recordKey}}'"
+                            height="200px"
+                            rl-exclude="version,recordKey"
+                            action="<button type='button' class='close' ng-click='deleteOrder(row.entity)'><span aria-hidden='true'>&times;</span></button>">
+                        </rl-table>
                     </div>
                 </td>
             </tr>

@@ -3,23 +3,41 @@ var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid', 'ngRoute']);
 
 app.config(['$routeProvider',
     function($routeProvider) {
+
+        var requireAuthentication = function () {
+            return {
+                load: function ($q) {
+                    if (app.mainScope.loggedIn) { // fire $routeChangeSuccess
+                        var deferred = $q.defer();
+                        deferred.resolve();
+                        return deferred.promise;
+                    } else { // fire $routeChangeError
+                        return $q.reject("'/login'");
+                    }
+                }
+            };
+        };
+
+
         $routeProvider.
             when('/admin', {
-                templateUrl: 'admin.html'
+                templateUrl: 'admin.html',
+                resolve: requireAuthentication()
             }).
             when('/market', {
-                templateUrl: 'market.html'
+                templateUrl: 'market.html',
+                resolve: requireAuthentication()
             }).
-            when('/testing', {
-                templateUrl: 'testing.html'
+            when('/login', {
+                templateUrl: 'loginview.html'
             }).
             when('/position', {
                 templateUrl: 'position.html',
-                controller: 'PositionController'
+                controller: 'PositionController',
+                resolve: requireAuthentication()
             }).
             otherwise({
-                templateUrl: 'testing.html'
-//                controller: 'LoginController'
+                templateUrl: 'loginview.html'
             });
     }]);
 
@@ -161,7 +179,8 @@ app.directive('rlTable', function() {
             $scope.rlset = new RLResultSet();
             $scope.height = '300px';
             $scope.exclude = {};
-            $scope.links = {};
+            $scope.links = {};   // ',' separated list of clickable column field names
+            $scope.action = null; // plain html of action column template. row denotes the record
 
             if ( $attrs.rlExclude ) {
                 var list = $attrs.rlExclude.split(",");
@@ -172,6 +191,16 @@ app.directive('rlTable', function() {
                 var list = $attrs.links.split(",");
                 for ( var i = 0; i < list.length; i++ )
                     $scope.links[list[i]] = true;
+            }
+
+            if ( $attrs.action ) {
+                $scope.action = $attrs.action;
+            }
+
+            if ( $attrs.actionWidth ) {
+                $scope.actionWidth = $attrs.actionWidth;
+            } else {
+                $scope.actionWidth = "20px";
             }
 
             if ( $attrs.height ) {
@@ -189,6 +218,16 @@ app.directive('rlTable', function() {
                 }
                 var cols = $scope.model.tables[$attrs.table].columnsNGTableConf;
                 var res = [];
+                if ( $scope.action ) {
+                    res.push({
+                        field: 'action',
+                        displayName: '',
+                        width: $scope.actionWidth,
+                        sortable: false,
+                        enableCellEdit: false,
+                        cellTemplate: '<div class="ngCellText colt{{$index}}">'+$scope.action+'</div>'
+                    })
+                }
                 for (var i=0; i < cols.length; i++ ) {
                     var col = cols[i];
                     if ( ! $scope.exclude[col.field] ) {
@@ -289,6 +328,8 @@ app.directive('rlOrder', function() {
 app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
 
     var mainScope = $scope;
+
+    app.mainScope = $scope;
     $scope.isOECollapsed = true;
 
     $scope.loggedIn = false;
@@ -318,6 +359,17 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
         $scope.alertmsg = null;
     };
 
+    $scope.deleteOrder = function(order) {
+        RealLive.call("deleteOrder", order, function(result) {
+            if ( result.indexOf('not found') >= 0 ) // dirty ..
+            {
+                $scope.showAlert( result, 'danger' );
+            } else {
+                $scope.showAlert(result);
+            }
+        });
+    };
+
     $scope.cellClicked = function(table,field,row, event) {
         var recordkey = row.recordKey;
         var orderFilled = false;
@@ -338,6 +390,16 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
 
         } else if ( 'Market' == table && (field == 'ask' || field == 'bid' || field == 'bidQty' || field == 'askQty' ) ) {
             var isBuy = field == 'ask' || field == 'askQty';
+
+            rlGlobalOrderContext.order.instrumentKey = recordkey;
+            rlGlobalOrderContext.order.limitPrice = (isBuy ? row.ask : row.bid) / 100;
+            rlGlobalOrderContext.order.buy = isBuy ? 1 : 0;
+            rlGlobalOrderContext.order.qty = field == 'bidQty' ? row.bidQty : field == 'askQty' ? row.askQty : 1;
+
+            rlGlobalOrderContext.ordermsg = '';
+            orderFilled = true;
+        } else if ( 'Market' == table && (field == 'buyAction' || field == 'sellAction' ) ) {
+            var isBuy = field == 'buyAction';
 
             rlGlobalOrderContext.order.instrumentKey = recordkey;
             rlGlobalOrderContext.order.limitPrice = (isBuy ? row.ask : row.bid) / 100;
@@ -428,7 +490,7 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
     $scope.openLogin = function() {
         var instance = $modal.open({
             templateUrl: "login.html",
-//            size:'sm',
+            size:'sm',
             backdrop:false,
             keyboard:false,
             reallive:'reallive',
@@ -452,6 +514,7 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
                         $scope.loginunderway = false;
                         if ( result.indexOf("success") < 0 ) {
                             self.msg = result;
+                            $scope.$digest();
                             return;
                         }
                         var subsId = RealLive.subscribeKey('Trader', self.user, function(change) {

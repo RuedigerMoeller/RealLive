@@ -61,10 +61,9 @@ public class InstrumentMatcher { // ready to be be an actor if needed
             // add to open order Qty
             positionAsset.setOpenBuyQty( positionAsset.getOpenBuyQty() + order.getQty() );
 
-            int marginImprover = 0;
-            if ( positionAsset.getAvaiable() < 0 )
-                marginImprover = 1000 * -positionAsset.getAvaiable();
-            if (cashAsset.getAvaiable() + marginImprover < 0) {
+            // can we ensure there is a short position regardless of open orders ?
+            int worstCaseQty = positionAsset.getAvaiable() + positionAsset.getOpenBuyQty() + order.getQty();
+            if (cashAsset.getAvaiable() < 0 && worstCaseQty <= 0 ) {
                 res.receiveResult(null, "Not enough cash avaiable to place Buy order.");
                 return res;
             }
@@ -84,10 +83,9 @@ public class InstrumentMatcher { // ready to be be an actor if needed
             // add to open order Qty
             positionAsset.setOpenSellQty( positionAsset.getOpenSellQty() + order.getQty() );
 
-            int marginImprover = 0;
-            if ( positionAsset.getAvaiable() > 0 )
-                marginImprover = 1000 * positionAsset.getAvaiable();
-            if ( cashAsset.getAvaiable() + marginImprover < 0 ) {
+            // can we ensure there is a long position regardless of open orders ?
+            int worstCaseQty = positionAsset.getAvaiable() - positionAsset.getOpenSellQty() - order.getQty();
+            if ( cashAsset.getAvaiable() < 0 && worstCaseQty >= 0 ) {
                 res.receiveResult(null, "Not enough cash avaiable to place Sell order.");
                 return res;
             }
@@ -262,4 +260,24 @@ public class InstrumentMatcher { // ready to be be an actor if needed
         }
     }
 
+    public Future<Order> delOrder(Order ord) {
+        if ( ord.isBuy() ) {
+            for (Iterator<Order> iterator = buySet.getTreeSet().iterator(); iterator.hasNext(); ) {
+                Order next = iterator.next();
+                if ( next.getRecordKey().equals(ord.getRecordKey()) ) {
+                    buySet.unsafeRemove(next.getRecordKey());
+                    return new Promise<>(next);
+                }
+            }
+        } else {
+            for (Iterator<Order> iterator = sellSet.getTreeSet().iterator(); iterator.hasNext(); ) {
+                Order next = iterator.next();
+                if ( next.getRecordKey().equals(ord.getRecordKey()) ) {
+                    sellSet.unsafeRemove(next.getRecordKey());
+                    return new Promise<>(next);
+                }
+            }
+        }
+        return new Promise(null);
+    }
 }
