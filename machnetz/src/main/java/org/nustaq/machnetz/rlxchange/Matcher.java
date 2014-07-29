@@ -3,15 +3,12 @@ package org.nustaq.machnetz.rlxchange;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
-import org.nustaq.kontraktor.util.FutureLatch;
 import org.nustaq.kontraktor.util.TicketMachine;
 import org.nustaq.machnetz.model.rlxchange.*;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.RealLive;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by ruedi on 19.07.14.
@@ -109,7 +106,7 @@ public class Matcher extends Actor<Matcher> {
                 }
 
                 ord._setId(createOrderId());
-                matcherMap.get(ord.getInstrumentKey()).$addOrder(rl.getTable("Asset"),orders,ord,cashAsset,posAsset)
+                matcherMap.get(ord.getInstrumentKey()).addOrder(rl.getTable("Asset"), orders, ord, cashAsset, posAsset)
                     .then((res,err) -> {
                         result.receiveResult(err != null ? err : res, null);
                         finished.signal();
@@ -142,45 +139,39 @@ public class Matcher extends Actor<Matcher> {
                     posAsset = new Asset(positionKey,0);
                 }
 
+                int prevQty = posAsset.getAvaiable();
                 if ( ord.isBuy() ) {
-                    int preMatchPosQty = posAsset.getQty();
                     posAsset.setQty( posAsset.getQty() + matchedQty );
                     // release cash margin of order
                     cashAsset.setMargined( cashAsset.getMargined() - matchedQty * ord.getLimitPrice() );
                     // subtract price of match from cash
                     cashAsset.setQty( cashAsset.getQty() - matchedQty * matchPrice );
-                    // has a short position margin reduced ?
-                    if ( preMatchPosQty < 0 ) {
-                        int qty2Release = Math.min(-preMatchPosQty,matchedQty);
-                        if ( qty2Release > 0 ) { // only release for negative qty
-                            // free cashmargin for negative position
-                            cashAsset.setMargined(cashAsset.getMargined()-1000*qty2Release);
-                        }
-                    }
-
+                    // adjust open buy
                     posAsset.setOpenBuyQty(posAsset.getOpenBuyQty()-matchedQty);
 
-                    rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
-                    rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
-
-                    finished.signal();
                 } else {
                     // add cash gained
                     cashAsset.setQty( cashAsset.getQty() + matchedQty * matchPrice );
 
                     // free part of initally reserved margin when order was added
                     cashAsset.setMargined( cashAsset.getMargined() - (1000-ord.getLimitPrice()) * matchedQty );
-                    // add new cash margin
-                    cashAsset.setMargined( cashAsset.getMargined() + 1000 * matchedQty );
 
                     // adjust asset position
                     posAsset.setQty( posAsset.getQty() - matchedQty );
                     posAsset.setOpenSellQty( posAsset.getOpenSellQty() - matchedQty );
-
-                    rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
-                    rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
-                    finished.signal();
                 }
+                int currMargin = cashAsset.getMargined();
+                if ( prevQty < 0 ) {
+                    currMargin = currMargin - Math.abs(prevQty) * 1000;
+                }
+                if ( posAsset.getQty() < 0 ) {
+                    currMargin = currMargin + Math.abs(posAsset.getQty()) * 1000;
+                }
+                cashAsset.setMargined(currMargin);
+
+                rl.getTable("Asset").$put( posAsset.getRecordKey(), posAsset, MATCHER_ID );
+                rl.getTable("Asset").$put( cashAsset.getRecordKey(), cashAsset, MATCHER_ID );
+                finished.signal();
 
             });
         });

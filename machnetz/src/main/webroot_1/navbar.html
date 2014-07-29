@@ -31,13 +31,14 @@
         <ul class="nav nav-pills pull-right">
             <li>
                 <div style="padding-top: 14px; padding-right: 24px; ">
-                    Welcome <b>{{user.recordKey}}</b>,
+                    <b>{{user.recordKey}}</b>,
                     <!--available:<span rl-hi><b>{{(user.cashBalance-user.margined)/100|number:2}}€</b></span>-->
                     <!--blocked:<span rl-hi><b>{{user.margined/100|number:2}}€</b></span>-->
                     <!--overall:<span rl-hi><b>{{user.cashBalance/100|number:2}}€</b></span>-->
                     <rl-record table="Asset" record-key="{{user.recordKey}}#cash">
-                        available: <span rl-hi><b>{{(record.qty-record.margined)/100|number:2}}€</b></span>
+                        avail.:  <span rl-hi><b>{{(record.qty-record.margined)/100|number:2}}€</b></span>
                         blocked: <span rl-hi>{{record.margined/100|number:2}}€</span>
+                        total:   <span rl-hi>{{record.qty/100|number:2}}€</span>
                     </rl-record>
                 </div>
             </li>

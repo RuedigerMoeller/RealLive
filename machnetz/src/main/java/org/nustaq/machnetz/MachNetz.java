@@ -111,18 +111,18 @@ public class MachNetz extends WebSocketHttpServer {
         });
 
         Arrays.stream( new Trader[] {
-            new Trader("Hans", "hans@wurst.de", 100000),
-            new Trader("Hubert", "hans@wurst.de", 300000),
-            new Trader("Ruedi", "hans@wurst.de", 200000),
-            new Trader("Hara", "hans@wurst.de", 2000000),
-            new Trader("Kiri", "hans@wurst.de", 3000000),
-            new Trader("Angela", "hans@wurst.de", 11000),
-            new Trader("Mutti", "hans@wurst.de", 100000),
-            new Trader("Feed0", "hans@wurst.de", Integer.MAX_VALUE),
-            new Trader("Feed1", "hans@wurst.de", Integer.MAX_VALUE),
+            new Trader("Hans", "hans@wurst.de"),
+            new Trader("Hubert", "hans@wurst.de"),
+            new Trader("Ruedi", "hans@wurst.de"),
+            new Trader("Hara", "hans@wurst.de"),
+            new Trader("Kiri", "hans@wurst.de"),
+            new Trader("Angela", "hans@wurst.de"),
+            new Trader("Mutti", "hans@wurst.de"),
+            new Trader("Feed0", "hans@wurst.de"),
+            new Trader("Feed1", "hans@wurst.de"),
         }).forEach((trader) -> {
             realLive.getTable("Trader").$put(trader.getRecordKey(),trader,0);
-            realLive.getTable("Asset").$put(trader.getRecordKey()+"#cash",new Asset(trader.getRecordKey()+"#cash",30000),0);
+            realLive.getTable("Asset").$put(trader.getRecordKey()+"#cash",new Asset(trader.getRecordKey()+"#cash",trader.getRecordKey().startsWith("Feed")?Integer.MAX_VALUE : 30000),0);
         });
 
         realLive.stream("Trader").each( (change) -> {
@@ -140,7 +140,7 @@ public class MachNetz extends WebSocketHttpServer {
                     matcher.$init(realLive);
 
                     Feeder feeder = Actors.AsActor(Feeder.class);
-//                    feeder.$feed0(realLive,matcher);
+                    feeder.$feed0(realLive,matcher);
                 } else {
                     System.out.println("instr change "+change.getRecord());
                 }
@@ -168,7 +168,7 @@ public class MachNetz extends WebSocketHttpServer {
                 if ("USA".equals(change.getRecordKey())) {
                     return;
                 }
-                if ( orderCount > 500 ) {
+                if ( orderCount > 1000 ) {
                     RLTable orTable = rl.getTable("Order");
                     orTable.stream().each((delChange) -> {
                         if ( delChange.isAdd() ) {

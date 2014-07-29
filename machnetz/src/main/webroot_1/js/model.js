@@ -1,8 +1,6 @@
 
 var JTrader = function(obj) {
     this.__typeInfo = 'Trader';
-    this.j_cashBalance = function() { return parseInt(this.cashBalance,10); };
-    this.j_margined = function() { return parseInt(this.margined,10); };
     this.j_version = function() { return parseInt(this.version,10); };
     this.j_email = function() { return this.email; };
     this.j_recordKey = function() { return this.recordKey; };
@@ -231,9 +229,7 @@ var JQueryTuple = function(obj) {
 var JOrder = function(obj) {
     this.__typeInfo = 'Order';
     this.j_buy = function() { return this.buy?1:0; };
-    this.j_cashMargin = function() { return parseInt(this.cashMargin,10); };
     this.j_limitPrice = function() { return parseInt(this.limitPrice,10); };
-    this.j_positionMargin = function() { return parseInt(this.positionMargin,10); };
     this.j_qty = function() { return parseInt(this.qty,10); };
     this.j_version = function() { return parseInt(this.version,10); };
     this.j_creationTime = function() { return parseInt(this.creationTime,10); };

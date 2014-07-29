@@ -17,7 +17,7 @@ import java.util.NoSuchElementException;
 /**
  * Created by ruedi on 19.07.14.
  */
-public class InstrumentMatcher {
+public class InstrumentMatcher { // ready to be be an actor if needed
 
     RLTable<Order> orders;
     RLTable<Trade> trades;
@@ -52,7 +52,7 @@ public class InstrumentMatcher {
     }
 
     // return null or error
-    public Future<String> $addOrder(RLTable<Asset> assets, RLTable<Order> orders, Order order, Asset cashAsset, Asset positionAsset ) {
+    public Future<String> addOrder(RLTable<Asset> assets, RLTable<Order> orders, Order order, Asset cashAsset, Asset positionAsset) {
         Promise<String> res = new Promise();
 
         if ( order.isBuy() ) {
@@ -61,15 +61,10 @@ public class InstrumentMatcher {
             // add to open order Qty
             positionAsset.setOpenBuyQty( positionAsset.getOpenBuyQty() + order.getQty() );
 
-            // check if short position present, remove margin from risk calculation in case
-            int worstCaseAssetPosition = positionAsset.getAvaiable() - positionAsset.getOpenBuyQty();
-            int marginReduceQty = 0;
-            if (worstCaseAssetPosition < 0) {
-                marginReduceQty = Math.min(worstCaseAssetPosition, order.getQty());
-                marginReduceQty = Math.max(0,marginReduceQty);
-            }
-            int resultingAvail = cashAsset.getAvaiable() + marginReduceQty * 1000;
-            if ( resultingAvail < 0 ) {
+            int marginImprover = 0;
+            if ( positionAsset.getAvaiable() < 0 )
+                marginImprover = 1000 * -positionAsset.getAvaiable();
+            if (cashAsset.getAvaiable() + marginImprover < 0) {
                 res.receiveResult(null, "Not enough cash avaiable to place Buy order.");
                 return res;
             }
@@ -89,15 +84,10 @@ public class InstrumentMatcher {
             // add to open order Qty
             positionAsset.setOpenSellQty( positionAsset.getOpenSellQty() + order.getQty() );
 
-            // check if long position present, remove margin from risk calculation in case
-            int worstCaseAssetPosition = positionAsset.getAvaiable() - positionAsset.getOpenSellQty();
-            int marginReduceQty = 0;
-            if (worstCaseAssetPosition > 0) {
-                marginReduceQty = Math.min(worstCaseAssetPosition, order.getQty());
-                marginReduceQty = Math.max(0,marginReduceQty);
-            }
-            int resultingAvail = cashAsset.getAvaiable() + marginReduceQty * 1000;
-            if ( resultingAvail < 0 ) {
+            int marginImprover = 0;
+            if ( positionAsset.getAvaiable() > 0 )
+                marginImprover = 1000 * positionAsset.getAvaiable();
+            if ( cashAsset.getAvaiable() + marginImprover < 0 ) {
                 res.receiveResult(null, "Not enough cash avaiable to place Sell order.");
                 return res;
             }

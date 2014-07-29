@@ -38,10 +38,6 @@ public class Order extends Record {
 
     String creationTimeString;
 
-    // set by system upon order add
-    int cashMargin;
-    int positionMargin;
-
     public long getCreationTime() {
         return creationTime;
     }
@@ -109,21 +105,5 @@ public class Order extends Record {
 
     public void setTimeStringFrom(long timeStringFrom) {
         this.creationTimeString = DateFormat.getDateTimeInstance().format(new Date(timeStringFrom));
-    }
-
-    public int getCashMargin() {
-        return cashMargin;
-    }
-
-    public void setCashMargin(int cashMargin) {
-        this.cashMargin = cashMargin;
-    }
-
-    public int getPositionMargin() {
-        return positionMargin;
-    }
-
-    public void setPositionMargin(int positionMargin) {
-        this.positionMargin = positionMargin;
     }
 }

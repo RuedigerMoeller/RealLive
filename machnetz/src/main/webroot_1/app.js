@@ -1,7 +1,7 @@
 
 var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid', 'ngRoute']);
 
-app .config(['$routeProvider',
+app.config(['$routeProvider',
     function($routeProvider) {
         $routeProvider.
             when('/admin', {
@@ -320,19 +320,35 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
 
     $scope.cellClicked = function(table,field,row, event) {
         var recordkey = row.recordKey;
+        var orderFilled = false;
         console.log("clicked "+table+' '+field+' '+recordkey+" "+row);
-        if ( 'Market' == table && (field == 'ask' || field == 'bid' || field == 'bidQty' || field == 'askQty' ) ) {
+
+        if ( ! rlGlobalOrderContext )
+            rlGlobalOrderContext = { order: new JOrder(), orderUnderway:false, ordermsg: '' };
+
+        if ( 'Position' == table ) {
+            var isBuy = row.qty > 0;
+
+            rlGlobalOrderContext.order.instrumentKey = row.instrKey;
+            rlGlobalOrderContext.order.limitPrice = (row.avgPrice < 0 ? -row.avgPrice : row.avgPrice) / 100;
+            rlGlobalOrderContext.order.buy = isBuy ? 0 : 1; // reverse
+            rlGlobalOrderContext.order.qty = row.qty < 0 ? -row.qty : row.qty;
+            rlGlobalOrderContext.ordermsg = '';
+            orderFilled = true;
+
+        } else if ( 'Market' == table && (field == 'ask' || field == 'bid' || field == 'bidQty' || field == 'askQty' ) ) {
             var isBuy = field == 'ask' || field == 'askQty';
-            if ( ! rlGlobalOrderContext )
-                rlGlobalOrderContext = { order: new JOrder(), orderUnderway:false, ordermsg: '' };
 
             rlGlobalOrderContext.order.instrumentKey = recordkey;
-            rlGlobalOrderContext.order.limitPrice = (isBuy ? row.ask : row.bid) /100;
+            rlGlobalOrderContext.order.limitPrice = (isBuy ? row.ask : row.bid) / 100;
             rlGlobalOrderContext.order.buy = isBuy ? 1 : 0;
             rlGlobalOrderContext.order.qty = field == 'bidQty' ? row.bidQty : field == 'askQty' ? row.askQty : 1;
 
             rlGlobalOrderContext.ordermsg = '';
+            orderFilled = true;
+        }
 
+        if (orderFilled) {
             rlGlobalOrderContext.doOrder = function() {
                 rlGlobalOrderContext.order.traderKey = $scope.user.recordKey;
                 var transmittedOrder = new JOrder(rlGlobalOrderContext.order);
