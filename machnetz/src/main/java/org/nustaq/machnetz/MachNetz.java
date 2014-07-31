@@ -183,37 +183,40 @@ public class MachNetz extends WebSocketHttpServer {
                     });
                 } else {
                     if ( change.isAdd() ) {
-                        Instrument instrument = change.getRecord();
-//                        Order newOrder = (Order) rl.getTable("Order").createForAdd();
-                        Order newOrder = new Order();
-                        newOrder.setInstrumentKey(instrument.getRecordKey());
-                        boolean isBuy = Math.random() > .5;
-                        if ( isBuy ) {
-                            newOrder.setBuy(isBuy);
-                            newOrder.setQty((int) (Math.random() * 70 + 50));
-                            newOrder.setLimitPrice((int) (Math.random() * 888 + 1));
-                        } else {
-                            newOrder.setBuy(isBuy);
-                            newOrder.setQty((int) (Math.random() * 70 + 50));
-                            newOrder.setLimitPrice((int) (Math.random() * 500 + 500));
+                        double rand = 1 - (change.getRecordKey().charAt(0) - 65) / 100.0;
+                        if ( Math.random() < rand ) {
+                            Instrument instrument = change.getRecord();
+                            //                        Order newOrder = (Order) rl.getTable("Order").createForAdd();
+                            Order newOrder = new Order();
+                            newOrder.setInstrumentKey(instrument.getRecordKey());
+                            boolean isBuy = Math.random() > .5;
+                            if (isBuy) {
+                                newOrder.setBuy(isBuy);
+                                newOrder.setQty((int) (Math.random() * 70 + 50));
+                                newOrder.setLimitPrice((int) (Math.random() * 888 + 1));
+                            } else {
+                                newOrder.setBuy(isBuy);
+                                newOrder.setQty((int) (Math.random() * 70 + 50));
+                                newOrder.setLimitPrice((int) (Math.random() * 500 + 500));
+                            }
+                            switch ((int) (Math.random() * 2)) {
+                                case 0:
+                                    newOrder.setTraderKey("Feed0");
+                                    break;
+                                case 1:
+                                    newOrder.setTraderKey("Feed1");
+                                    break;
+                            }
+                            newOrder.setCreationTime(System.currentTimeMillis());
+                            int len = (int) (Math.random() * 20 + 1);
+                            String t = "Feeder ";
+                            for (int i = 0; i < len; i++)
+                                t += " poaskdpaokds";
+                            newOrder.setText(t);
+                            // newOrder.$apply(2);
+                            m.$addOrder(newOrder);
+                            orderCount++;
                         }
-                        switch ((int)(Math.random()*2)) {
-                            case 0:
-                                newOrder.setTraderKey("Feed0");
-                                break;
-                            case 1:
-                                newOrder.setTraderKey("Feed1");
-                                break;
-                        }
-                        newOrder.setCreationTime(System.currentTimeMillis());
-                        int len = (int) (Math.random()*20+1);
-                        String t = "Feeder ";
-                        for ( int i = 0; i < len; i++)
-                            t+=" poaskdpaokds";
-                        newOrder.setText(t);
-//                        newOrder.$apply(2);
-                        m.$addOrder(newOrder);
-                        orderCount++;
                     }
                 }
             });

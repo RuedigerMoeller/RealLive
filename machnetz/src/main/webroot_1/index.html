@@ -17,6 +17,8 @@
     <!--<script src="js/angular-strap-2.0.4.tpl.js"></script>-->
     <script src="//angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.11.0.js"></script>
     <script src="js/ng-grid-2.0.11.debug.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="js/d3tip.js"></script>
 
     <script src="js/minbin.js"></script>
     <script src="js/model.js"></script>
@@ -33,7 +35,7 @@
     </style>
 </head>
 
-<body ng-controller="RLAdmin" style="background-color: #eef;">
+<body ng-controller="RLAdmin" style="background-color: #e0e0e5;">
 
 <!--<div style="position: relative;">-->
     <div class="alert alert-{{alertstyle}}" style="z-index: 2000; position: absolute; top: 10px; left: 35%;" role="alert" ng-show="alertmsg">{{alertmsg}}&nbsp;&nbsp;&nbsp;<button type="button" class="close" ng-click="hideAlert()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button></div>

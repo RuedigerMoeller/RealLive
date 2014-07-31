@@ -29,6 +29,9 @@ app.config(['$routeProvider',
                 resolve: requireAuthentication()
             }).
             when('/login', {
+                templateUrl: 'empty.html'
+            }).
+            when('/showcase', {
                 templateUrl: 'loginview.html'
             }).
             when('/position', {
@@ -37,9 +40,136 @@ app.config(['$routeProvider',
                 resolve: requireAuthentication()
             }).
             otherwise({
-                templateUrl: 'loginview.html'
+                templateUrl: 'empty.html'
             });
     }]);
+
+app.directive('rlBubbles', function () {
+
+    return {
+        restrict: 'EA',
+        scope: true,
+        link: function ($scope, $element, $attrs) {
+            $scope.field = $attrs.field;
+            $scope.textAttr = $attrs.textAttr;
+            $scope.table = $attrs.table;
+            $scope.query =$attrs.query;
+            $scope.size = $attrs.size; // always quadratic
+            $scope.color = $attrs.color;
+
+            var resultSet = new RLResultSet();
+
+            if ( ! $scope.size )
+                $scope.size = 400;
+            if ( ! $scope.textAttr )
+                $scope.textAttr = 'recordKey';
+            if ( ! $scope.color )
+                $scope.color = "steelblue";
+
+
+            $scope.canvas = d3.select($element[0]).append("svg")
+                .attr('width',  ($scope.size)+"px")
+                .attr('height', ($scope.size)+"px");
+//                .append("g");
+//                .attr("transform", "translate(" + 0 + "," + 0 + ")"); // origin
+            $scope.pack = d3.layout.pack().size([$scope.size-10,$scope.size-10]).padding(5);
+
+            var tip = d3.tip()
+                .attr('class', 'd3-tip')
+                .html(function(d) {
+                    if (d.children)
+                        return '';
+                    return d[$scope.textAttr] +' '+d[$scope.field];
+                })
+                .offset([0, 3]);
+
+            $scope.subsId = 0;
+            $attrs.$observe('query', function(data) {
+                $scope.query = data;
+                if ( RealLive.socketConnected ) {
+                    RealLive.subscribeSet($scope.table,$scope.query,resultSet, $scope );
+                }
+                resultSet.postChangeHook = function (change, snapFin) {
+                    $scope.bubbles(resultSet.list);
+                };
+            }, true);
+
+            $scope.bubbles = function(dataSet) {
+
+                var max = 0;
+                for ( var i = 0; i < dataSet.length; i++ ) {
+                    var newVar = dataSet[i][$scope.field];
+                    if ( newVar > max )
+                        max = newVar;
+                }
+
+                var fac = 1;
+                if ( max > 1 ) {
+                    fac = $scope.size/max;
+                }
+
+                for ( var i = 0; i < dataSet.length; i++ ) {
+                    var newVar = dataSet[i][$scope.field];
+                    dataSet[i].value = newVar * fac;
+                }
+
+                var nodeSet = $scope.pack.nodes({ name: 'top', children: dataSet });
+
+                $scope.canvas.call(tip);
+
+                var nodes = $scope.canvas.selectAll('.node').data(nodeSet);
+                var node = nodes.enter()
+                    .append('g')
+                    .attr("class", "node")
+                    .attr("transform", function(d) { return "translate("+ d.x +"," + d.y + ")"; } );
+
+                node
+                    .append("circle")
+                    .attr("r", function(d) { return d.r; })
+                    .attr("fill", function(d) { return d.children ? "#fff": $scope.color; } )
+                    .attr("stroke", "black" ) //function(d) { return d.children ? "#fff": $scope.color; })
+                    .attr("stroke-width", "2")
+                    .attr("stroke-opacity", ".8")
+                    .attr("opacity",.25)
+                    .on('mousedown', tip.show )
+                    .on('mouseout', tip.hide );
+                node
+                    .append("text")
+                    .text( function(d) { return d.children ? "" : d[$scope.textAttr];}).attr("style", 'text-anchor: middle;')
+                      .on('mousedown', tip.show )
+                      .on('mouseout', tip.hide );
+
+
+                var trans = nodes.transition();
+
+                // ... update circle radius
+                trans.select("circle")
+                    .transition()
+                    .attr("r", function(d) { return d.r; });
+
+                trans.select("text").transition()
+                    .text( function(d) { return d.children ? "" : d[$scope.textAttr];}).attr("style", 'text-anchor: middle;');
+
+                trans.duration(500)
+                    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+                    .attr("r", function(d) { return d.r; });
+
+                var exit = nodes.exit();
+
+                exit.select("g")
+                    .remove();
+//                exit.select("circle")
+//                    .remove();
+//                exit.select("text")
+//                    .remove();
+            };
+
+//            $scope.$watch('data', function(){
+//                $scope.bubbles($scope.resultSet.list);
+//            }, true);
+        }
+    };
+});
 
 app.directive('rlPopover', function ($compile,$templateCache,$http) {
 
