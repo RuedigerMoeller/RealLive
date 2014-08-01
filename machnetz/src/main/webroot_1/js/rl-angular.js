@@ -1,47 +1,205 @@
 angular.module('rl-angular', ['ngGrid'])
 
 
-.directive('rlStream', function () {
+.directive('rlMonitorChart', function () {
 
     return {
         restrict: 'EA',
         scope: true,
-        link: function ($scope, $element, $attrs) {
+        link: function ($scope, $element, $attrs, $filter) {
+            // attributes + defaults
+            var title = $attrs.title;
             var field = $attrs.field;
-            var textAttr = $attrs.textAttr;
             var table = $attrs.table;
             var recordKey = $attrs.recordKey; //
             var color = $attrs.color;
+            var width = $attrs.width;
+            var height = $attrs.height;
+            var maxVal = $attrs.max;
+            var interval = $attrs.interval;
+            var n = $attrs.points;
+            var xfilter = $attrs.xfilter;
+            var yfilter = $attrs.yfilter;
+            var diff = $attrs.diff;
 
-            var maxDataLen = 300;
-            var interval = 1000;
-            var rawData = [1,5,7,44,5,4];
-
-            if ( ! textAttr )
-                textAttr = 'recordKey';
+            if ( ! width )
+                width = 600;
+            if ( ! height )
+                height = 150;
+            if ( ! title )
+                title = 'title';
             if ( ! color )
                 color = "steelblue";
+            if ( ! maxVal )
+                maxVal = 10;
+            if ( ! interval )
+                interval = 1000;
+            if ( ! n )
+                n = 120;
 
 
-            var canvas = d3.select($element[0]).append("svg")
-                .attr('width',  (600)+"px")
-                .attr('height', (300)+"px");
-//                .append("g");
-//                .attr("transform", "translate(" + 0 + "," + 0 + ")"); // origin
+            // chart ..
 
+            var data = d3.range(n).map(function(d) { return 0;});
+
+            var margin = {top: 20, right: 50, bottom: 20, left: 40};
+
+            width = width - margin.left - margin.right;
+            height = height - margin.top - margin.bottom;
+
+            var x = d3.scale.linear()
+                .domain([0, n - 1])
+                .range([0, width]);
+
+            var y = d3.scale.linear()
+                .domain([0, maxVal])
+                .range([height, 0]);
+
+            var line = d3.svg.area()
+                .x(function(d, i) {
+                    return x(i);
+                })
+                .y(function(d, i) {
+                    return y(d);
+                })
+                .y0(height);
+
+            var svg = d3.select($element[0]).append("svg")
+                .attr("class", "monline")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            svg.append("text")      // title
+                .attr("x", width/2 )
+                .attr("y",  height/2 )
+                .style("text-anchor", "middle")
+                .attr("font-size", '20px')
+                .attr("font-weight", 'bold')
+                .attr("opacity", 0.4)
+                .text(title);
+
+            svg.append("defs").append("clipPath")
+                .attr("id", "clip")
+                .append("rect")
+                .attr("width", width)
+                .attr("height", height);
+
+            var xaxis =
+                d3.svg.axis().scale(x).orient("bottom")
+                .ticks(height > 800 ? 10 : 5)
+                .tickSize(-height, 0, 0);
+
+            if ( xfilter ) {
+                var fun = function(d) {
+                    var res = $scope.$eval(xfilter, {val:n-d});
+                    return res;
+                };
+                xaxis.tickFormat(fun);
+            } else {
+                xaxis.tickFormat(function(d) { return ""+((n-d)*interval)/1000+"s"; });
+            }
+            svg.append("g")
+                .attr("class", "x axis monline")
+                .attr("transform", "translate(0," + y(0) + ")")
+                .call(xaxis);
+
+            var yaxis = d3.svg.axis().scale(y).orient("left")
+                .ticks(5)
+                .tickSize(-width, 0, 0);
+            if ( yfilter ) {
+                yaxis.tickFormat(function(d) { return $scope.$eval(yfilter, {val:d}); });
+            }
+            svg.append("g")
+                .attr("class", "y axis monline")
+                .call( yaxis );
+
+            var path = svg.append("g")
+                .attr("clip-path", "url(#clip)")
+                .append("path")
+                .datum(data)
+                .attr("fill", color)
+                .attr("class", "line monline")
+                .attr("d", line );
+
+            // tooltip stuff
+            var focus = svg.append("g")
+                .attr("class", "focus")
+                .style("display", "none");
+
+            focus.append("circle")
+                .attr("r", 3.0);
+
+            focus.append("text")
+                .attr("x", 9)
+                .attr("font-size", '12px')
+                .attr("dy", "-1.0em");
+
+            svg.append("rect")
+                .attr("class", "overlay")
+                .attr("width", width)
+                .attr("height", height)
+                .on("mouseover", function() { focus.style("display", null); })
+                .on("mouseout", function() { focus.style("display", "none"); })
+                .on("mousemove", mousemove);
+
+            function mousemove() {
+                var x0 = x.invert(d3.mouse(this)[0]),
+                    i = Math.floor(x0),
+                    d = data[i];
+                focus.attr("transform", "translate(" + x(i) + "," + y(d) + ")");
+                focus.select("text").text("x:"+i+" y:"+d);
+            }
+
+            // animation
+            tick();
+            function tick() {
+                if ( ! lastValue ) {
+                    lastValue = 0; prevLast = 0;
+                }
+                if ( diff ) {
+                    // push a new data point onto the back
+                    data.push(lastValue-prevLast);
+                } else {
+                    // push a new data point onto the back
+                    data.push(lastValue);
+                }
+
+                var max = d3.max(data, function(d) { return d; });
+                if ( max > maxVal ) {
+                    y.domain([0, max]).nice();
+                    var t = svg.transition().duration(500);
+                    t.select(".y.axis").call(yaxis);
+                }
+
+                // redraw the line, and slide it to the left
+                path
+                    .attr("d", line)
+                    .attr("transform", null)
+                    .transition()
+                    .duration(interval)
+                    .ease("linear")
+                    .attr("transform", "translate(" + x(-1) + ",0)")
+                    .each("end", tick);
+
+                // pop the old data point off the front
+                data.shift();
+            }
+
+            // data subscription
             var subsId = 0;
-            var lastValue = 0;
+            var lastValue = 0, prevLast = 0;
             $attrs.$observe('recordKey', function(data) {
                 recordKey = data;
                 if ( RealLive.socketConnected ) {
                     RealLive.unsubscribe(subsId);
-                    subsId = RealLive.subscribeKey(table, recordKey, new function(change) {
+                    subsId = RealLive.subscribeKey(table, recordKey, function(change) {
                         switch (change.type) {
                             case RL_ADD:
                             case RL_UPDATE:
-                                lastValue = change.record[field];
-                                rawData.push();
-                                render(rawData);
+                                prevLast = lastValue;
+                                lastValue = change.newRecord[field];
                                 break;
                             case RL_REMOVE:
                                 break;
@@ -52,20 +210,6 @@ angular.module('rl-angular', ['ngGrid'])
                 }
             }, true);
 
-            var ticker = function() {
-                rawData.push(lastValue);
-                render(rawData);
-                setTimeout( ticker, 1000 );
-            };
-
-            var render = function(dataSet) {
-                canvas.selectAll("path")
-                    .data(dataSet)
-                    .enter().append("path")
-                      .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
-                      .style("fill", function(d, i) { return color(i); })
-                      .attr("d", area);
-            };
         }
     };
 })
@@ -95,9 +239,10 @@ angular.module('rl-angular', ['ngGrid'])
 
             var canvas = d3.select($element[0]).append("svg")
                 .attr('width',  (size)+"px")
-                .attr('height', (size)+"px");
-//                .append("g");
-//                .attr("transform", "translate(" + 0 + "," + 0 + ")"); // origin
+                .attr('height', (size)+"px")
+                .append("g")
+                .attr("transform", "translate(" + 5 + "," + 5 + ")"); // origin
+
             var pack = d3.layout.pack().size([size-10,size-10]).padding(5);
 
             var tip = d3.tip()
@@ -183,7 +328,7 @@ angular.module('rl-angular', ['ngGrid'])
 
                 var exit = nodes.exit();
 
-                exit.select("g")
+                exit.select(".node")
                     .remove();
 //                exit.select("circle")
 //                    .remove();

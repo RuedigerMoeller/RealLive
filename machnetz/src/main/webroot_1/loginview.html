@@ -19,13 +19,52 @@
 
 <table>
     <tr>
-        <td align="center">
-            <b>Volume</b>
+        <td>
+            <rl-monitor-chart
+                table="Market"
+                record-key="Germany"
+                field="lastPrc"
+                title="Germany Price"
+                max="500"
+                interval="2000"
+                points="120"
+                yfilter="val/100|currency:'€'"
+                width="800"
+            >
+            </rl-monitor-chart>
         </td>
     </tr>
     <tr>
         <td>
-            <rl-bubbles table="Instrument" query="it.contractsTraded > 0" field="contractsTraded" text-attr="recordKey"></rl-bubbles>
+            <rl-monitor-chart
+                    table="Market"
+                    record-key="Germany"
+                    field="bidQty"
+                    title="Germany Bid Qty"
+                    max="10"
+                    interval="2000"
+                    points="120"
+                    width="800"
+                    color="lightblue"
+            >
+            </rl-monitor-chart>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <rl-monitor-chart
+                    table="SysTable"
+                    record-key="Trade"
+                    field="numElems"
+                    title="Trades / 10sec"
+                    max="10"
+                    interval="10000"
+                    points="60"
+                    width="800"
+                    color="lightgreen"
+                    diff="true"
+                    >
+            </rl-monitor-chart>
         </td>
     </tr>
 </table>

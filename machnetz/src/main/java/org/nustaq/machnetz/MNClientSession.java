@@ -238,7 +238,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     HashMap<String, Subscription> subscriptions = new HashMap<>();
 
-    Object unsubscribe(Invocation<String> inv) {
+    Object unsubscribe(Invocation inv) {
         String subsId = ""+inv.getArgument();
         unsubscribe(subsId);
         return NO_RESULT;

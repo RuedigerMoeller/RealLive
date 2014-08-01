@@ -2,28 +2,46 @@
 <meta charset="utf-8">
 <style>
 
-    svg {
+    svg.monline {
         font: 10px sans-serif;
     }
 
-    .line {
-        fill: #99c;
+    path.monline {
         stroke: #000;
-        stroke-width: 1.5px;
+        fill-opacity: .4;
     }
 
-    path {
-        stroke: #000;
-        fill-opacity: .8;
-    }
-
-    .axis path,
-    .axis line {
+    .axis.monline path {
         fill: none;
         stroke: #000;
+        stroke-opacity: .75;
         shape-rendering: crispEdges;
     }
 
+    .axis.monline path.domain {
+        stroke-opacity: .75;
+    }
+
+    .axis.monline line {
+        fill: none;
+        stroke: #000;
+        stroke-opacity: .25;
+        shape-rendering: crispEdges;
+    }
+
+    .axis.monline line.zero {
+        stroke-opacity: .75;
+    }
+
+    .overlay {
+        fill: none;
+        pointer-events: all;
+    }
+
+    .focus circle {
+        fill: steelblue;
+        stroke: steelblue;
+    }
 </style>
 <body>
 <script src="http://d3js.org/d3.v3.min.js"></script>
@@ -31,18 +49,18 @@
 
     var n = 100,
             random = d3.random.normal(0, .2),
-            data = d3.range(n); //.map(random);
+            data = d3.range(n).map(function(d) { return 0;});
 
-    var margin = {top: 20, right: 20, bottom: 20, left: 40},
+    var margin = {top: 20, right: 50, bottom: 20, left: 40},
             width = 960 - margin.left - margin.right,
-            height = 200 - margin.top - margin.bottom;
+            height = 170 - margin.top - margin.bottom;
 
     var x = d3.scale.linear()
             .domain([0, n - 1])
             .range([0, width]);
 
     var y = d3.scale.linear()
-            .domain([0, 1])
+            .domain([0, 10])
             .range([height, 0]);
 
     var line = d3.svg.area()
@@ -55,10 +73,21 @@
             .y0(height);
 
     var svg = d3.select("body").append("svg")
+            .attr("class", "monline")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.append("text")      // text label for the x axis
+            .attr("x", width/2 )
+            .attr("y",  height/2 )
+            .style("text-anchor", "middle")
+            .attr("font-size", '20px')
+            .attr("font-weight", 'bold')
+            .attr("opacity", 0.4)
+            .text("Broadcasts");
+
 
     svg.append("defs").append("clipPath")
             .attr("id", "clip")
@@ -67,28 +96,74 @@
             .attr("height", height);
 
     svg.append("g")
-            .attr("class", "x axis")
+            .attr("class", "x axis monline")
             .attr("transform", "translate(0," + y(0) + ")")
-            .call(d3.svg.axis().scale(x).orient("bottom"));
+            .call(d3.svg.axis().scale(x).orient("bottom")
+                  .ticks(10)
+                  .tickSize(-height, 0, 0)
+            );
 
     svg.append("g")
-            .attr("class", "y axis")
-            .call(d3.svg.axis().scale(y).orient("left"));
+            .attr("class", "y axis monline")
+            .call(
+              d3.svg.axis().scale(y).orient("left")
+                .ticks(5)
+                .tickSize(-width, 0, 0)
+//                .tickFormat("")
+            );
 
     var path = svg.append("g")
             .attr("clip-path", "url(#clip)")
             .append("path")
             .datum(data)
-            .attr("class", "line")
+            .attr("class", "line monline")
             .attr("d", line );
-//            .attr("d", function(d) { return "M 0,200 "+line(d) + " M 300,0"; });
 
+    // tooltip stuff
+    var focus = svg.append("g")
+            .attr("class", "focus")
+            .style("display", "none");
+
+    focus.append("circle")
+            .attr("r", 3.0);
+
+    focus.append("text")
+            .attr("x", 9)
+            .attr("font-size", '12px')
+            .attr("dy", "-1.0em");
+
+    svg.append("rect")
+            .attr("class", "overlay")
+            .attr("width", width)
+            .attr("height", height)
+            .on("mouseover", function() { focus.style("display", null); })
+            .on("mouseout", function() { focus.style("display", "none"); })
+            .on("mousemove", mousemove);
+
+    function mousemove() {
+        var x0 = x.invert(d3.mouse(this)[0]),
+            i = Math.floor(x0),
+            d = data[i];
+        focus.attr("transform", "translate(" + x(i) + "," + y(d) + ")");
+        focus.select("text").text("x:"+i+" y:"+d);
+    }
+
+
+    //            .attr("d", function(d) { return "M 0,200 "+line(d) + " M 300,0"; });
+
+    // animation
     tick();
-
+    var rand;
     function tick() {
 
         // push a new data point onto the back
-        var rand = Math.random();
+        rand = rand + Math.random()-.5;
+        if ( rand >= 9.5 )
+            rand = 9.9;
+        if ( rand <= 0 )
+            rand = 0.01;
+        if ( ! rand )
+            rand = 0.1;
         data.push(rand);
 
         // redraw the line, and slide it to the left

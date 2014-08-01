@@ -122,3 +122,44 @@ td {
     stroke: none;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
+
+svg.monline {
+    font: 10px sans-serif;
+}
+
+path.monline {
+    stroke: #000;
+    fill-opacity: .4;
+}
+
+.axis.monline path {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: .75;
+    shape-rendering: crispEdges;
+}
+
+.axis.monline path.domain {
+    stroke-opacity: .75;
+}
+
+.axis.monline line {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: .25;
+    shape-rendering: crispEdges;
+}
+
+.axis.monline line.zero {
+    stroke-opacity: .75;
+}
+
+.overlay {
+    fill: none;
+    pointer-events: all;
+}
+
+.focus circle {
+    fill: steelblue;
+    stroke: steelblue;
+}

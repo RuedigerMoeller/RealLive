@@ -1,0 +1,33 @@
+<div ng-controller="Tables">
+<form ng-submit="doQuery()">
+    <table style="width: 100%;" cellpadding="4px">
+        <tr>
+            <td>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <input ng-model="table" type="text" class="form-control" placeholder="Table" required>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <input ng-model="query" type="text" class="form-control" placeholder="Query" required>
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;
+            </td>
+        </tr>
+        <tr>
+            <td align="left" valign="center">
+                <div rl-hi>{{msg}}</div>
+            </td>
+            <td align="RIGHT">
+                <button type="submit" style="width: 80px;" class="btn btn-primary btn-default" id="login" ng-click="doQuery()">Query</button>
+            </td>
+        </tr>
+    </table>
+    <rl-table table="{{table}}" height="600px" query="{{query}}"></rl-table>
+</form>
+</div>
