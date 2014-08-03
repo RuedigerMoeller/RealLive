@@ -180,7 +180,7 @@ angular.module('rl-angular', ['ngGrid'])
                 .call(xaxis);
 
             var yaxis = d3.svg.axis().scale(y).orient("left")
-                .ticks(height > 200 ? 5 : 2)
+                .ticks(height > 150 ? 5 : 2)
                 .tickSize(-width, 0, 0);
             if ( yfilter ) {
                 yaxis.tickFormat(function(d) { return $scope.$eval(yfilter, {val:d}); });
