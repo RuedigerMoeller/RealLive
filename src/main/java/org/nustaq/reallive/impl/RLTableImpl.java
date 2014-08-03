@@ -141,6 +141,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             record._setMode(Record.Mode.UPDATE);
             record.copyTo(res);
             record._setOriginalRecord(res);
+            record._setTable(self());
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {

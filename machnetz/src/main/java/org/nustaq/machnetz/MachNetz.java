@@ -154,25 +154,6 @@ public class MachNetz extends WebSocketHttpServer {
 
         });
 
-        try {
-            ConfigReader.init();
-            SchemaConfig c = new SchemaConfig();
-            TableConfig tc = new TableConfig();
-            ColumnConfig cf = new ColumnConfig();
-            cf.setBgColor("#fff");
-            tc.getColumns().put("bcColor",cf);
-            c.getTables().put("SysTable",tc);
-            String s = Dson.getInstance().writeObject(c);
-            System.out.println(s);
-
-            if ( new File("./annotations.dson").exists() ) {
-                SchemaConfig schemaConfig = ConfigReader.readConfig("./annotations.dson");
-                System.out.println("read config");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 
     volatile static boolean stopF = false;

@@ -1,5 +1,79 @@
 angular.module('rl-angular', ['ngGrid'])
 
+.directive('rlDonutValue', function () {
+
+    return {
+        restrict: 'EA',
+        scope: true,
+        link: function ($scope, $element, $attrs) {
+            // attributes + defaults
+            var size = $attrs.size;
+            var maxVal = $attrs.max;
+            var value = $attrs.value;
+            var color0 = '#99f';
+            var color1 = '#77e';
+
+            if (!size)
+                size = 80;
+            if (!maxVal)
+                maxVal = 100;
+            var svg = d3.select($element[0]).append("svg")
+                .attr("width", size)
+                .attr("height", size)
+                .append("g")
+                .attr("transform", "translate(" + size / 2 + "," + size / 2 + ")");
+            var text_y = "+.30em";
+
+            var dataset = {
+                    lower: calcPercent(0),
+                    upper: calcPercent(value)
+                },
+                radius = size / 2,
+                pie = d3.layout.pie().sort(null),
+                format = d3.format(".0%");
+
+            var arc = d3.svg.arc()
+                .innerRadius(radius - 20)
+                .outerRadius(radius);
+
+
+            var path = svg.selectAll("path")
+                .data(pie(dataset.lower))
+                .enter().append("path")
+                .attr("fill", function(d, i) { return i == 0 ? color0 : color1; })
+                .attr("d", arc)
+                .each(function(d) { this._current = d; }); // store the initial values
+
+            var text = svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("font-weight", "bold")
+                .attr("font-size", "14px")
+                .attr("dy", text_y);
+
+            var progress = 0;
+            var timeout = setTimeout(function () {
+                clearTimeout(timeout);
+                path = path.data(pie(dataset.upper)); // update the data
+                path.transition().duration(2000).attrTween("d", function (a) {
+                    // Store the displayed angles in _current.
+                    // Then, interpolate from _current to the new angles.
+                    // During the transition, _current is updated in-place by d3.interpolate.
+                    var i  = d3.interpolate(this._current, a);
+                    var i2 = d3.interpolate(progress, value);
+                    this._current = i(0);
+                    return function(t) {
+                        text.text( format(i2(t) / 100) );
+                        return arc(i(t));
+                    };
+                }); // redraw the arcs
+            }, 200);
+
+            function calcPercent(percent) {
+                return [percent, 100-percent];
+            }
+        }
+    };
+})
 
 .directive('rlMonitorChart', function () {
 
@@ -88,7 +162,7 @@ angular.module('rl-angular', ['ngGrid'])
 
             var xaxis =
                 d3.svg.axis().scale(x).orient("bottom")
-                .ticks(height > 800 ? 10 : 5)
+                .ticks(width > 600 ? 10 : 5)
                 .tickSize(-height, 0, 0);
 
             if ( xfilter ) {
@@ -106,7 +180,7 @@ angular.module('rl-angular', ['ngGrid'])
                 .call(xaxis);
 
             var yaxis = d3.svg.axis().scale(y).orient("left")
-                .ticks(5)
+                .ticks(height > 200 ? 5 : 2)
                 .tickSize(-width, 0, 0);
             if ( yfilter ) {
                 yaxis.tickFormat(function(d) { return $scope.$eval(yfilter, {val:d}); });

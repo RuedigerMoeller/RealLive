@@ -6,27 +6,17 @@ import java.util.HashMap;
 /**
  * Created by ruedi on 03.08.14.
  */
-public class ColumnConfig implements Serializable {
+public class ColumnConfig {
 
-    String align;
-    String bgColor;
-    String colColor;
-
-    public int getColOrder() {
-        return colOrder;
-    }
-
-    public void setColOrder(int colOrder) {
-        this.colOrder = colOrder;
-    }
-
-    int colOrder;
-    String description;
-    String displayName;
-    String displayWidth;
-    boolean hidden;
-    String renderStyle;
-    String textColor;
+    public String align;
+    public String bgColor;
+    public Integer colOrder;
+    public String description;
+    public String displayName;
+    public String displayWidth;
+    public Boolean hidden;
+    public String renderStyle;
+    public String textColor;
 
     public String getAlign() {
         return align;
@@ -44,12 +34,12 @@ public class ColumnConfig implements Serializable {
         this.bgColor = bgColor;
     }
 
-    public String getColColor() {
-        return colColor;
+    public Integer getColOrder() {
+        return colOrder;
     }
 
-    public void setColColor(String colColor) {
-        this.colColor = colColor;
+    public void setColOrder(Integer colOrder) {
+        this.colOrder = colOrder;
     }
 
     public String getDescription() {
@@ -76,11 +66,11 @@ public class ColumnConfig implements Serializable {
         this.displayWidth = displayWidth;
     }
 
-    public boolean isHidden() {
+    public Boolean getHidden() {
         return hidden;
     }
 
-    public void setHidden(boolean hidden) {
+    public void setHidden(Boolean hidden) {
         this.hidden = hidden;
     }
 

@@ -10,14 +10,19 @@ import org.nustaq.machnetz.model.rlxchange.Trade;
 import org.nustaq.reallive.*;
 import org.nustaq.reallive.client.ReplicatedSet;
 import org.nustaq.reallive.queries.JSQuery;
+import org.nustaq.reallive.sys.config.ConfigReader;
+import org.nustaq.reallive.sys.config.SchemaConfig;
 import org.nustaq.reallive.sys.messages.Invocation;
 import org.nustaq.reallive.sys.messages.InvocationCallback;
 import org.nustaq.reallive.sys.messages.QueryTuple;
+import org.nustaq.reallive.sys.metadata.Metadata;
 import org.nustaq.serialization.FSTClazzInfo;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.minbin.MBPrinter;
+import org.nustaq.serialization.util.FSTUtil;
 import org.nustaq.webserver.ClientSession;
 
+import java.io.File;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -145,7 +150,17 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     Object initModel(Invocation inv) {
         System.out.println("Called method initModel !!!");
-        return getRLDB().getMetadata();
+        Metadata metadata = FSTConfiguration.getDefaultConfiguration().deepCopy( getRLDB().getMetadata() );
+        try {
+            if ( new File("./annotations.dson").exists() ) {
+                SchemaConfig schemaConfig = ConfigReader.readConfig("./annotations.dson");
+                System.out.println("read config");
+                metadata.overrideWith(schemaConfig);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return metadata;
     }
 
     Object streamTable(Invocation inv) {

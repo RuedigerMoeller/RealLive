@@ -1,5 +1,9 @@
 package org.nustaq.reallive.sys.metadata;
 
+import org.nustaq.reallive.sys.config.ColumnConfig;
+import org.nustaq.reallive.sys.config.SchemaConfig;
+import org.nustaq.reallive.sys.config.TableConfig;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,5 +32,30 @@ public class Metadata implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void overrideWith(SchemaConfig conf) {
+        tables.keySet().forEach( (tableId) -> {
+            TableConfig table = conf.getTable(tableId);
+            if (table != null ) {
+                tables.get(tableId).getColumns().keySet().forEach( (columnId) -> {
+                    ColumnConfig config = table.getConfig(columnId);
+                    if ( config != null ) {
+                        ColumnMeta column = tables.get(tableId).getColumn(columnId);
+
+                        if ( config.hidden != null ) column.setHidden(config.hidden);
+                        if ( config.align != null ) column.setAlign(config.align);
+                        if ( config.bgColor != null ) column.setBgColor(config.bgColor);
+                        if ( config.colOrder != null ) column.setOrder(config.colOrder);
+                        if ( config.description != null ) column.setDescription(config.description);
+                        if ( config.displayName != null ) column.setDisplayName(config.displayName);
+                        if ( config.displayWidth != null ) column.setDisplayWidth(config.displayWidth);
+                        if ( config.renderStyle != null ) column.setRenderStyle(config.renderStyle);
+                        if ( config.textColor != null ) column.setTextColor(config.textColor);
+
+                    }
+                });
+            }
+        });
     }
 }

@@ -25,6 +25,10 @@ public class TableMeta implements Serializable {
         }
     }
 
+    public HashMap<String, ColumnMeta> getColumns() {
+        return columns;
+    }
+
     public String getCustomMeta() {
         return customMeta;
     }

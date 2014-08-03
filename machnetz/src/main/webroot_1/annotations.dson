@@ -1,12 +1,25 @@
-schema: [
-  SysTable:
-    table: [
-      recordKey: column { colOrder: 1 }
-    ]
-  Session:
-    table: [
-      recordKey: column { hidden: true }
-      version: column { hidden: true }
-      loginTime: column { displayWidth: '160px' }
-    ]
-]
+schema {
+
+    tables: {
+
+        Session: {
+            columns: {
+                recordKey: { hidden: true }
+                version:   { hidden: true }
+                requests:  { displayWidth: '60px' displayName: 'Req' colOrder: 40 }
+                subscriptions: { displayWidth: '60px' displayName: 'Subs' colOrder: 30 }
+                loginTime: { displayWidth: '170px' colOrder: 20 }
+                traderKey: { colOrder: 10 }
+            }
+        }
+
+        Instrument: {
+            columns: {
+                expiryDate: { hidden: true }
+                expiryDateString: { displayName: 'Expiry' }
+            }
+        }
+
+    }
+
+}
