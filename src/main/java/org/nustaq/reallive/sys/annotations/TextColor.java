@@ -6,10 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * denotes a table that is not actually created + persisted but is a result of computing.
- * Used to just easily define metainformation
+ * Created by ruedi on 21.07.14.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.FIELD})
-public @interface Virtual {
+@Target({ElementType.FIELD, ElementType.TYPE})
+public @interface TextColor {
+    String value();
 }

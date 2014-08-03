@@ -1,14 +1,24 @@
 <table width="100%">
+<tr>
+    <td style="padding-top: 4px;font-size: 1.3em;"> <b>Position</b></td>
+</tr>
+<tr>
+    <td colspan="2" width="100%" style="vertical-align:top; padding: 0px; overflow-x: auto;">
+        <span class="repeater" ng-repeat="position in positions.list" >
+            <span>
+               <ng-include src="'position.html'"></ng-include>
+            </span>
+        </span>
+    </td>
+</tr>
+    <tr>
+        <td>&nbsp;<br></td>
+    </tr>
 <tr align="top">
     <td style="vertical-align:top;">
-        <table class="rllightbg" width="100%">
+        <table width="100%">
             <tr>
-                <td style="padding-top: 4px;"> <b>&nbsp;Market</b></td>
-                <td align="right">
-                    <div ng-click="isMarketCollapsed = !isMarketCollapsed">
-                        <img src="img/appbar.chevron.down.png" style="width:20px; height: 20px;">
-                    </div>
-                </td>
+                <td style="padding-top: 4px;font-size: 1.3em;"> <b>Market</b></td>
             </tr>
             <tr>
                 <td colspan="2">
@@ -27,16 +37,9 @@
             </tr>
         </table>
         <br>
-        <!--<ng-include src="'orderentry.html'"></ng-include>-->
-        <!--<br>-->
-        <table width="100%" class="rllightbg">
+        <table width="100%">
             <tr>
-                <td style="padding-top: 4px;"> <b>&nbsp;Orders</b></td>
-                <td align="right" >
-                    <div ng-click="isOrderCollapsed = !isOrderCollapsed">
-                        <img src="img/appbar.chevron.down.png" style="width:20px; height: 20px;">
-                    </div>
-                </td>
+                <td style="padding-top: 4px;font-size: 1.3em;"> <b>Orders</b></td>
             </tr>
             <tr>
                 <td colspan="2" width="100%">
@@ -52,25 +55,33 @@
                 </td>
             </tr>
         </table>
+        <br>
+        <table width="100%">
+            <tr>
+                <td style="padding-top: 4px;font-size: 1.3em;"> <b>Trades</b></td>
+            </tr>
+            <tr>
+                <td colspan="2" width="100%">
+                    <div collapse="isOrderCollapsed">
+                        <rl-table
+                                table="Trade"
+                                rl-query="it.sellTraderKey=='{{user.recordKey}}' || it.buyTraderKey=='{{user.recordKey}}'"
+                                height="300px"
+                                rl-exclude="version,recordKey"
+                        >
+                        </rl-table>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
     </td>
-
-    <td style="vertical-align:top; padding: 0px; padding-left: 8px;">
-        <div>
-            <div style="overflow-y:auto; min-width: 150px; max-height: 600px; padding: 0px;">
-                <div ng-repeat="position in positions.list" >
-                    <div style="padding-right: 12px; padding-bottom: 4px;"></div>
-                    <ng-include src="'position.html'"></ng-include>
-                </div>
-            </div>
-        </div>
-    </td>
-
-    <td width="40px">&nbsp;</td>
 
 </tr>
 
 </table>
-
+<br>
+<br>
+<br>
 
 

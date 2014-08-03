@@ -1,15 +1,14 @@
 package org.nustaq.machnetz;
 
 import org.nustaq.kontraktor.Actor;
-import org.nustaq.kontraktor.annotations.*;
 import io.netty.channel.ChannelHandlerContext;
-import org.nustaq.machnetz.model.TestModel;
+import org.nustaq.machnetz.model.DataModel;
 import org.nustaq.machnetz.model.rlxchange.Order;
 import org.nustaq.machnetz.model.rlxchange.Position;
+import org.nustaq.machnetz.model.rlxchange.Session;
 import org.nustaq.machnetz.model.rlxchange.Trade;
 import org.nustaq.reallive.*;
 import org.nustaq.reallive.client.ReplicatedSet;
-import org.nustaq.reallive.impl.SubscriptionImpl;
 import org.nustaq.reallive.queries.JSQuery;
 import org.nustaq.reallive.sys.messages.Invocation;
 import org.nustaq.reallive.sys.messages.InvocationCallback;
@@ -22,6 +21,9 @@ import org.nustaq.webserver.ClientSession;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,37 +36,58 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     private static final Object NO_RESULT = "NO_RESULT";
     static FSTConfiguration conf = FSTConfiguration.createCrossPlatformConfiguration();
     static {
-        conf.registerCrossPlatformClassMappingUseSimpleName(new TestModel().getClasses());
+        conf.registerCrossPlatformClassMappingUseSimpleName(new DataModel().getClasses());
     }
 
     protected MachNetz server; // FIXME: iface
 
-    int sessionId;
+    String sessionKey;
+    Session session;
     MethodHandles.Lookup lookup;
     RealLive realLive;
     String traderKey;
+    ChannelHandlerContext context;
 
     public void $init(MachNetz machNetz, int sessionId) {
         Thread.currentThread().setName("MNClientSession"+sessionId);
         server = machNetz;
         lookup = MethodHandles.lookup();
         realLive = new RealLiveClientWrapper(server.getRealLive());
+        session = (Session) realLive.getTable("Session").createForAddWithKey(sessionKey);
+        session.setLastPing(System.currentTimeMillis());
+        session.$apply(0).then((recordId, err) -> {
+            sessionKey = recordId;
+            realLive.getTable("Session").prepareForUpdate(session);
+            $updateSession();
+        });
+    }
+
+    int SESSION_TIMOUT = 120000;
+    public void $updateSession() {
+        if ( System.currentTimeMillis() - session.getLastPing() > SESSION_TIMOUT) {
+            $onClose(context);
+        } else {
+            session.setSubscriptions(subscriptions.size());
+            session.$apply(0);
+            delayed(10000, () -> self().$updateSession());
+        }
     }
 
     protected RealLive getRLDB() {
         return realLive;
     }
 
-    @CallerSideMethod
-    public int getSessionId() { return getActor().sessionId; }
-
     public void $onOpen(ChannelHandlerContext ctx) {
         checkThread();
+        this.context = ctx;
     }
 
     public void $onClose(ChannelHandlerContext ctx) {
+        System.out.println("closing session "+sessionKey);
         checkThread();
-        subscriptions.keySet().forEach((subsid) -> unsubscribe(subsid));
+        ArrayList subs = new ArrayList(subscriptions.keySet());
+        subs.forEach((subsid) -> unsubscribe((String) subsid));
+        getRLDB().getTable("Session").$remove(sessionKey, 0);
         self().$stop();
         server.removeSession(ctx);
     }
@@ -76,6 +99,12 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     final MethodType rpctype = MethodType.methodType(Object.class,Invocation.class);
     public void $onBinaryMessage(ChannelHandlerContext ctx, byte[] buffer) {
         checkThread();
+        if ( ctx != context ) {
+            System.out.println("This is unexpected !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Thread.dumpStack();
+            context = ctx;
+        }
+        session.setRequests(session.getRequests()+1);
 //        System.out.println("minmsg");
         final Object msg;
         try {
@@ -106,6 +135,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     AtomicInteger msgCount = new AtomicInteger(1);
     protected void sendReply(Invocation inv, Object msg) {
+        session.setBcasts(session.getBcasts()+1);
         String cbId = inv.getCbId();
         ChannelHandlerContext ctx = (ChannelHandlerContext) inv.getCurrentContext();
         InvocationCallback cb = new InvocationCallback(msg, cbId);
@@ -137,6 +167,9 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
                         if (traderKey != null) {
                             initPositionStream();
                             sendReply(inv, "success");
+                            session.setTraderKey(traderKey);
+                            session.setLoginTime(DateFormat.getDateTimeInstance().format(new Date(System.currentTimeMillis())));
+                            session.$apply(0);
                         }
                     } else {
                         sendReply(inv, "Invalid user or password.");
@@ -189,7 +222,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
             p = new Position();
             p.setInstrKey(trade.getInstrumentKey());
             positionMap.put(trade.getInstrumentKey(), p);
-            p._setId(trade.getInstrumentKey() + "#" + traderKey);
+            p._setRecordKey(trade.getInstrumentKey() + "#" + traderKey);
             p.prepareForUpdate(false, classInfo);
             myPosition.onChangeReceived(ChangeBroadcast.NewAdd("Position", p, 0));
         }
@@ -271,6 +304,11 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
     // expect [tableName,filterString]
     Object query(Invocation<QueryTuple> inv) {
         getRLDB().stream("" + inv.getArgument()).filter(new JSQuery(inv.getArgument().getQuerySource()),(change) -> sendReply(inv, change));
+        return NO_RESULT;
+    }
+
+    Object ping(Invocation inv) {
+        session.setLastPing(System.currentTimeMillis());
         return NO_RESULT;
     }
 

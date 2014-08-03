@@ -9,6 +9,7 @@ import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.reallive.*;
 import org.nustaq.reallive.impl.storage.BinaryStorage;
 import org.nustaq.reallive.impl.storage.FSTBinaryStorage;
+import org.nustaq.reallive.sys.annotations.InMem;
 import org.nustaq.reallive.sys.annotations.KeyLen;
 import org.nustaq.reallive.sys.tables.SysTable;
 import org.nustaq.serialization.FSTClazzInfo;
@@ -54,12 +55,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             if ( ks != null ) {
                 keyLen = Math.max(ks.value(),keyLen);
             }
+            InMem inMem = clz.getAnnotation(InMem.class);
             recordFSTBinaryStorage.init(
                 realLive.getDataDirectory() + File.separator + tableId+".mmf",
                 DEFAULT_TABLE_MEM_MB, // 1 GB init size
                 100000, // num records
                 keyLen, // keylen
-                clz);
+                inMem == null,
+                clz
+             );
             idgen.setState(storage.getCustomStorage());
         } catch (Exception e) {
             e.printStackTrace();
@@ -87,6 +91,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         try {
             T res = (T) clazz.newInstance();
             res._setTable(self());
+            res.setClazzInfo(getClazzInfo(res));
             res._setMode(Record.Mode.ADD);
             return res;
         } catch (InstantiationException e) {
@@ -103,12 +108,19 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override @CallerSideMethod
+    public T createForAddWithKey(String key) {
+        T forAdd = createForAdd();
+        forAdd._setRecordKey(key);
+        return forAdd;
+    }
+
+    @Override @CallerSideMethod
     public T createForUpdateWith(Class<? extends Record> clazz, String key, boolean addIfNotPresent) {
         T res = createForAddWith(clazz);
         res._setMode(addIfNotPresent ? Record.Mode.UPDATE_OR_ADD : Record.Mode.UPDATE);
-        res._setId(key);
+        res._setRecordKey(key);
         T org = createForAdd();
-        org._setId(key);
+        org._setRecordKey(key);
         res._setOriginalRecord(org);
         return res;
     }
@@ -124,6 +136,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         try {
             res = (T) record.getClass().newInstance();
             res._setTable(self());
+            if ( record.getClassInfo() == null )
+                record.setClazzInfo(getClazzInfo(record));
             record._setMode(Record.Mode.UPDATE);
             record.copyTo(res);
             record._setOriginalRecord(res);
@@ -142,19 +156,23 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     @Override
     public Future<String> $addGetId(T object, int originator) {
         checkThread();
-        String nextKey = idgen.nextid();
-        object._setId(nextKey);
-        put(nextKey, object);
+        if ( object.getRecordKey() == null ) {
+            String nextKey = idgen.nextid();
+            object._setRecordKey(nextKey);
+        }
+        put(object.getRecordKey(), object);
         broadCastAdd(object,originator);
-        return new Promise<>(nextKey);
+        return new Promise<>(object.getRecordKey());
     }
 
     @Override
     public void $add(T object, int originator) {
         checkThread();
-        String nextKey = idgen.nextid();
-        object._setId(nextKey);
-        put(nextKey, object);
+        if ( object.getRecordKey() == null ) {
+            String nextKey = idgen.nextid();
+            object._setRecordKey(nextKey);
+        }
+        put(object.getRecordKey(), object);
         broadCastAdd(object,originator);
     }
 
@@ -166,7 +184,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             return;
         }
         Record record = storage.get(key);
-        newRec._setId(key);
+        newRec._setRecordKey(key);
         if ( record != null ) {
             record.setClazzInfo(getClazzInfo(record));
             newRec.setClazzInfo(getClazzInfo(newRec));

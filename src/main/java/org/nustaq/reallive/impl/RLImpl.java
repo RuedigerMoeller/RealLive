@@ -45,14 +45,14 @@ public class RLImpl extends RealLive {
         if (tables.get(name) != null ) {
             throw new RuntimeException("table already created");
         }
-        pureCreateTable(name,clazz);
+        if ( clazz.getAnnotation(Virtual.class) == null ) {
+            pureCreateTable(name, clazz);
+        }
         addToSysTable(name, clazz);
     }
 
     @Override
     public void createTable(Class<? extends Record> recordClass) {
-        if ( recordClass.getAnnotation(Virtual.class) != null )
-            return;
         createTable(recordClass.getSimpleName(),recordClass);
     }
 
@@ -114,6 +114,11 @@ public class RLImpl extends RealLive {
                 cm.setBgColor(bg.value());
             }
 
+            TextColor tc = fi.getField().getAnnotation(TextColor.class);
+            if ( tc != null ) {
+                cm.setTextColor(tc.value());
+            }
+
             DisplayWidth dw = fi.getField().getAnnotation(DisplayWidth.class);
             if ( dw != null ) {
                 cm.setDisplayWidth(dw.value());
@@ -142,7 +147,7 @@ public class RLImpl extends RealLive {
         sysTab.setTableName(name);
         sysTab.setDescription(model.getTable(name).getDescription());
         sysTab.setMeta(tableMeta);
-        sysTab._setId(name);
+        sysTab._setRecordKey(name);
         sysTab.$apply(0);
     }
 

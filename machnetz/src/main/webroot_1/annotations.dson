@@ -1,0 +1,12 @@
+schema: [
+  SysTable:
+    table: [
+      recordKey: column { colOrder: 1 }
+    ]
+  Session:
+    table: [
+      recordKey: column { hidden: true }
+      version: column { hidden: true }
+      loginTime: column { displayWidth: '160px' }
+    ]
+]

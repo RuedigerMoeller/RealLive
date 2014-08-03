@@ -19,6 +19,7 @@ public interface RLTable<T extends Record> {
     public Class getRowClazz();
     public T createForAddWith(Class<? extends Record> clazz);
     public T createForAdd();
+    public T createForAddWithKey(String key);
     public T createForUpdateWith(Class<? extends Record> clazz, String key, boolean addIfNotPresent);
     public T createForUpdate(String key, boolean addIfNotPresent);
     public void prepareForUpdate(T original);

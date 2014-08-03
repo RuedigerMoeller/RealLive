@@ -16,6 +16,11 @@ import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.RealLive;
 import org.nustaq.reallive.Record;
 import org.nustaq.reallive.impl.RLImpl;
+import org.nustaq.reallive.sys.config.ColumnConfig;
+import org.nustaq.reallive.sys.config.ConfigReader;
+import org.nustaq.reallive.sys.config.SchemaConfig;
+import org.nustaq.reallive.sys.config.TableConfig;
+import org.nustaq.serialization.dson.Dson;
 import org.nustaq.webserver.ClientSession;
 import org.nustaq.webserver.WebSocketHttpServer;
 
@@ -81,6 +86,7 @@ public class MachNetz extends WebSocketHttpServer {
                 Trade.class,
                 Trader.class,
                 Position.class,
+                Session.class,
                 Asset.class
             }
         ).forEach( (clz) -> realLive.createTable(clz) );
@@ -148,6 +154,25 @@ public class MachNetz extends WebSocketHttpServer {
 
         });
 
+        try {
+            ConfigReader.init();
+            SchemaConfig c = new SchemaConfig();
+            TableConfig tc = new TableConfig();
+            ColumnConfig cf = new ColumnConfig();
+            cf.setBgColor("#fff");
+            tc.getColumns().put("bcColor",cf);
+            c.getTables().put("SysTable",tc);
+            String s = Dson.getInstance().writeObject(c);
+            System.out.println(s);
+
+            if ( new File("./annotations.dson").exists() ) {
+                SchemaConfig schemaConfig = ConfigReader.readConfig("./annotations.dson");
+                System.out.println("read config");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     volatile static boolean stopF = false;
@@ -186,7 +211,7 @@ public class MachNetz extends WebSocketHttpServer {
                         double rand = 1 - (change.getRecordKey().charAt(0) - 65) / 100.0;
                         if ( Math.random() < rand ) {
                             Instrument instrument = change.getRecord();
-                            //                        Order newOrder = (Order) rl.getTable("Order").createForAdd();
+                            //                        Order newOrder = (Order) rl.getTable("Order").createForAddWithKey();
                             Order newOrder = new Order();
                             newOrder.setInstrumentKey(instrument.getRecordKey());
                             boolean isBuy = Math.random() > .5;

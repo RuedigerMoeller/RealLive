@@ -21,10 +21,13 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
     public FSTBinaryStorage() {
     }
 
-    public void init(String tableFile, int sizeMB, int estimatedNumRecords, int keyLen, Class ... toReg) throws Exception {
+    public void init(String tableFile, int sizeMB, int estimatedNumRecords, int keyLen, boolean persist, Class... toReg) throws Exception {
         conf = FSTConfiguration.createDefaultConfiguration();
         conf.registerClass(toReg);
-        store = new FSTAsciiStringOffheapMap<>(tableFile, keyLen, FSTBinaryOffheapMap.MB*sizeMB,estimatedNumRecords,conf);
+        if ( persist )
+            store = new FSTAsciiStringOffheapMap<>(tableFile, keyLen, FSTBinaryOffheapMap.MB*sizeMB,estimatedNumRecords,conf);
+        else
+            store = new FSTAsciiStringOffheapMap<>(keyLen, FSTBinaryOffheapMap.MB*sizeMB,estimatedNumRecords,conf);
     }
 
     @Override

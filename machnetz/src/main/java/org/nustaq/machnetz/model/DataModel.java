@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Created by ruedi on 11.07.14.
  */
-public class TestModel extends SysMeta {
+public class DataModel extends SysMeta {
 
     @Override
     public List<Class> getClasses() {
@@ -22,6 +22,7 @@ public class TestModel extends SysMeta {
         classes.add(Trader.class);
         classes.add(Position.class);
         classes.add(Asset.class);
+        classes.add(Session.class);
 
         return classes;
     }

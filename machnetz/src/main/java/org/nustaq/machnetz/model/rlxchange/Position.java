@@ -8,7 +8,7 @@ import org.nustaq.reallive.sys.annotations.Virtual;
 /**
  * Created by ruedi on 23.07.14.
  */
-//@Virtual
+@Virtual
 public class Position extends Record {
 
     String instrKey;

@@ -11,9 +11,9 @@ import java.util.Date;
  */
 public class Market extends Record {
 
-    @RenderStyle("Price") @BGColor("rgba(0,0,255,0.2)") @DisplayWidth("60px") @ColOrder(2)
+    @RenderStyle("Price") @BGColor("rgba(8,8,77,0.8)") @DisplayWidth("60px") @ColOrder(2) @TextColor("#fff")
     int bid;
-    @RenderStyle("Price") @BGColor("rgba(255,0,0,0.2)") @DisplayWidth("60px") @ColOrder(3)
+    @RenderStyle("Price") @BGColor("rgba(77,8,8,0.8)") @DisplayWidth("60px") @ColOrder(3) @TextColor("#fff")
     int ask;
     @RenderStyle("Qty") @ColOrder(1) @DisplayWidth("60px")
     int bidQty;
@@ -27,7 +27,7 @@ public class Market extends Record {
 
     @Hidden
     long lastMatch;
-    @DisplayWidth("150px") @DisplayName("Time")
+    @DisplayWidth("160px") @DisplayName("Time")
     String lastMatchTimeUTC;
     String state = "TRADE";
 

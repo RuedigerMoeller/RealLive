@@ -54,7 +54,7 @@ public class Record implements Serializable {
         this.table = table;
     }
 
-    public void _setId(String id) {
+    public void _setRecordKey(String id) {
         this.recordKey = id;
     }
 

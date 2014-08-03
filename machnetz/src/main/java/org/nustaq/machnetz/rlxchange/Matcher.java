@@ -105,7 +105,7 @@ public class Matcher extends Actor<Matcher> {
                     posAsset = new Asset(positionKey,0);
                 }
 
-                ord._setId(createOrderId());
+                ord._setRecordKey(createOrderId());
                 matcherMap.get(ord.getInstrumentKey()).addOrder(rl.getTable("Asset"), orders, ord, cashAsset, posAsset)
                     .then((res,err) -> {
                         result.receiveResult(err != null ? err : res, null);

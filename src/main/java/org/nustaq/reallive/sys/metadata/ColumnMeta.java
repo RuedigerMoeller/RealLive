@@ -18,6 +18,7 @@ public class ColumnMeta implements Serializable{
     int order;
     private String displayWidth;
     boolean hidden;
+    private String textColor;
 
     public boolean isHidden() {
         return hidden;
@@ -122,5 +123,13 @@ public class ColumnMeta implements Serializable{
 
     public String getDisplayWidth() {
         return displayWidth;
+    }
+
+    public void setTextColor(String textColor) {
+        this.textColor = textColor;
+    }
+
+    public String getTextColor() {
+        return textColor;
     }
 }

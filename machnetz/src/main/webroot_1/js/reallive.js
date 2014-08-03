@@ -15,8 +15,13 @@ var RealLive = new function() {
     this.model = null; // RealLive data model
     this.onChange = null; // callback function
     this.toDo = [];
+    this.addHandler = {}; // TableName => function called whenever a record is added. Can be used to implement computed 'virtual fields'
 
-    this.highlightElem = function(elementId) {
+    this.registerAddHandler = function(tableName, handlerFunction ) {
+        this.addHandler[tableName] = handlerFunction;
+    };
+
+    this.highlightElem = function(elementId, color) {
         if ( !elementId )
             return;
         var element = document.getElementById(elementId);
@@ -27,13 +32,17 @@ var RealLive = new function() {
         } else {
             element.hicount++;
         }
-        element.style.backgroundColor = '#F2E38A';
+        element.style.backgroundColor = '#FFF3B0';
+        if ( color )
+            element.style.color = '#000';
         (function () {
             var current = element;
             var prevKey = elementId;
             setTimeout(function () {
                 if (current.hicount <= 1 || prevKey != current.id) {
                     current.style.backgroundColor = 'rgba(230,230,230,0.0)';
+                    if ( color )
+                        current.style.color = color;
                     current.hicount = 0;
                 } else {
                     current.hicount--;
@@ -96,6 +105,18 @@ var RealLive = new function() {
             this.lastSeq = 0;
             console.log("open");
             self.socketConnected = true;
+
+            var ping = function() {
+                setTimeout(function() {
+                    if (self.socketConnected ) {
+                        self.call("ping");
+                    }
+                    ping();
+                },
+                60000)
+            };
+            ping();
+
             self.call("initModel", 0, function(retVal) {
                 console.log("model:"+retVal);
 
@@ -115,6 +136,7 @@ var RealLive = new function() {
                             if ( col != '__typeInfo' && ! col.hidden ) {
                                 var align = '';
                                 var bgColor = null;
+                                var txtColor = null;
                                 var fieldExpr = '{{COL_FIELD}}';
 
                                 if ( cols[col].renderStyle ) {
@@ -126,6 +148,10 @@ var RealLive = new function() {
 
                                 if ( cols[col].bgColor ) {
                                     bgColor = cols[col].bgColor;
+                                }
+
+                                if ( cols[col].textColor ) {
+                                    txtColor = cols[col].textColor;
                                 }
 
                                 if ( cols[col].align ) {
@@ -155,12 +181,8 @@ var RealLive = new function() {
                                         groupable: false,
                                         _fieldExpr: fieldExpr,
                                         _align: align,
-                                        _bgColor: bgColor
-//                                        cellTemplate: '<div class="ngCellText" ng-class="col.colIndex()" id="{{row.entity.recordKey}}#COL_FIELD"><span ng-cell-text>{{COL_FIELD}}</span></div>'
-//                                        cellTemplate:
-//                                           '<div class="ngCellText" style="text-align: '+align + '; '+(bgColor?'background-color:'+bgColor+';':'')+'"'+
-//                                            'ng-class="col.colIndex()"><span style="transition: background-color .2s ease-out; padding: 3px; " ' +
-//                                            'ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">'+fieldExpr+'</span></div>'
+                                        _bgColor: bgColor,
+                                        _txtColor: txtColor
                                     }
                                 );
                                 indexToFieldName[cols[col].fieldId] = cols[col].name;
@@ -178,6 +200,7 @@ var RealLive = new function() {
             console.log("error");
             self.socketConnected = false;
             self.sendChange('State');
+            self.close();
         };
 
         this.ws.onclose = function () {
@@ -202,6 +225,16 @@ var RealLive = new function() {
                                 }
                             }
                             _thisWS.lastSeq = msg.sequence;
+
+                            if ( msg.result instanceof JChangeBroadcast) {
+                                if ( msg.result.type == RL_ADD ) {
+                                    var addHook = RealLive.addHandler[msg.result.tableId];
+                                    if ( addHook ) {
+                                        addHook( msg.result.newRecord );
+                                    }
+                                }
+                            }
+
                             var cb = _thisWS.cbMap[msg.cbId];
                             if (typeof cb === "function") {
                                 var unsubscribe = cb.call(null, msg.result);
@@ -209,8 +242,10 @@ var RealLive = new function() {
                                     delete _thisWS.cbMap[msg.cbId];
                                 }
                             } else {
-                                if ( msg )
+                                if (msg) {
                                     console.log("unmapped callback " + msg.cbId + " " + msg);
+                                    RealLive.unsubscribe(msg.cbId);
+                                }
                                 else {
                                     console.log("corrupted message unmapped callback " + msg.cbId + " " + msg);
                                 }
@@ -291,6 +326,8 @@ var RealLive = new function() {
 
     this.call = function( methodName, arg, callback, stream ) {
         var res = null;
+        if ( ! arg )
+            arg = '';
         var msg = MinBin.encode(
             new JInvocation({
                 "name" : methodName,

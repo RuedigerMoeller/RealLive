@@ -163,3 +163,26 @@ path.monline {
     fill: steelblue;
     stroke: steelblue;
 }
+
+.repeater.ng-enter,
+.repeater.ng-move {
+    -webkit-transition:0.3s linear all;
+    transition:0.3s linear all;
+
+    opacity:0;
+    -webkit-transform:scale(1.15)!important;
+    transform:scale(1.15)!important;
+}
+.repeater.ng-enter.ng-enter-active,
+.repeater.ng-move.ng-move-active {
+    opacity:1;
+}
+.repeater.ng-leave {
+    -webkit-transition:0.3s linear all;
+    transition:0.3s linear all;
+
+    opacity:1;
+}
+.repeater.ng-leave.ng-leave-active {
+    opacity:0;
+}

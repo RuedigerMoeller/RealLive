@@ -39,6 +39,30 @@ var JInvocationCallback = function(obj) {
 };
 
 
+var JSession = function(obj) {
+    this.__typeInfo = 'Session';
+    this.j_bcasts = function() { return MinBin.parseIntOrNan(this.bcasts); };
+    this.j_requests = function() { return MinBin.parseIntOrNan(this.requests); };
+    this.j_subscriptions = function() { return MinBin.parseIntOrNan(this.subscriptions); };
+    this.j_version = function() { return MinBin.parseIntOrNan(this.version); };
+    this.j_loginTime = function() { return this.loginTime; };
+    this.j_recordKey = function() { return this.recordKey; };
+    this.j_traderKey = function() { return this.traderKey; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'j_'.concat(key);
+            if ( this.hasOwnProperty(setter) ) {
+                this[key] = obj[key];
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
 var JRecordChange = function(obj) {
     this.__typeInfo = 'RecordChange';
     this.j_originator = function() { return MinBin.parseIntOrNan(this.originator); };
@@ -89,17 +113,18 @@ var JSysTable = function(obj) {
 
 var JTrade = function(obj) {
     this.__typeInfo = 'Trade';
+    this.j_isBuy = function() { return this.isBuy?1:0; };
     this.j_tradePrice = function() { return MinBin.parseIntOrNan(this.tradePrice); };
     this.j_tradeQty = function() { return MinBin.parseIntOrNan(this.tradeQty); };
     this.j_version = function() { return MinBin.parseIntOrNan(this.version); };
-    this.j_tradeTime = function() { return MinBin.parseIntOrNan(this.tradeTime); };
+    this.j_tradeTimeStamp = function() { return MinBin.parseIntOrNan(this.tradeTimeStamp); };
     this.j_buyOrderId = function() { return this.buyOrderId; };
     this.j_buyTraderKey = function() { return this.buyTraderKey; };
     this.j_instrumentKey = function() { return this.instrumentKey; };
     this.j_recordKey = function() { return this.recordKey; };
     this.j_sellOrderId = function() { return this.sellOrderId; };
     this.j_sellTraderKey = function() { return this.sellTraderKey; };
-    this.j_tradeTimeStringUTC = function() { return this.tradeTimeStringUTC; };
+    this.j_tradeTime = function() { return this.tradeTime; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
             var setter = 'j_'.concat(key);
@@ -358,6 +383,7 @@ var JColumnMeta = function(obj) {
     this.j_javaType = function() { return this.javaType; };
     this.j_name = function() { return this.name; };
     this.j_renderStyle = function() { return this.renderStyle; };
+    this.j_textColor = function() { return this.textColor; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
             var setter = 'j_'.concat(key);
@@ -378,6 +404,7 @@ var mbfactory = function(clzname) {
 switch (clzname) {
         case 'Trader': return new JTrader();
         case 'InvocationCallback': return new JInvocationCallback();
+        case 'Session': return new JSession();
         case 'RecordChange': return new JRecordChange();
         case 'SysTable': return new JSysTable();
         case 'Trade': return new JTrade();

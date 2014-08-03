@@ -5,8 +5,6 @@ import org.nustaq.kontraktor.Promise;
 import org.nustaq.machnetz.model.rlxchange.*;
 import org.nustaq.reallive.ChangeBroadcast;
 import org.nustaq.reallive.RLTable;
-import org.nustaq.reallive.RealLive;
-import org.nustaq.reallive.Record;
 import org.nustaq.reallive.client.SortedReplicatedSet;
 
 import java.util.ArrayList;
@@ -156,7 +154,7 @@ public class InstrumentMatcher { // ready to be be an actor if needed
                 newTrade.setInstrumentKey(instrument.getRecordKey());
                 newTrade.setBuyTraderKey(bestBuy.getTraderKey());
                 newTrade.setSellTraderKey(bestSell.getTraderKey());
-                newTrade.setTradeTime(System.currentTimeMillis());
+                newTrade.setTradeTimeStamp(System.currentTimeMillis());
                 newTrade.setBuyOrderId(bestBuy.getRecordKey());
                 newTrade.setSellOrderId(bestSell.getRecordKey());
 

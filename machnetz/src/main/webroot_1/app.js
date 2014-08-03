@@ -1,5 +1,5 @@
 
-var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid', 'ngRoute', 'rl-angular']);
+var app = angular.module("rl-admin", ['ui.bootstrap', 'ngGrid', 'ngRoute', 'rl-angular', "ngAnimate"]);
 
 app.config(['$routeProvider',
     function($routeProvider) {
@@ -31,8 +31,8 @@ app.config(['$routeProvider',
             when('/login', {
                 templateUrl: 'empty.html'
             }).
-            when('/showcase', {
-                templateUrl: 'loginview.html'
+            when('/charts', {
+                templateUrl: 'charts.html'
             }).
             when('/position', {
                 templateUrl: 'position.html',
@@ -59,11 +59,24 @@ app.directive('rlOrder', function() {
     };
 });
 
-app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
+app.controller('NavCtrl', function ($scope,$location) {
+
+    $scope.navClass = function (page) {
+        var currentRoute = $location.path().substring(1) || 'home';
+        return page === currentRoute ? 'active' : '';
+    };
+
+    $scope.load = function (url) {
+        $location.url(url);
+    };
+
+});
+
+app.controller('RLAdmin', function ($scope,$modal,$http,$compile,$location) {
 
     var mainScope = $scope;
-
     app.mainScope = $scope;
+
     $scope.isOECollapsed = true;
 
     $scope.loggedIn = false;
@@ -74,12 +87,10 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
 
     $scope.model = null;
     $scope.alertmsg = null;
-    $scope.gridOptions = {
-        data: 'systables.list',
-        columnDefs: 'model.tables.SysTable.columnsNGTableConf',
-        enableColumnResize: true,
-        multiSelect: false
-    };
+
+    RealLive.registerAddHandler('Trade', function(trade) {
+        trade.isBuy = trade.buyTraderKey == $scope.user.recordKey ? 1 : 0;
+    });
 
     $scope.showAlert = function(message,style) {
         $scope.alertmsg = message;
@@ -222,6 +233,7 @@ app.controller('RLAdmin', function ($scope,$modal,$http,$compile) {
     };
 
     $scope.openLogin = function() {
+        $location.url('login');
         var instance = $modal.open({
             templateUrl: "login.html",
             size:'sm',

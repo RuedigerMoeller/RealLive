@@ -210,6 +210,11 @@ angular.module('rl-angular', ['ngGrid'])
                 }
             }, true);
 
+            $scope.$on("$destroy", function() {
+                console.log("destroy "+subsId);
+                RealLive.unsubscribe(subsId);
+            });
+
         }
     };
 })
@@ -255,6 +260,7 @@ angular.module('rl-angular', ['ngGrid'])
                 .offset([0, 3]);
 
             var subsId = 0;
+            var bubblesQueue = [];
             $attrs.$observe('query', function(data) {
                 query = data;
                 if ( RealLive.socketConnected ) {
@@ -262,9 +268,24 @@ angular.module('rl-angular', ['ngGrid'])
                     subsId = RealLive.subscribeSet(table,query,resultSet, $scope );
                 }
                 resultSet.postChangeHook = function (change, snapFin) {
-                    bubbles(resultSet.list);
+                    setTimeout( function() {
+                        if ( bubblesQueue.length < 2 ) {
+                            bubblesQueue.push(function () {
+                                bubbles(resultSet.list);
+                            });
+                        }
+                        if ( bubblesQueue.length == 1 ) {
+                            bubblesQueue[0].apply();
+                            bubblesQueue = [];
+                        }
+                    }, 1000);
                 };
             }, true);
+
+            $scope.$on("$destroy", function() {
+                console.log("destroy "+subsId);
+                RealLive.unsubscribe(subsId);
+            });
 
             var bubbles = function(dataSet) {
 
@@ -324,7 +345,13 @@ angular.module('rl-angular', ['ngGrid'])
 
                 trans.duration(500)
                     .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-                    .attr("r", function(d) { return d.r; });
+                    .attr("r", function(d) { return d.r; })
+                    .each( "end", function() {
+                        if ( bubblesQueue.length > 0 ) {
+                            bubblesQueue[0].apply();
+                            bubblesQueue = [];
+                        }
+                    });
 
                 var exit = nodes.exit();
 
@@ -379,7 +406,7 @@ angular.module('rl-angular', ['ngGrid'])
         transclude:true,
 //        replace: true,
 //        template: '<b>uh-<div ng-transclude></div>-uh</b>'
-        template: '<span style="border-radius: 4px; transition: background-color .2s ease-out; padding: 4px;" id="{{itid}}" ng-transclude></span>',
+        template: '<span style="border-radius: 4px; transition: background-color .3s linear, color .3s linear; padding: 4px;" id="{{itid}}" ng-transclude></span>',
         scope: true,
         link: function( $scope, $element, $attrs ) {
             $scope.itid = genId('rlhi');
@@ -391,7 +418,7 @@ angular.module('rl-angular', ['ngGrid'])
                 function(newVal,oldVal) {
                     if (newVal!=oldVal) {
                         var elementId = $scope.itid;
-                        RealLive.highlightElem(elementId);
+                        RealLive.highlightElem(elementId,$attrs.color);
                     }
                 }
             );
@@ -469,6 +496,10 @@ angular.module('rl-angular', ['ngGrid'])
             };
 
             RealLive.onModelLoaded( $scope.subsribeKey );
+            $scope.$on("$destroy", function() {
+                console.log("destroy "+$scope.subsId);
+                RealLive.unsubscribe($scope.subsId);
+            });
         }
     }
 })
@@ -477,12 +508,13 @@ angular.module('rl-angular', ['ngGrid'])
     return {
         restrict: 'E',
         scope: true,
-        controller: function( $scope, $attrs ) {
+        controller: function( $scope, $attrs, $element ) {
             $scope.rlset = new RLResultSet();
             $scope.height = '300px';
             $scope.exclude = {};
             $scope.links = {};   // ',' separated list of clickable column field names
             $scope.action = null; // plain html of action column template. row denotes the record
+
 
             if ( $attrs.rlExclude ) {
                 var list = $attrs.rlExclude.split(",");
@@ -538,8 +570,8 @@ angular.module('rl-angular', ['ngGrid'])
                             copiedCol._fieldExpr = '<span class="rlhover" ng-click="cellClicked(\''+$attrs.table+'\',\''+col.field+'\' ,row.entity,$event)">'+copiedCol._fieldExpr+"</span>";
                         }
                         copiedCol.cellTemplate =
-                            '<div class="ngCellText" style="text-align: '+copiedCol._align + '; '+(copiedCol._bgColor?'background-color:'+copiedCol._bgColor+';':'')+'"'+
-                            'ng-class="col.colIndex()"><span style="transition: background-color .2s ease-out; padding: 3px; " ' +
+                            '<div class="ngCellText" style="text-align: '+copiedCol._align + '; '+(copiedCol._bgColor?'background-color:'+copiedCol._bgColor+';':' ')+(copiedCol._txtColor?'color:'+copiedCol._txtColor+';':' ')+'"'+
+                            'ng-class="col.colIndex()"><span style="transition: background-color .3s linear, color .3s linear; padding: 3px; " ' +
                             'ng-cell-text id="{{row.entity.recordKey}}#COL_FIELD">'+copiedCol._fieldExpr+'</span></div>';
                         res.push(copiedCol);
                     }
@@ -554,7 +586,7 @@ angular.module('rl-angular', ['ngGrid'])
                 rowHeight: 27,
                 enableColumnReordering:false,
                 rowTemplate:
-                    '<span id="row#{{row.entity.recordKey}}" style="transition: background-color .2s ease-out; padding: 3px;">'+
+                    '<span id="row#{{row.entity.recordKey}}" style="transition: background-color .3s linear, color .3s linear; padding: 3px;">'+
                     "<div ng-style=\"{ 'cursor': row.cursor }\" ng-repeat=\"col in renderedColumns\" ng-class=\"col.colIndex()\" class=\"ngCell {{col.cellClass}}\">" +
                     "\n" +
                     "\t<div class=\"ngVerticalBar\" ng-style=\"{height: rowHeight}\" ng-class=\"{ ngVerticalBarVisible: !$last }\">&nbsp;</div>\r" +
@@ -577,22 +609,33 @@ angular.module('rl-angular', ['ngGrid'])
                                 if (cell)
                                     cell.$digest();
                             }
-                            RealLive.highlightElem(elementId);
+                            if ( cell ) {
+                                var fieldMeta = $scope.model.tables[$attrs.table].columnsNGTableConf[cell.$index];
+                                if ( fieldMeta._txtColor ) {
+                                    RealLive.highlightElem(elementId, fieldMeta._txtColor );
+                                } else {
+                                    RealLive.highlightElem(elementId);
+                                }
+                            }
                         }
 //                        $scope.$digest();
                     } else
                     if (change.type == RL_SNAPSHOT_DONE) {
                         $scope.$digest();
                     } else
-                    if (change.type == RL_ADD && $scope.rlset.snapFin ) {
+                    if (change.type == RL_ADD ) {
                         var elementId = 'row#' + change.recordKey;
-                        RealLive.highlightElem(elementId);
-                        $scope.$digest();
+                        if ($scope.rlset.snapFin) {
+//                            RealLive.highlightElem(elementId);
+                            $scope.$digest();
+                        }
                     } else
-                    if (change.type == RL_REMOVE && $scope.rlset.snapFin ) {
+                    if (change.type == RL_REMOVE ) {
                         var elementId = 'row#' + change.recordKey;
-                        RealLive.highlightElem(elementId);
-                        $scope.$digest();
+                        if ($scope.rlset.snapFin) {
+//                            RealLive.highlightElem(elementId);
+                            $scope.$digest();
+                        }
                     }
                 };
                 RealLive.subscribeSet($attrs.table, $attrs.rlQuery ? $attrs.rlQuery : "true", $scope.rlset, null); //$scope);
@@ -609,6 +652,7 @@ angular.module('rl-angular', ['ngGrid'])
 
         },
         template: '<div class="gridStyle" style="height: {{height}};" ng-grid="gridOptions"></div>'
+//        template: '<div class="gridStyle" ng-grid="gridOptions"></div>'
     }
 });
 
