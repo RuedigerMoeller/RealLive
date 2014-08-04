@@ -2,6 +2,12 @@ schema {
 
     tables: {
 
+        Market: {
+            columns: {
+                recordKey: { displayName: Contract renderStyle: Bold }
+            }
+        }
+
         Session: {
             columns: {
                 recordKey: { hidden: true }

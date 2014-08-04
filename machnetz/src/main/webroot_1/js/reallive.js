@@ -92,7 +92,8 @@ var RealLive = new function() {
     this.renderStyles = {
         "BS": "<span class=\"{{COL_FIELD==1?'rlBuy':'rlSell'}}\">{{COL_FIELD==1?'Buy':'Sell'}}</span>",
         "Price": "<b>{{COL_FIELD/100|number:2}}</b>",
-        "Qty"  : "{{COL_FIELD|number:0}}"
+        "Qty"  : "{{COL_FIELD|number:0}}",
+        "Bold" : "<b>{{COL_FIELD}}</b>"
     };
 
     this.doConnect = function (host,port,websocketDir) {
