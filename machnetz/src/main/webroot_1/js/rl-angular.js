@@ -589,7 +589,6 @@ angular.module('rl-angular', ['ngGrid'])
             $scope.links = {};   // ',' separated list of clickable column field names
             $scope.action = null; // plain html of action column template. row denotes the record
 
-
             if ( $attrs.rlExclude ) {
                 var list = $attrs.rlExclude.split(",");
                 for ( var i = 0; i < list.length; i++ )
@@ -621,10 +620,13 @@ angular.module('rl-angular', ['ngGrid'])
             });
 
             $scope.getColumns = function() {
-                if ( RealLive.model == null ) {
+                if ( ! RealLive.model || ! $scope.model ) {
                     return [];
                 }
-                var cols = $scope.model.tables[$attrs.table].columnsNGTableConf;
+                var table = $scope.model.tables[$attrs.table];
+                if ( ! table )
+                    return [];
+                var cols = table.columnsNGTableConf;
                 var res = [];
                 if ( $scope.action ) {
                     res.push({
@@ -652,9 +654,10 @@ angular.module('rl-angular', ['ngGrid'])
                 }
                 return res;
             };
+            $scope.colDefs = [];
             $scope.gridOptions = {
                 data: 'rlset.list',
-                columnDefs: [],
+                columnDefs: 'colDefs',
                 enableColumnResize: true,
                 multiSelect: false,
                 rowHeight: 27,
@@ -715,13 +718,21 @@ angular.module('rl-angular', ['ngGrid'])
                 RealLive.subscribeSet($attrs.table, $attrs.rlQuery ? $attrs.rlQuery : "true", $scope.rlset, null); //$scope);
             };
 
-            $attrs.$observe('rlQuery', function() {
-                $scope.rlset.unsubscribe();
+            if ( ! $attrs.nowatch )
+                $attrs.$observe('rlQuery', function() {
+                    if ($scope.rlset)
+                        $scope.rlset.unsubscribe();
+                    RealLive.onModelLoaded(subscribe);
+                });
+
+            $scope.$on("refresh", function() {
+                $scope.rlset.unsubscribeAndClear();
+                $scope.colDefs = $scope.getColumns();
                 RealLive.onModelLoaded(subscribe);
             });
 
             RealLive.onModelLoaded(function() {
-                $scope.gridOptions.columnDefs = $scope.getColumns();
+                $scope.colDefs = $scope.getColumns();
             });
 
         },

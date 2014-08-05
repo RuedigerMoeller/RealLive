@@ -4,6 +4,7 @@ var JTrader = function(obj) {
     this.j_version = function() { return MinBin.parseIntOrNan(this.version); };
     this.j_email = function() { return this.email; };
     this.j_recordKey = function() { return this.recordKey; };
+    this.j_markets = function() { return MinBin.strArr(this.markets); };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
             var setter = 'j_'.concat(key);
@@ -45,6 +46,7 @@ var JSession = function(obj) {
     this.j_requests = function() { return MinBin.parseIntOrNan(this.requests); };
     this.j_subscriptions = function() { return MinBin.parseIntOrNan(this.subscriptions); };
     this.j_version = function() { return MinBin.parseIntOrNan(this.version); };
+    this.j_lastPing = function() { return MinBin.parseIntOrNan(this.lastPing); };
     this.j_loginTime = function() { return this.loginTime; };
     this.j_recordKey = function() { return this.recordKey; };
     this.j_traderKey = function() { return this.traderKey; };
@@ -329,6 +331,8 @@ var JInstrument = function(obj) {
     this.j_expiryDate = function() { return MinBin.parseIntOrNan(this.expiryDate); };
     this.j_description = function() { return this.description; };
     this.j_expiryDateString = function() { return this.expiryDateString; };
+    this.j_instrumentName = function() { return this.instrumentName; };
+    this.j_marketPlace = function() { return this.marketPlace; };
     this.j_recordKey = function() { return this.recordKey; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
@@ -354,6 +358,27 @@ var JChangeBroadcast = function(obj) {
     this.j_appliedChange = function() { return this.appliedChange; };
     this.j_recordKey = function() { return this.recordKey; };
     this.j_tableId = function() { return this.tableId; };
+    this.fromObj = function(obj) {
+        for ( var key in obj ) {
+            var setter = 'j_'.concat(key);
+            if ( this.hasOwnProperty(setter) ) {
+                this[key] = obj[key];
+            }
+        }
+        return this;
+    };
+    if ( obj != null ) {
+        this.fromObj(obj);
+    }
+};
+
+
+var JMarketPlace = function(obj) {
+    this.__typeInfo = 'MarketPlace';
+    this.j_version = function() { return MinBin.parseIntOrNan(this.version); };
+    this.j_admin = function() { return this.admin; };
+    this.j_marketPlaceName = function() { return this.marketPlaceName; };
+    this.j_recordKey = function() { return this.recordKey; };
     this.fromObj = function(obj) {
         for ( var key in obj ) {
             var setter = 'j_'.concat(key);
@@ -418,6 +443,7 @@ switch (clzname) {
         case 'Invocation': return new JInvocation();
         case 'Instrument': return new JInstrument();
         case 'ChangeBroadcast': return new JChangeBroadcast();
+        case 'MarketPlace': return new JMarketPlace();
         case 'ColumnMeta': return new JColumnMeta();
         default: return { __typeInfo: clzname };
 }

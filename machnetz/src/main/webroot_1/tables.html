@@ -6,17 +6,17 @@
             </td>
         </tr>
         <tr>
-            <td colspan="2">
-                <input ng-model="table" type="text" class="form-control" placeholder="Table" required>
+            <td colspan="1">
+                <input ng-model="tableField" type="text" class="form-control" placeholder="Table">
             </td>
         </tr>
         <tr>
             <td colspan="2">
-                <input ng-model="query" type="text" class="form-control" placeholder="Query" required>
+                <input ng-model="queryField" type="text" class="form-control" placeholder="Query">
             </td>
         </tr>
         <tr>
-            <td>&nbsp;
+            <td>
             </td>
         </tr>
         <tr>
@@ -24,10 +24,15 @@
                 <div rl-hi>{{msg}}</div>
             </td>
             <td align="RIGHT">
-                <button type="submit" style="width: 80px;" class="btn btn-primary btn-default" id="login" ng-click="doQuery()">Query</button>
+                <button type="submit" style="width: 80px;" class="btn btn-primary btn-default" id="login" ng-click="doQuery($event)">Query</button>
+            </td>
+        </tr>
+        <tr>
+            <td>
             </td>
         </tr>
     </table>
-    <rl-table table="{{table}}" height="600px" query="{{query}}"></rl-table>
+    <br>
+    <rl-table table="{{table}}" height="600px" rl-query="{{query}}" nowatch="true"></rl-table>
 </form>
 </div>

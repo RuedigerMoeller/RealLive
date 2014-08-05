@@ -31,8 +31,13 @@ app.config(['$routeProvider',
             when('/login', {
                 templateUrl: 'empty.html'
             }).
+            when('/tables', {
+                templateUrl: 'tables.html',
+                resolve: requireAuthentication()
+            }).
             when('/charts', {
-                templateUrl: 'charts.html'
+                templateUrl: 'charts.html',
+                resolve: requireAuthentication()
             }).
             when('/position', {
                 templateUrl: 'position.html',
@@ -70,6 +75,24 @@ app.controller('NavCtrl', function ($scope,$location) {
         $location.url(url);
     };
 
+});
+
+app.controller('Tables', function ($scope) {
+
+    $scope.table = '';
+    $scope.query = '';
+    $scope.tableField = 'SysTable';
+    $scope.queryField = 'true';
+
+    $scope.doQuery = function(event) {
+        if ( !event ) // ????
+        {
+            $scope.table = $scope.tableField;
+            $scope.query = $scope.queryField;
+            setTimeout(function() {$scope.$broadcast('refresh');},10);
+
+        }
+    }
 });
 
 app.controller('RLAdmin', function ($scope,$modal,$http,$compile,$location) {

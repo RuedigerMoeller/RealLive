@@ -23,6 +23,7 @@ public class DataModel extends SysMeta {
         classes.add(Position.class);
         classes.add(Asset.class);
         classes.add(Session.class);
+        classes.add(MarketPlace.class);
 
         return classes;
     }

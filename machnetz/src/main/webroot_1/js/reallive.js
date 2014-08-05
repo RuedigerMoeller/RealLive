@@ -383,6 +383,14 @@ function RLResultSet() {
         }
     };
 
+    this.unsubscribeAndClear = function() {
+        this.unsubscribe();
+        this.map = {};
+        this.list = [];
+        this.snapFin = false;
+        this.subsId = null;
+    };
+
     this.push = function(change) {
         if (this.preChangeHook) {
             this.preChangeHook.call(null,change,this.snapFin);

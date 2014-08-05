@@ -6,7 +6,6 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Scheduler;
-import org.nustaq.kontraktor.impl.DispatcherThread;
 import io.netty.channel.ChannelHandlerContext;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.machnetz.model.rlxchange.*;
@@ -14,23 +13,14 @@ import org.nustaq.machnetz.rlxchange.Matcher;
 import org.nustaq.netty2go.NettyWSHttpServer;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.RealLive;
-import org.nustaq.reallive.Record;
 import org.nustaq.reallive.impl.RLImpl;
-import org.nustaq.reallive.sys.config.ColumnConfig;
-import org.nustaq.reallive.sys.config.ConfigReader;
-import org.nustaq.reallive.sys.config.SchemaConfig;
-import org.nustaq.reallive.sys.config.TableConfig;
-import org.nustaq.serialization.dson.Dson;
 import org.nustaq.webserver.ClientSession;
 import org.nustaq.webserver.WebSocketHttpServer;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.atomic.*;
-import java.util.concurrent.locks.LockSupport;
 
 /**
  * Created by ruedi on 25.05.14.
@@ -87,9 +77,13 @@ public class MachNetz extends WebSocketHttpServer {
                 Trader.class,
                 Position.class,
                 Session.class,
-                Asset.class
+                Asset.class,
+                MarketPlace.class
             }
         ).forEach( (clz) -> realLive.createTable(clz) );
+
+        realLive.createTable("InstrumentTpl", Instrument.class);
+        realLive.createTable("MarketPlaceTpl", MarketPlace.class);
 
         String description = "10€ in case $X wins";
         long expiry = System.currentTimeMillis()+4*7*24*60*60*1000;
@@ -113,8 +107,15 @@ public class MachNetz extends WebSocketHttpServer {
             new Instrument("Iran", description, expiry, expString),
         }).forEach((instr) -> {
             instr.setDescription(instr.getDescription().replace("$X",instr.getRecordKey()));
-            realLive.getTable("Instrument").$put(instr.getRecordKey(),instr,0);
+            instr.setMarketPlace("WM 2040");
+            realLive.getTable("Instrument").$put(instr.getRecordKey(), instr, 0);
+            realLive.getTable("InstrumentTpl").$put(instr.getRecordKey(),instr,0);
         });
+
+        MarketPlace mp = new MarketPlace();
+        mp.setAdmin("Ruedi");
+        mp.setMarketPlaceName("WM 2040");
+        realLive.getTable("MarketPlace").$put("WM 2040",mp,0);
 
         Arrays.stream( new Trader[] {
             new Trader("Hans", "hans@wurst.de"),

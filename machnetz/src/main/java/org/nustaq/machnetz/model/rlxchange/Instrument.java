@@ -2,16 +2,14 @@ package org.nustaq.machnetz.model.rlxchange;
 
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.Record;
-import org.nustaq.reallive.sys.annotations.BGColor;
-import org.nustaq.reallive.sys.annotations.ColOrder;
-import org.nustaq.reallive.sys.annotations.DisplayWidth;
-import org.nustaq.reallive.sys.annotations.RenderStyle;
+import org.nustaq.reallive.sys.annotations.*;
 
 /**
  * Created by ruedi on 18.07.14.
  *
  * mnemonic is key
  */
+@KeyLen(40) // instr template id # marketid
 public class Instrument extends Record {
 
     @ColOrder(3)
@@ -25,6 +23,9 @@ public class Instrument extends Record {
     @RenderStyle("Price") @ColOrder(2) @BGColor("rgba(0,0,255,0.2)") @DisplayWidth("110px")
     int volumeTraded;
 
+    String marketPlace;
+    String instrumentName;
+
     public Instrument() {
     }
 
@@ -33,6 +34,22 @@ public class Instrument extends Record {
         this.description = description;
         this.expiryDate = expiryDate;
         this.expiryDateString = expiryDateString;
+    }
+
+    public String getMarketPlace() {
+        return marketPlace;
+    }
+
+    public void setMarketPlace(String marketPlace) {
+        this.marketPlace = marketPlace;
+    }
+
+    public String getInstrumentName() {
+        return instrumentName;
+    }
+
+    public void setInstrumentName(String instrumentName) {
+        this.instrumentName = instrumentName;
     }
 
     public int getContractsTraded() {

@@ -16,6 +16,7 @@ public class Trader extends Record {
 
     @ColOrder(3)
     String email;
+    String markets[];
 
     public Trader() {
     }

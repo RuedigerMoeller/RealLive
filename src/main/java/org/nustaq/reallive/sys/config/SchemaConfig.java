@@ -12,6 +12,7 @@ import java.util.HashMap;
 public class SchemaConfig implements Serializable {
 
     HashMap<String,TableConfig> tables;
+    HashMap<String,ColumnConfig> globals;
 
     public TableConfig getTable(String table) {
         return tables.get(table);
@@ -21,5 +22,11 @@ public class SchemaConfig implements Serializable {
         if ( tables == null )
             tables = new HashMap<>();
         return tables;
+    }
+
+    public HashMap<String, ColumnConfig> getGlobals() {
+        if ( globals == null )
+            globals = new HashMap<>();
+        return globals;
     }
 }
