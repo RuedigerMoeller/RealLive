@@ -1,7 +1,9 @@
 package org.nustaq.machnetz;
 
+import org.nustaq.konfigkaiser.KonfigKaiser;
 import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
+import org.nustaq.machnetz.model.rlxchange.Order;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectOutput;
 
@@ -34,7 +36,6 @@ public class MachNetzAdmin {
         outputStream.write(objectOutput.getBuffer(), 0, objectOutput.getWritten());
         objectOutput.flush();
     }
-
 
     public static class AdminClient {
 
@@ -107,6 +108,16 @@ public class MachNetzAdmin {
 
     public static void main(String argv[]) throws Exception
     {
+        Order order = new Order();
+        order._setRecordKey("BL:AAA");
+        order.setText("Text");
+        order.setCreationTime(System.currentTimeMillis());
+        order.setBuy(true);
+        order.setInstrumentKey("Germany");
+        order.setLimitPrice(1000);
+        order.setQty(12);
+        System.out.println( new KonfigKaiser().writeObject(order) );
+
         if ( argv.length == 0 ) {
             AdminServer tcpServer = new AdminServer();
             tcpServer.start( (message) -> {
