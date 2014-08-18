@@ -1,8 +1,8 @@
 package org.nustaq.machnetz;
 
-import org.nustaq.konfigkaiser.KonfigKaiser;
 import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
+import org.nustaq.kson.Kson;
 import org.nustaq.machnetz.model.rlxchange.Order;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectOutput;
@@ -116,7 +116,7 @@ public class MachNetzAdmin {
         order.setInstrumentKey("Germany");
         order.setLimitPrice(1000);
         order.setQty(12);
-        System.out.println( new KonfigKaiser().writeObject(order) );
+        System.out.println( new Kson().writeObject(order) );
 
         if ( argv.length == 0 ) {
             AdminServer tcpServer = new AdminServer();

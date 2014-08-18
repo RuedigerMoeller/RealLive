@@ -1,6 +1,7 @@
 package org.nustaq.reallive.sys.config;
 
-import org.nustaq.konfigkaiser.KonfigKaiser;
+
+import org.nustaq.kson.Kson;
 
 import java.io.File;
 
@@ -10,7 +11,7 @@ import java.io.File;
 public class ConfigReader {
 
     public static SchemaConfig readConfig(String file) throws Exception {
-        return (SchemaConfig) new KonfigKaiser()
+        return (SchemaConfig) new Kson()
             .map("schema", SchemaConfig.class)
             .map("table", TableConfig.class)
             .map("column", ColumnConfig.class)
