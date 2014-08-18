@@ -1,14 +1,12 @@
 package org.nustaq.reallive.client;
 
-import org.nustaq.heapoff.bytez.ByteSource;
+import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.reallive.*;
-import org.nustaq.reallive.impl.SubscriptionImpl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
 

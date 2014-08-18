@@ -1,11 +1,9 @@
 package org.nustaq.reallive.impl.storage;
 
-import org.nustaq.heapoff.FSTAsciiStringOffheapMap;
-import org.nustaq.heapoff.FSTBinaryOffheapMap;
-import org.nustaq.heapoff.bytez.ByteSource;
-import org.nustaq.heapoff.bytez.Bytez;
-import org.nustaq.heapoff.bytez.bytesource.ByteArrayByteSource;
-import org.nustaq.heapoff.bytez.bytesource.BytezByteSource;
+import org.nustaq.offheap.FSTAsciiStringOffheapMap;
+import org.nustaq.offheap.FSTBinaryOffheapMap;
+import org.nustaq.offheap.bytez.ByteSource;
+import org.nustaq.offheap.bytez.Bytez;
 import org.nustaq.serialization.FSTConfiguration;
 
 import java.util.Iterator;
@@ -52,7 +50,7 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
 
     @Override
     public V decodeValue(ByteSource value) {
-        return store.decodeValue((org.nustaq.heapoff.bytez.bytesource.BytezByteSource) value);
+        return store.decodeValue((org.nustaq.offheap.bytez.bytesource.BytezByteSource) value);
     }
 
     @Override

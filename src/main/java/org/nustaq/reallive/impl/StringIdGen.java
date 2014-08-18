@@ -1,8 +1,6 @@
 package org.nustaq.reallive.impl;
 
-import org.nustaq.heapoff.bytez.Bytez;
-
-import java.util.concurrent.atomic.AtomicLong;
+import org.nustaq.offheap.bytez.Bytez;
 
 /**
  * Threadsafe String id generator.

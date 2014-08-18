@@ -1,6 +1,6 @@
 package org.nustaq.reallive.impl;
 
-import org.nustaq.heapoff.bytez.Bytez;
+import org.nustaq.offheap.bytez.Bytez;
 
 /**
  * Created by ruedi on 21.06.14.

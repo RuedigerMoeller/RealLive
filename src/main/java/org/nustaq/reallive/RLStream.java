@@ -1,8 +1,7 @@
 package org.nustaq.reallive;
 
-import org.nustaq.heapoff.bytez.ByteSource;
+import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Callback;
-import org.nustaq.reallive.impl.SubscriptionImpl;
 
 import java.util.function.Predicate;
 

@@ -1,6 +1,6 @@
 package org.nustaq.reallive.impl;
 
-import org.nustaq.heapoff.bytez.ByteSource;
+import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;

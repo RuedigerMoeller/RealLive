@@ -1,7 +1,7 @@
 package org.nustaq.reallive.impl.storage;
 
-import org.nustaq.heapoff.bytez.ByteSource;
-import org.nustaq.heapoff.bytez.Bytez;
+import org.nustaq.offheap.bytez.ByteSource;
+import org.nustaq.offheap.bytez.Bytez;
 
 import java.util.Iterator;
 
