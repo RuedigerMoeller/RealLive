@@ -229,7 +229,7 @@ public class TableTest {
             },
             (rec) -> count[0]++ >= MAX,
             (r, e) -> {
-                if (e == RLTable.FIN)
+                if (e == RLTable.END)
                     latch.countDown();
                 if (e instanceof Exception) {
                     System.out.println("count " + count[0]);

@@ -62,7 +62,7 @@ public class InstrumentMatcher { // ready to be be an actor if needed
             // can we ensure there is a short position regardless of open orders ?
             int worstCaseQty = positionAsset.getAvaiable() + positionAsset.getOpenBuyQty() + order.getQty();
             if (cashAsset.getAvaiable() < 0 && worstCaseQty <= 0 ) {
-                res.receiveResult(null, "Not enough cash avaiable to place Buy order.");
+                res.receive(null, "Not enough cash avaiable to place Buy order.");
                 return res;
             }
 
@@ -84,7 +84,7 @@ public class InstrumentMatcher { // ready to be be an actor if needed
             // can we ensure there is a long position regardless of open orders ?
             int worstCaseQty = positionAsset.getAvaiable() - positionAsset.getOpenSellQty() - order.getQty();
             if ( cashAsset.getAvaiable() < 0 && worstCaseQty >= 0 ) {
-                res.receiveResult(null, "Not enough cash avaiable to place Sell order.");
+                res.receive(null, "Not enough cash avaiable to place Sell order.");
                 return res;
             }
 

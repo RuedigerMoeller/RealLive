@@ -69,7 +69,7 @@ public class MachNetzAdmin {
 
         public AdminServer() throws IOException {
             welcomeSocket = new ServerSocket(8886);
-            System.out.println("server running on "+welcomeSocket.getLocalPort());
+            System.out.println("mnserver running on "+welcomeSocket.getLocalPort());
         }
 
         public void start( ServerListener listener /* expect actor */ ) throws IOException {

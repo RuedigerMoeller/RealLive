@@ -97,7 +97,7 @@ public class Matcher extends Actor<Matcher> {
                 Asset posAsset = position.getResult();
 
                 if ( cashAsset == null ) {
-                    result.receiveResult("fatal: no cash asset found",null);
+                    result.receive("fatal: no cash asset found", null);
                     finished.signal();
                     return;
                 }
@@ -108,7 +108,7 @@ public class Matcher extends Actor<Matcher> {
                 ord._setRecordKey(createOrderId());
                 matcherMap.get(ord.getInstrumentKey()).addOrder(rl.getTable("Asset"), orders, ord, cashAsset, posAsset)
                     .then((res,err) -> {
-                        result.receiveResult(err != null ? err : res, null);
+                        result.receive(err != null ? err : res, null);
                         finished.signal();
                     });
             });
@@ -182,18 +182,18 @@ public class Matcher extends Actor<Matcher> {
         tickets.getTicket(ord.getTraderKey()).then( (sigFin, e) -> {
             matcherMap.get(ord.getInstrumentKey()).delOrder(ord).then((r,err) -> {
                 if ( r == null ) {
-                    result.receiveResult( "Order " + ord.getRecordKey() + " not found.", null );
+                    result.receive("Order " + ord.getRecordKey() + " not found.", null);
                     sigFin.signal();
                     return;
                 }
                 if ( ord.getQty() != r.getQty() ) {
-                    result.receiveResult( "Partial Order deleted. Has already been matched partially: " + (ord.getQty()-r.getQty()), null );
+                    result.receive("Partial Order deleted. Has already been matched partially: " + (ord.getQty() - r.getQty()), null);
                     orders.$remove(ord.getRecordKey(),MATCHER_ID);
                     orderDeletionBalanceUpdate(ord);
                     sigFin.signal();
                     return;
                 }
-                result.receiveResult( (ord.isBuy()?"Buy":"Sell")+" Order deleted. ["+ord.getInstrumentKey()+" "+ord.getQty()+"@"+(ord.getLimitPrice()/100)+"]", null );
+                result.receive((ord.isBuy() ? "Buy" : "Sell") + " Order deleted. [" + ord.getInstrumentKey() + " " + ord.getQty() + "@" + (ord.getLimitPrice() / 100) + "]", null);
                 orders.$remove(ord.getRecordKey(),MATCHER_ID);
                 orderDeletionBalanceUpdate(ord);
                 sigFin.signal();

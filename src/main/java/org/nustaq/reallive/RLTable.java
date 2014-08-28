@@ -8,7 +8,7 @@ import java.util.function.Predicate;
  * Created by ruedi on 21.06.14.
  */
 public interface RLTable<T extends Record> {
-    public final String FIN = "FIN";
+    public final String END = "FIN";
 
     ////////////////////////////////////////////////////////////////////////////////////////
     // sync methods

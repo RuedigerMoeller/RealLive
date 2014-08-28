@@ -34,8 +34,8 @@
         </dependency>
         <dependency>
             <groupId>de.ruedigermoeller</groupId>
-            <artifactId>netty2go</artifactId>
-            <version>1.02</version>
+            <artifactId>netty-kontraktor</artifactId>
+            <version>LATEST</version>
         </dependency>
         <dependency>
             <groupId>de.ruedigermoeller</groupId>

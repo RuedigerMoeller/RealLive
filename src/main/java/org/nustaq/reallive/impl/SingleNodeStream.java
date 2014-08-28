@@ -41,7 +41,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     public void filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
         tableActor.$filter(matches,terminateQuery, (r,e) -> {
             checkThread();
-            if ( e == RLTable.FIN ) {
+            if ( e == RLTable.END ) {
                 resultReceiver.onChangeReceived( ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0));
             } else if ( e == null ) {
                 resultReceiver.onChangeReceived( ChangeBroadcast.NewAdd(tableActor.getTableId(),r,0));
@@ -99,7 +99,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
             checkThread();
             if ( e == null ) {
                 subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewAdd(tableActor.getTableId(), r,0));
-            } else if ( e == RLTable.FIN ) {
+            } else if ( e == RLTable.END ) {
                 subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0));
             } else {
                 subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewError(tableActor.getTableId(), e,0));

@@ -295,15 +295,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
                 T t = (T) vals.next();
                 t._setTable(self());
                 if (doProcess == null || doProcess.test(t)) {
-                    resultReceiver.receiveResult(t, null);
+                    resultReceiver.receive(t, null);
                 }
                 if (terminate != null && terminate.test(t))
                     break;
             } catch (Exception e ) {
-                resultReceiver.receiveResult(null,e);
+                resultReceiver.receive(null, e);
             }
         }
-        resultReceiver.receiveResult(null,FIN);
+        resultReceiver.receive(null, END);
     }
 
     public void $filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback resultReceiver) {
@@ -313,15 +313,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             try {
                 ByteSource t = entries.next();
                 if (doProcess == null || doProcess.test(t)) {
-                    resultReceiver.receiveResult(t, null);
+                    resultReceiver.receive(t, null);
                 }
                 if (terminate != null && terminate.test(t))
                     break;
             } catch (Exception e ) {
-                resultReceiver.receiveResult(null,e);
+                resultReceiver.receive(null, e);
             }
         }
-        resultReceiver.receiveResult(null,FIN);
+        resultReceiver.receive(null, END);
     }
 
     private T get(String key) {

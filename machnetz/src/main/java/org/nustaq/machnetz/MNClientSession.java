@@ -1,7 +1,8 @@
 package org.nustaq.machnetz;
 
-import org.nustaq.kontraktor.Actor;
 import io.netty.channel.ChannelHandlerContext;
+import org.nustaq.kontraktor.remoting.http.netty.ActorWSClientSession;
+import org.nustaq.kontraktor.remoting.http.netty.ActorWSServer;
 import org.nustaq.machnetz.model.DataModel;
 import org.nustaq.machnetz.model.rlxchange.Order;
 import org.nustaq.machnetz.model.rlxchange.Position;
@@ -19,7 +20,6 @@ import org.nustaq.reallive.sys.metadata.Metadata;
 import org.nustaq.serialization.FSTClazzInfo;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.minbin.MBPrinter;
-import org.nustaq.serialization.util.FSTUtil;
 import org.nustaq.webserver.ClientSession;
 
 import java.io.File;
@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by ruedi on 25.05.14.
  */
-public class MNClientSession<T extends MNClientSession> extends Actor<T> implements ClientSession {
+public class MNClientSession<T extends MNClientSession> extends ActorWSClientSession<T> implements ClientSession {
 
     private static final Object NO_RESULT = "NO_RESULT";
     static FSTConfiguration conf = FSTConfiguration.createCrossPlatformConfiguration();
@@ -44,20 +44,20 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         conf.registerCrossPlatformClassMappingUseSimpleName(new DataModel().getClasses());
     }
 
-    protected MachNetz server; // FIXME: iface
+    protected MachNetz mnserver; // FIXME: iface
 
     String sessionKey;
     Session session;
     MethodHandles.Lookup lookup;
     RealLive realLive;
     String traderKey;
-    ChannelHandlerContext context;
 
-    public void $init(MachNetz machNetz, int sessionId) {
+    public void $init(ActorWSServer machNetz, int sessionId) {
+        super.$init(machNetz, sessionId);
         Thread.currentThread().setName("MNClientSession"+sessionId);
-        server = machNetz;
+        mnserver = (MachNetz) machNetz;
         lookup = MethodHandles.lookup();
-        realLive = new RealLiveClientWrapper(server.getRealLive());
+        realLive = new RealLiveClientWrapper(mnserver.getRealLive());
         session = (Session) realLive.getTable("Session").createForAddWithKey(sessionKey);
         session.setLastPing(System.currentTimeMillis());
         session.$apply(0).then((recordId, err) -> {
@@ -94,7 +94,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         subs.forEach((subsid) -> unsubscribe((String) subsid));
         getRLDB().getTable("Session").$remove(sessionKey, 0);
         self().$stop();
-        server.removeSession(ctx);
+        mnserver.removeSession(ctx);
     }
 
     public void $onTextMessage(ChannelHandlerContext ctx, String text) {
@@ -145,7 +145,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
         ChannelHandlerContext ctx = (ChannelHandlerContext) inv.getCurrentContext();
         InvocationCallback cb = new InvocationCallback(msg, cbId);
         cb.setSequence(msgCount.incrementAndGet());
-        server.sendWSBinaryMessage(ctx,conf.asByteArray(cb));
+        mnserver.sendWSBinaryMessage(ctx, conf.asByteArray(cb));
     }
 
     Object initModel(Invocation inv) {
@@ -256,7 +256,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
 
     Object deleteOrder(Invocation inv) {
         Order ord = (Order) inv.getArgument();
-        server.getMatcher().$delOrder(ord).then((r,e) -> sendReply(inv,r));
+        mnserver.getMatcher().$delOrder(ord).then((r,e) -> sendReply(inv,r));
         return NO_RESULT;
     }
 
@@ -268,7 +268,7 @@ public class MNClientSession<T extends MNClientSession> extends Actor<T> impleme
             return NO_RESULT;
         }
         toAdd.setCreationTime(System.currentTimeMillis());
-        server.getMatcher().$addOrder(toAdd).then( (r,e) -> {
+        mnserver.getMatcher().$addOrder(toAdd).then( (r,e) -> {
             sendReply(inv, r != null ? r : "");
         });
         return NO_RESULT;

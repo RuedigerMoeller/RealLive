@@ -103,7 +103,7 @@ public class TClient {
             }
             Promise res = new Promise();
             yieldList(recids).then((r,e) -> {
-                res.receiveResult("void",null);
+                res.receive("void", null);
             });
             return res;
         }

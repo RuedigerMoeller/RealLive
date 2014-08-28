@@ -49,7 +49,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
                 break;
             case ChangeBroadcast.SNAPSHOT_DONE:
                 snaphotFinished = true;
-                snapFin.receiveResult("void",null);
+                snapFin.receive("void", null);
                 break;
             case ChangeBroadcast.ERROR:
             default:
