@@ -4,7 +4,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Actors;
-import org.nustaq.kontraktor.remoting.http.netty.ActorWSServer;
+import org.nustaq.kontraktor.remoting.http.netty.util.ActorWSServer;
 import org.nustaq.machnetz.model.rlxchange.*;
 import org.nustaq.machnetz.rlxchange.Matcher;
 import org.nustaq.netty2go.NettyWSHttpServer;

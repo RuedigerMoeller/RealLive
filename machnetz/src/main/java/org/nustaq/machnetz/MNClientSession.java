@@ -1,8 +1,8 @@
 package org.nustaq.machnetz;
 
 import io.netty.channel.ChannelHandlerContext;
-import org.nustaq.kontraktor.remoting.http.netty.ActorWSClientSession;
-import org.nustaq.kontraktor.remoting.http.netty.ActorWSServer;
+import org.nustaq.kontraktor.remoting.http.netty.util.ActorWSClientSession;
+import org.nustaq.kontraktor.remoting.http.netty.util.ActorWSServer;
 import org.nustaq.machnetz.model.DataModel;
 import org.nustaq.machnetz.model.rlxchange.Order;
 import org.nustaq.machnetz.model.rlxchange.Position;
@@ -70,7 +70,7 @@ public class MNClientSession<T extends MNClientSession> extends ActorWSClientSes
     int SESSION_TIMOUT = 120000;
     public void $updateSession() {
         if ( System.currentTimeMillis() - session.getLastPing() > SESSION_TIMOUT) {
-            $onClose(context);
+            $onClose();
         } else {
             session.setSubscriptions(subscriptions.size());
             session.$apply(0);
@@ -84,31 +84,26 @@ public class MNClientSession<T extends MNClientSession> extends ActorWSClientSes
 
     public void $onOpen(ChannelHandlerContext ctx) {
         checkThread();
-        this.context = ctx;
+        super.$onOpen(ctx);
     }
 
-    public void $onClose(ChannelHandlerContext ctx) {
+    public void $onClose() {
         System.out.println("closing session "+sessionKey);
         checkThread();
         ArrayList subs = new ArrayList(subscriptions.keySet());
         subs.forEach((subsid) -> unsubscribe((String) subsid));
         getRLDB().getTable("Session").$remove(sessionKey, 0);
         self().$stop();
-        mnserver.removeSession(ctx);
+        mnserver.removeSession(context);
     }
 
-    public void $onTextMessage(ChannelHandlerContext ctx, String text) {
+    public void $onTextMessage(String text) {
         System.out.println("textmsg");
     }
 
     final MethodType rpctype = MethodType.methodType(Object.class,Invocation.class);
-    public void $onBinaryMessage(ChannelHandlerContext ctx, byte[] buffer) {
+    public void $onBinaryMessage(byte[] buffer) {
         checkThread();
-        if ( ctx != context ) {
-            System.out.println("This is unexpected !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            Thread.dumpStack();
-            context = ctx;
-        }
         session.setRequests(session.getRequests()+1);
 //        System.out.println("minmsg");
         final Object msg;
@@ -123,7 +118,7 @@ public class MNClientSession<T extends MNClientSession> extends ActorWSClientSes
 //        System.out.println("  minmsg "+msg);
         if (msg instanceof Invocation) {
             final Invocation inv = (Invocation) msg;
-            inv.setCurrentContext(ctx);
+            inv.setCurrentContext(context);
             try {
                 final MethodHandle method = lookup.findVirtual(getClass(), inv.getName(), rpctype);
                 Object result = method.invoke(this, inv);
@@ -142,10 +137,10 @@ public class MNClientSession<T extends MNClientSession> extends ActorWSClientSes
     protected void sendReply(Invocation inv, Object msg) {
         session.setBcasts(session.getBcasts()+1);
         String cbId = inv.getCbId();
-        ChannelHandlerContext ctx = (ChannelHandlerContext) inv.getCurrentContext();
         InvocationCallback cb = new InvocationCallback(msg, cbId);
         cb.setSequence(msgCount.incrementAndGet());
-        mnserver.sendWSBinaryMessage(ctx, conf.asByteArray(cb));
+        final byte[] b = conf.asByteArray(cb);
+        sendBinaryMessage(b);
     }
 
     Object initModel(Invocation inv) {
