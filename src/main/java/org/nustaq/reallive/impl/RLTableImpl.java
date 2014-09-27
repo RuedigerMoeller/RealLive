@@ -21,8 +21,10 @@ import java.util.function.Predicate;
 /**
  * Created by ruedi on 21.06.14.
  *
+ * todo:
  * add CAS
  * add Client Object to be able to correlate changes and broadcasts
+ * add striping
  */
 public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> implements RLTable<T> {
 
