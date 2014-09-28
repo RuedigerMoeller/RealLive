@@ -12,6 +12,13 @@ public interface RLStream<T extends Record> {
 
     public void each(ChangeBroadcastReceiver<T> resultReceiver);
     public void filter(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver);
+
+    /**
+     * filter until terminate query returns true
+     * @param matches
+     * @param terminateQuery
+     * @param resultReceiver
+     */
     public void filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver);
     public void filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback<ByteSource> resultReceiver);
 

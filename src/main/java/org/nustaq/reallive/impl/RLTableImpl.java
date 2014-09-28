@@ -1,5 +1,6 @@
 package org.nustaq.reallive.impl;
 
+import org.nustaq.kontraktor.annotations.AsCallback;
 import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Callback;
@@ -70,7 +71,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         } catch (Exception e) {
             e.printStackTrace();
         }
-        delayed( 3000, ()-> self().$reportStats() );
+        delayed( 3000, ()-> $reportStats() );
     }
 
     @CallerSideMethod
@@ -241,6 +242,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             broadCastRemove(record,originator);
     }
 
+    @AsCallback
     public void $reportStats() {
         checkThread();
         SysTable sysTable = (SysTable) getRealLive().getTable("SysTable").createForUpdate(tableId, true);
@@ -248,7 +250,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         sysTable.setSizeMB(storage.getSizeMB());
         sysTable.setFreeMB(storage.getFreeMB());
         sysTable.$apply(0);
-        delayed( 3000, () -> self().$reportStats() );
+        delayed( 3000, () -> $reportStats() );
     }
 
     //

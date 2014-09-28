@@ -60,8 +60,20 @@ public class SubscriptionImpl<T extends Record> implements ChangeBroadcastReceiv
         return filter;
     }
 
+    Thread _t; //
+    protected final void checkThread() {
+        if (_t==null) {
+            _t = Thread.currentThread();
+        } else {
+            if ( _t != Thread.currentThread() ) {
+                throw new RuntimeException("Wrong Thread");
+            }
+        }
+    }
+
     @Override
     public void onChangeReceived(ChangeBroadcast<T> changeBC) {
+        checkThread();
         cb.onChangeReceived(changeBC);
     }
 

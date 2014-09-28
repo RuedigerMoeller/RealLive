@@ -1,5 +1,6 @@
 package org.nustaq.reallive.impl;
 
+import org.nustaq.kontraktor.annotations.AsCallback;
 import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Callback;
@@ -22,7 +23,6 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     public void $init(String name, RLTableImpl<T> tableActor) {
-        Thread.currentThread().setName("SNStream:"+name);
         checkThread();
         this.tableActor = tableActor;
     }
@@ -77,13 +77,14 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
         return subs;
     }
 
-    public void $subscribe(SubscriptionImpl subs) { // fixme: inthread missing, not possible
+    public void $subscribe(SubscriptionImpl subs) {
         checkThread();
-        subscribers.add(subs);
         if ( subs.getFilter() instanceof SubscriptionImpl.KeyPredicate ) {
+            // listen to single key
             tableActor.$get( ((SubscriptionImpl.KeyPredicate) subs.getFilter()).getKey())
                 .then(
                     (record,e) -> {
+                        subscribers.add(subs);
                         checkThread();
                         if ( record == null ) {
                             ChangeBroadcast changeBC = ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0);
@@ -101,6 +102,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
                 subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewAdd(tableActor.getTableId(), r,0));
             } else if ( e == RLTable.END ) {
                 subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0));
+                subscribers.add(subs); // delay listening onto snapfinish
             } else {
                 subs.getChangeReceiver().onChangeReceived(ChangeBroadcast.NewError(tableActor.getTableId(), e,0));
             }
@@ -116,7 +118,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
         subscribers.remove(subs);
     }
 
-    @Override
+    @Override @AsCallback
     public void onChangeReceived(ChangeBroadcast<T> changeBC) {
         checkThread();
         if ( changeBC.isARU() ) {

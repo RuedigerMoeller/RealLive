@@ -21,7 +21,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
     protected boolean snaphotFinished = false;
 
     public ReplicatedSet() {
-        snapFin = new Promise();
+        reset();
     }
     protected List<MySubscription> subscribers;
 
@@ -29,6 +29,13 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
         this();
         this.tableId = tableId;
     }
+
+    public void reset() {
+        snaphotFinished = false;
+        snapFin = new Promise();
+        map.clear();
+    }
+
 
     public void setTableId(String tableId) {
         this.tableId = tableId;
@@ -115,7 +122,19 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
         }
     }
 
+    Thread _t;
+    protected final void checkThread() {
+        if (_t==null) {
+            _t = Thread.currentThread();
+        } else {
+            if ( _t != Thread.currentThread() ) {
+                throw new RuntimeException("Wrong Thread");
+            }
+        }
+    }
+
     protected void handleUpdate(ChangeBroadcast<T> changeBC) {
+        checkThread();
         T t = map.get(changeBC.getRecordKey());
         if ( t == null ) {
             System.out.println("replication error: unknown record updated: "+changeBC.getRecordKey()+" "+changeBC.getRecord());
@@ -202,6 +221,10 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
     @Override
     public void filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback<ByteSource> resultReceiver) {
         throw new RuntimeException("unsupported for replicated sets");
+    }
+
+    public T get(String recordKey) {
+        return map.get(recordKey);
     }
 
     static abstract class MySubscription<T extends Record> implements Subscription<T> {

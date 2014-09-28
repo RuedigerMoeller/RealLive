@@ -24,8 +24,9 @@ import java.util.concurrent.CountDownLatch;
  */
 public class RLImpl extends RealLive {
 
-    public static int CHANGE_Q_SIZE = 10000;
-    public static int FILTER_Q_SIZE = 100000;
+    public static int CHANGE_Q_SIZE = 50000;
+    public static int FILTER_Q_SIZE = 30000;
+
     ConcurrentHashMap<String, RLTable> tables = new ConcurrentHashMap<>();
     Metadata model;
 
@@ -174,8 +175,9 @@ public class RLImpl extends RealLive {
     }
 
     protected void pureCreateTable(String name, Class<? extends Record> clazz) {
-        RLTableImpl table = Actors.AsActor( RLTableImpl.class, new ElasticScheduler(1), CHANGE_Q_SIZE );
-        SingleNodeStream stream = Actors.AsActor(SingleNodeStream.class,new ElasticScheduler(1), FILTER_Q_SIZE);
+        ElasticScheduler scheduler = new ElasticScheduler(1);
+        RLTableImpl table = Actors.AsActor( RLTableImpl.class, scheduler, CHANGE_Q_SIZE );
+        SingleNodeStream stream = Actors.AsActor(SingleNodeStream.class, scheduler, FILTER_Q_SIZE);
         stream.$init(name,table);
         table.$init(name, this, clazz, stream);
         CountDownLatch latch = new CountDownLatch(1);
