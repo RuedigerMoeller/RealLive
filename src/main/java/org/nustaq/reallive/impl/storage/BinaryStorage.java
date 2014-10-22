@@ -28,4 +28,6 @@ public interface BinaryStorage<K,V> {
     int getSizeMB();
 
     boolean contains(String key);
+
+    void close();
 }

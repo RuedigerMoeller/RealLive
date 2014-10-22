@@ -34,4 +34,5 @@ public abstract class RealLive {
     public abstract void createTable(Class<? extends Record> recordClass);
     public abstract void createVirtualStream(String name, ReplicatedSet set);
 
+    public abstract void shutDown();
 }

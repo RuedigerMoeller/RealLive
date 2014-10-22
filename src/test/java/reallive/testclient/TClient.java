@@ -15,6 +15,7 @@ import static org.nustaq.kontraktor.Actors.*;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by ruedi on 06.07.14.
@@ -160,7 +161,7 @@ public class TClient {
                 recids.add(recordForAdd.$apply(0));
             }
             Promise res = new Promise();
-            yieldList(recids).then((r,e) -> {
+            yieldList((List)recids).then((r, e) -> {
                 res.receive("void", null);
             });
             return res;

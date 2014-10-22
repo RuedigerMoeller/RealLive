@@ -91,4 +91,9 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
         return store.getBinary(store.encodeKey(key)) != null;
     }
 
+    @Override
+    public void close() {
+        store.free();
+    }
+
 }

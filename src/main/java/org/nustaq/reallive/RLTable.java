@@ -93,4 +93,5 @@ public interface RLTable<T extends Record> {
      */
     public Future $sync();
 
+    public Future $shutDown();
 }

@@ -53,4 +53,10 @@ public class RealLiveClientWrapper extends RealLive {
         set.setTableId(name);
         virtualStreams.put(name,set);
     }
+
+    @Override
+    public void shutDown() {
+        realRealLive.shutDown();
+    }
+
 }

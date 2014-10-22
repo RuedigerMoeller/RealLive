@@ -39,6 +39,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     RealLive realLive; // shared
     private RLStream streamActor;
     private ChangeBroadcastReceiver receiver;
+    boolean isShutDown;
 
     public void $init( String tableId, RealLive realLive, Class<T> clz, SingleNodeStream streamActor ) {
         Thread.currentThread().setName("TableImpl:"+tableId);
@@ -159,6 +160,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public Future<String> $addGetId(T object, int originator) {
+        if (isShutDown)
+            return null;
         checkThread();
         if ( object.getRecordKey() == null ) {
             String nextKey = idgen.nextid();
@@ -171,6 +174,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public void $add(T object, int originator) {
+        if (isShutDown)
+            return;
         checkThread();
         if ( object.getRecordKey() == null ) {
             String nextKey = idgen.nextid();
@@ -182,6 +187,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public void $put(String key, T newRec, int originator) {
+        if (isShutDown)
+            return;
         checkThread();
         if ( newRec == null ) {
             $remove(key,originator);
@@ -206,6 +213,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public void $update(RecordChange<String,T> change, boolean addIfNotPresent ) {
+        if (isShutDown)
+            return;
         checkThread();
         T t = get(change.getId());
         if ( t != null ) {
@@ -223,6 +232,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public Future<Boolean> $updateCAS(RecordChange<String, T> change, Predicate<T> condition) {
+        if (isShutDown)
+            return null;
         T t = get(change.getId());
         if ( t == null ) {
             return new Promise<>(false);
@@ -236,6 +247,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @Override
     public void $remove(String key, int originator) {
+        if (isShutDown)
+            return;
         checkThread();
         Record record = storage.removeAndGet(key);
         if ( record != null )
@@ -244,6 +257,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
     @AsCallback
     public void $reportStats() {
+        if (isShutDown)
+            return;
         checkThread();
         SysTable sysTable = (SysTable) getRealLive().getTable("SysTable").createForUpdate(tableId, true);
         sysTable.setNumElems(storage.size());
@@ -290,8 +305,17 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         return new Promise("void");
     }
 
+    @Override
+    public Future $shutDown() {
+        isShutDown = true;
+        storage.close();
+        return new Promise("void");
+    }
+
 
     public void $filter(Predicate<T> doProcess, Predicate<T> terminate, Callback<T> resultReceiver) {
+        if (isShutDown)
+            return;
         checkThread();
         Iterator<Record> vals = storage.values();
         while( vals.hasNext() ) {
@@ -311,6 +335,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     public void $filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback resultReceiver) {
+        if (isShutDown)
+            return;
         Iterator<ByteSource> entries = storage.binaryValues();
 
         while( entries.hasNext() ) {
@@ -329,6 +355,8 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     private T get(String key) {
+        if (isShutDown)
+            return null;
         T res = (T) storage.get(key);
         if ( res == null )
             return null;
@@ -337,11 +365,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     private void put(String key, T object) {
+        if (isShutDown)
+            return;
         storage.put(key, object);
     }
 
     @CallerSideMethod
     public RLStream<T> stream() {
+        if (isShutDown)
+            return null;
         if ( isProxy() )
             return getActor().stream();
         return streamActor;

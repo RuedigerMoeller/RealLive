@@ -1,6 +1,7 @@
 package org.nustaq.reallive.impl;
 
 import org.nustaq.kontraktor.Actors;
+import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.reallive.RLStream;
@@ -16,8 +17,11 @@ import org.nustaq.reallive.sys.tables.SysTable;
 import org.nustaq.serialization.FSTClazzInfo;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Created by ruedi on 21.06.14.
@@ -38,7 +42,7 @@ public class RLImpl extends RealLive {
 
     protected void initSystemTables() {
         Arrays.stream(new Class[]{SysTable.class}).forEach(
-            (clz) -> createTable(clz.getSimpleName(), clz)
+                (clz) -> createTable(clz.getSimpleName(), clz)
         );
     }
 
@@ -54,12 +58,24 @@ public class RLImpl extends RealLive {
 
     @Override
     public void createTable(Class<? extends Record> recordClass) {
-        createTable(recordClass.getSimpleName(),recordClass);
+        createTable(recordClass.getSimpleName(), recordClass);
     }
 
     @Override
     public void createVirtualStream(String name, ReplicatedSet set) {
         throw new RuntimeException("not supported in core implementation");
+    }
+
+    @Override
+    public void shutDown() {
+        final List<Future> futs = tables.values().stream().map((rlTab) -> rlTab.$shutDown()).collect(Collectors.toList());
+        CountDownLatch latch = new CountDownLatch(futs.size());
+        Actors.yield(futs).then( (r,e) -> latch.countDown() );
+        try {
+            latch.await(3000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void addToSysTable(String name, Class rowClass) {
