@@ -39,13 +39,15 @@ public class RealLiveClientWrapper extends RealLive {
     }
 
     @Override
-    public void createTable(String name, Class<? extends Record> recordClass) {
+    public RealLive createTable(String name, Class<? extends Record> recordClass) {
         realRealLive.createTable(name,recordClass);
+        return this;
     }
 
     @Override
-    public void createTable(Class<? extends Record> recordClass) {
+    public RealLive createTable(Class<? extends Record> recordClass) {
         realRealLive.createTable(recordClass);
+        return this;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.nustaq.reallive.sys;
 
+import org.nustaq.kontraktor.annotations.GenRemote;
 import org.nustaq.reallive.ChangeBroadcast;
 import org.nustaq.reallive.RecordChange;
 import org.nustaq.reallive.sys.messages.*;
@@ -16,13 +17,14 @@ import java.util.List;
 /**
  * Created by ruedi on 07.07.14.
  */
+@GenRemote
 public class SysMeta implements GenMeta {
     @Override
     public List<Class> getClasses() {
         return new ArrayList<Class>( Arrays.asList(new Class[] {
             SysTable.class,
-            Invocation.class,
-            InvocationCallback.class,
+            Invocation.class,            // deprecated, kept for machnetz
+            InvocationCallback.class,    // deprecated, kept for machnetz
             ChangeBroadcast.class,
             Metadata.class,
             TableMeta.class,

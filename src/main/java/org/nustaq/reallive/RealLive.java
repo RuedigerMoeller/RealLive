@@ -22,16 +22,17 @@ public abstract class RealLive {
         return dataDirectory;
     }
 
-    public void setDataDirectory(String dataDirectory) {
+    public RealLive setDataDirectory(String dataDirectory) {
         this.dataDirectory = dataDirectory;
+        return this;
     }
 
     public abstract RLTable getTable(String tableId);
     public abstract RLStream stream(String tableId);
     public abstract Metadata getMetadata();
 
-    public abstract void createTable(String name, Class<? extends Record> recordClass);
-    public abstract void createTable(Class<? extends Record> recordClass);
+    public abstract RealLive createTable(String name, Class<? extends Record> recordClass);
+    public abstract RealLive createTable(Class<? extends Record> recordClass);
     public abstract void createVirtualStream(String name, ReplicatedSet set);
 
     public abstract void shutDown();

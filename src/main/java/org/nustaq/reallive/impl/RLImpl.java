@@ -46,7 +46,7 @@ public class RLImpl extends RealLive {
         );
     }
 
-    public void createTable(String name, Class<? extends Record> clazz) {
+    public RealLive createTable(String name, Class<? extends Record> clazz) {
         if (tables.get(name) != null ) {
             throw new RuntimeException("table already created");
         }
@@ -54,11 +54,13 @@ public class RLImpl extends RealLive {
             pureCreateTable(name, clazz);
         }
         addToSysTable(name, clazz);
+        return this;
     }
 
     @Override
-    public void createTable(Class<? extends Record> recordClass) {
+    public RealLive createTable(Class<? extends Record> recordClass) {
         createTable(recordClass.getSimpleName(), recordClass);
+        return this;
     }
 
     @Override
