@@ -1,9 +1,12 @@
 package org.nustaq.reallive.sys.metadata;
 
 import org.nustaq.reallive.sys.config.ColumnConfig;
+import org.nustaq.reallive.sys.config.ConfigReader;
 import org.nustaq.reallive.sys.config.SchemaConfig;
 import org.nustaq.reallive.sys.config.TableConfig;
+import org.nustaq.serialization.FSTConfiguration;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,6 +37,18 @@ public class Metadata implements Serializable {
         this.name = name;
     }
 
+    public Metadata copyOverrideBy( String fileName ) {
+        final Metadata metadata = FSTConfiguration.getDefaultConfiguration().deepCopy(this);
+        try {
+            if ( new File(fileName).exists() ) {
+                SchemaConfig schemaConfig = ConfigReader.readConfig(fileName);
+                metadata.overrideWith(schemaConfig);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return metadata;
+    }
     public void overrideWith(SchemaConfig conf) {
         tables.keySet().forEach( (tableId) -> {
             TableConfig table = conf.getTable(tableId);

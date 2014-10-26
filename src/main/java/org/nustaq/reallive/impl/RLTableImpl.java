@@ -260,12 +260,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         if (isShutDown)
             return;
         checkThread();
-        SysTable sysTable = (SysTable) getRealLive().getTable("SysTable").createForUpdate(tableId, true);
-        sysTable.setNumElems(storage.size());
-        sysTable.setSizeMB(storage.getSizeMB());
-        sysTable.setFreeMB(storage.getFreeMB());
-        sysTable.$apply(0);
-        delayed( 3000, () -> $reportStats() );
+        final RLTable st = getRealLive().getTable("SysTable");
+        if (st!=null) {
+            SysTable sysTable = (SysTable) st.createForUpdate(tableId, true);
+            sysTable.setNumElems(storage.size());
+            sysTable.setSizeMB(storage.getSizeMB());
+            sysTable.setFreeMB(storage.getFreeMB());
+            sysTable.$apply(0);
+            delayed(3000, () -> $reportStats());
+        }
     }
 
     //

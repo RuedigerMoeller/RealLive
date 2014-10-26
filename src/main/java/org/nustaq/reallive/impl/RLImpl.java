@@ -40,9 +40,16 @@ public class RLImpl extends RealLive {
         initSystemTables();
     }
 
+    public RLImpl(String dataDir) {
+        model = new Metadata();
+        dataDirectory = dataDir;
+        // configure conf
+        initSystemTables();
+    }
+
     protected void initSystemTables() {
         Arrays.stream(new Class[]{SysTable.class}).forEach(
-                (clz) -> createTable(clz.getSimpleName(), clz)
+            (clz) -> createTable(clz.getSimpleName(), clz)
         );
     }
 
@@ -193,18 +200,10 @@ public class RLImpl extends RealLive {
     }
 
     protected void pureCreateTable(String name, Class<? extends Record> clazz) {
-        ElasticScheduler scheduler = new ElasticScheduler(1);
-        RLTableImpl table = Actors.AsActor( RLTableImpl.class, scheduler, CHANGE_Q_SIZE );
-        SingleNodeStream stream = Actors.AsActor(SingleNodeStream.class, scheduler, FILTER_Q_SIZE);
+        RLTableImpl table = Actors.AsActor( RLTableImpl.class, CHANGE_Q_SIZE );
+        SingleNodeStream stream = Actors.AsActor(SingleNodeStream.class, FILTER_Q_SIZE);
         stream.$init(name,table);
         table.$init(name, this, clazz, stream);
-        CountDownLatch latch = new CountDownLatch(1);
-        table.$sync().then( (r,e) -> latch.countDown() );
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         tables.put( name, table );
     }
 

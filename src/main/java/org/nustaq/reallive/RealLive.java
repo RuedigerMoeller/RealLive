@@ -22,11 +22,6 @@ public abstract class RealLive {
         return dataDirectory;
     }
 
-    public RealLive setDataDirectory(String dataDirectory) {
-        this.dataDirectory = dataDirectory;
-        return this;
-    }
-
     public abstract RLTable getTable(String tableId);
     public abstract RLStream stream(String tableId);
     public abstract Metadata getMetadata();
