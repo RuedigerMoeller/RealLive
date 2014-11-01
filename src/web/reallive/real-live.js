@@ -76,12 +76,22 @@ var RealLive = new function() {
 };
 
 function RLResultSet() {
+
+    var self = this;
+
     this.map = {};
     this.list = [];
     this.preChangeHook = null;
     this.postChangeHook = null;
     this.snapFin = false;
     this.subsId = null;
+
+    this.subscribe = function( table, query ) {
+        self.unsubscribe();
+        Server.session().$subscribe( table, query, function(r,e) {
+
+        });
+    };
 
     this.unsubscribe = function() {
         if ( this.subsId ) {
