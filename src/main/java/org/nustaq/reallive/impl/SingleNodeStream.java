@@ -1,6 +1,8 @@
 package org.nustaq.reallive.impl;
 
 import org.nustaq.kontraktor.annotations.AsCallback;
+import org.nustaq.kontraktor.impl.StoppedActorTargetedException;
+import org.nustaq.kontraktor.util.Log;
 import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Callback;
@@ -121,6 +123,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     @Override @AsCallback
     public void onChangeReceived(ChangeBroadcast<T> changeBC) {
         checkThread();
+
         if ( changeBC.isARU() ) {
             changeBC.getRecord()._setTable(tableActor);
         }
@@ -128,16 +131,26 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
             case ChangeBroadcast.ADD:
                 for (int i = 0; i < subscribers.size(); i++) {
                     SubscriptionImpl<T> subs = subscribers.get(i);
-                    if (subs.getFilter().test(changeBC.getRecord())) {
-                        subs.getChangeReceiver().onChangeReceived(changeBC);
+                    try {
+                        if (subs.getFilter().test(changeBC.getRecord())) {
+                            subs.getChangeReceiver().onChangeReceived(changeBC);
+                        }
+                    } catch (StoppedActorTargetedException ex) {
+                        subscribers.remove(i); i--;
+                        Log.Warn(this, ex, null);
                     }
                 }
                 break;
             case ChangeBroadcast.REMOVE:
                 for (int i = 0; i < subscribers.size(); i++) {
                     SubscriptionImpl<T> subs = subscribers.get(i);
-                    if ( subs.getFilter().test(changeBC.getRecord()) ) {
-                        subs.getChangeReceiver().onChangeReceived(changeBC);
+                    try {
+                        if ( subs.getFilter().test(changeBC.getRecord()) ) {
+                            subs.getChangeReceiver().onChangeReceived(changeBC);
+                        }
+                    } catch (StoppedActorTargetedException ex) {
+                        subscribers.remove(i); i--;
+                        Log.Warn(this, ex, null);
                     }
                 }
                 break;
@@ -152,24 +165,29 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
                     SubscriptionImpl<T> subs = subscribers.get(i);
                     boolean matchesOld = subs.__matched;
                     boolean matchesNew = subs.getFilter().test(changeBC.getRecord());
-                    if ( matchesOld && matchesNew ) {
-                        subs.onChangeReceived(changeBC); // directly forward change
-                    } else if ( matchesOld && ! matchesNew ) {
-                        subs.onChangeReceived(
-                            ChangeBroadcast.NewRemove(
-                                changeBC.getTableId(),
-                                changeBC.getRecord(),
-                                changeBC.getOriginator()
+                    try {
+                        if ( matchesOld && matchesNew ) {
+                            subs.onChangeReceived(changeBC); // directly forward change
+                        } else if ( matchesOld && ! matchesNew ) {
+                            subs.onChangeReceived(
+                                ChangeBroadcast.NewRemove(
+                                    changeBC.getTableId(),
+                                    changeBC.getRecord(),
+                                    changeBC.getOriginator()
+                                ));
+                        } else if ( ! matchesOld && matchesNew ) {
+                            subs.onChangeReceived(
+                                ChangeBroadcast.NewAdd(
+                                    changeBC.getTableId(),
+                                    changeBC.getRecord(),
+                                    changeBC.getOriginator()
                             ));
-                    } else if ( ! matchesOld && matchesNew ) {
-                        subs.onChangeReceived(
-                            ChangeBroadcast.NewAdd(
-                                changeBC.getTableId(),
-                                changeBC.getRecord(),
-                                changeBC.getOriginator()
-                        ));
-                    } else {
-                        // silent
+                        } else {
+                            // silent
+                        }
+                    } catch (StoppedActorTargetedException ex) {
+                        subscribers.remove(i); i--;
+                        Log.Warn(this, ex, null);
                     }
                 }
                 break;

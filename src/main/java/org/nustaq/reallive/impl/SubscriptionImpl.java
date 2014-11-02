@@ -1,6 +1,8 @@
 package org.nustaq.reallive.impl;
 
 import org.nustaq.kontraktor.Actors;
+import org.nustaq.kontraktor.impl.StoppedActorTargetedException;
+import org.nustaq.kontraktor.util.Log;
 import org.nustaq.reallive.ChangeBroadcast;
 import org.nustaq.reallive.ChangeBroadcastReceiver;
 import org.nustaq.reallive.Record;
