@@ -81,7 +81,7 @@ public class RLImpl extends RealLive {
         CountDownLatch latch = new CountDownLatch(futs.size());
         Actors.yield(futs).then( (r,e) -> latch.countDown() );
         try {
-            latch.await(3000, TimeUnit.MILLISECONDS);
+            latch.await(6000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
