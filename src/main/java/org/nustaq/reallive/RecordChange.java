@@ -172,4 +172,5 @@ public class RecordChange<K, T extends Record> implements Serializable {
     public int[] getChangedFields() {
         return fieldIndex;
     }
+
 }

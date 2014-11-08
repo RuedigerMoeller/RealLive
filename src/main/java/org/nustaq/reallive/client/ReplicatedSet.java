@@ -36,7 +36,6 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
         map.clear();
     }
 
-
     public void setTableId(String tableId) {
         this.tableId = tableId;
     }
