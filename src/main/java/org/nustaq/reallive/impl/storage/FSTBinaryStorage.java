@@ -5,6 +5,8 @@ import org.nustaq.offheap.FSTBinaryOffheapMap;
 import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.offheap.bytez.Bytez;
 import org.nustaq.serialization.FSTConfiguration;
+import org.nustaq.serialization.simpleapi.DefaultCoder;
+import org.nustaq.serialization.simpleapi.FSTCoder;
 
 import java.util.Iterator;
 
@@ -14,14 +16,14 @@ import java.util.Iterator;
 public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
 
     FSTAsciiStringOffheapMap<V> store;
-    FSTConfiguration conf;
+    FSTCoder conf;
 
     public FSTBinaryStorage() {
     }
 
     public void init(String tableFile, int sizeMB, int estimatedNumRecords, int keyLen, boolean persist, Class... toReg) throws Exception {
-        conf = FSTConfiguration.createDefaultConfiguration();
-        conf.registerClass(toReg);
+        conf = new DefaultCoder();
+        conf.getConf().registerClass(toReg);
         if ( persist )
             store = new FSTAsciiStringOffheapMap<>(tableFile, keyLen, FSTBinaryOffheapMap.MB*sizeMB,estimatedNumRecords,conf);
         else
