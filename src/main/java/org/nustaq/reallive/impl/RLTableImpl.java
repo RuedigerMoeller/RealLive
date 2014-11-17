@@ -29,7 +29,7 @@ import java.util.function.Predicate;
  */
 public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> implements RLTable<T> {
 
-    public static int DEFAULT_TABLE_MEM_MB = 1000;
+    public static int DEFAULT_TABLE_MEM_MB = 1;
 
     String tableId;
     IdGenerator<String> idgen;
