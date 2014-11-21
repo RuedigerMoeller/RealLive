@@ -21,7 +21,7 @@ var RealLive = new function() {
         this.addHandler[tableName] = handlerFunction;
     };
 
-    this.highlightElem = function(elementId, color) {
+    this.highlightElem = function(elementId, textColor) {
         if ( !elementId )
             return;
         var element = document.getElementById(elementId);
@@ -33,7 +33,7 @@ var RealLive = new function() {
             element.hicount++;
         }
         element.style.backgroundColor = '#FFF3B0';
-        if ( color )
+        if ( textColor )
             element.style.color = '#000';
         (function () {
             var current = element;
@@ -41,8 +41,8 @@ var RealLive = new function() {
             setTimeout(function () {
                 if (current.hicount <= 1 || prevKey != current.id) {
                     current.style.backgroundColor = 'rgba(230,230,230,0.0)';
-                    if ( color )
-                        current.style.color = color;
+                    if ( textColor )
+                        current.style.color = textColor;
                     current.hicount = 0;
                 } else {
                     current.hicount--;
