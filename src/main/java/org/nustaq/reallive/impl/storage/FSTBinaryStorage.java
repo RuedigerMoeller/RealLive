@@ -16,12 +16,14 @@ import java.util.Iterator;
 public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
 
     FSTAsciiStringOffheapMap<V> store;
+    int keyLen;
     FSTCoder conf;
 
     public FSTBinaryStorage() {
     }
 
     public void init(String tableFile, int sizeMB, int estimatedNumRecords, int keyLen, boolean persist, Class... toReg) throws Exception {
+        this.keyLen = keyLen;
         conf = new DefaultCoder();
         conf.getConf().registerClass(toReg);
         if ( persist )
@@ -76,6 +78,11 @@ public class FSTBinaryStorage<V> implements BinaryStorage<String,V> {
     @Override
     public int size() {
         return store.getSize();
+    }
+
+    @Override
+    public int getKeyLen() {
+        return keyLen;
     }
 
     @Override

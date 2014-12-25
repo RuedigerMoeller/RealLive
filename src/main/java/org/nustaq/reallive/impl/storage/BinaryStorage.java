@@ -23,6 +23,7 @@ public interface BinaryStorage<K,V> {
     public Bytez getCustomStorage();
 
     int size();
+    int getKeyLen();
 
     int getFreeMB();
     int getSizeMB();

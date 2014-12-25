@@ -315,6 +315,11 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         return new Promise("void");
     }
 
+    @Override
+    public Future<Integer> $getKeyLen() {
+        return new Promise<>(storage.getKeyLen());
+    }
+
 
     public void $filter(Predicate<T> doProcess, Predicate<T> terminate, Callback<T> resultReceiver) {
         if (isShutDown)

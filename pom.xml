@@ -23,11 +23,6 @@
 
     <dependencies>
 
-        <!--<dependency>-->
-            <!--<groupId>it.unimi.dsi</groupId>-->
-            <!--<artifactId>fastutil</artifactId>-->
-            <!--<version>6.5.15</version>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>de.ruedigermoeller</groupId>
             <artifactId>kontraktor</artifactId>
@@ -41,10 +36,17 @@
         </dependency>
 
         <dependency>
-            <groupId>de.ruedigermoeller</groupId>
-            <artifactId>minbin-generate</artifactId>
-            <version>1.0</version>
+            <scope>test</scope>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
         </dependency>
+
+        <!--<dependency>-->
+            <!--<groupId>de.ruedigermoeller</groupId>-->
+            <!--<artifactId>minbin-generate</artifactId>-->
+            <!--<version>1.0</version>-->
+        <!--</dependency>-->
 
     </dependencies>
 

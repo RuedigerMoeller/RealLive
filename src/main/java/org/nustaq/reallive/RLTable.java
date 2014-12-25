@@ -94,4 +94,6 @@ public interface RLTable<T extends Record> {
     public Future $sync();
 
     public Future $shutDown();
+
+    public Future<Integer> $getKeyLen();
 }
