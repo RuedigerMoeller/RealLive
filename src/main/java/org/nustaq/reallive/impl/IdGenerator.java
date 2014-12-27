@@ -1,6 +1,7 @@
 package org.nustaq.reallive.impl;
 
 import org.nustaq.offheap.bytez.Bytez;
+import org.nustaq.reallive.impl.storage.BinaryStorage;
 
 /**
  * Created by ruedi on 21.06.14.
@@ -10,8 +11,7 @@ public interface IdGenerator<K> {
 
     /**
      * return length used.
-     * @param bytes
      * @return
      */
-    int setState( Bytez bytes );
+    int setState( BinaryStorage storage);
 }

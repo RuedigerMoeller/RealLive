@@ -68,7 +68,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
                 inMem == null,
                 clz
              );
-            idgen.setState(storage.getCustomStorage());
+            idgen.setState(storage);
         } catch (Exception e) {
             e.printStackTrace();
         }
