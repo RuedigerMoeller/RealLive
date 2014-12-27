@@ -168,9 +168,11 @@ public class Record implements Serializable {
             if ( recordKey == null )
                 throw new RuntimeException("recordKey must not be null on update");
             RecordChange recordChange = computeDiff();
-            recordChange.setOriginator(mutatorId);
-            table.$update(recordChange, mode == Mode.UPDATE_OR_ADD);
-            copyTo(originalRecord); // nil all diffs. Once prepared, record can be reused for updateing
+            if ( recordChange.getChangedFields().length > 0 || mode == Mode.UPDATE_OR_ADD ) {
+                recordChange.setOriginator(mutatorId);
+                table.$update(recordChange, mode == Mode.UPDATE_OR_ADD);
+                copyTo(originalRecord); // nil all diffs. Once prepared, record can be reused for updateing
+            }
             return new Promise<>(recordKey);
         } else
             throw new RuntimeException("wrong mode. Use table.create* and table.prepare* methods.");
@@ -327,6 +329,10 @@ public class Record implements Serializable {
     }
     public void incVersion() {
         version++;
+    }
+
+    public void prepareForUpdate(boolean addIfNotPresent) {
+        prepareForUpdate(addIfNotPresent,null);
     }
 
     public void prepareForUpdate(boolean addIfNotPresent, FSTClazzInfo info) {
