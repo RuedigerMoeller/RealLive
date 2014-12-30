@@ -8,12 +8,9 @@ import org.nustaq.kontraktor.Future;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.Record;
-import org.nustaq.reallive.impl.RLTableImpl;
 
 import static org.nustaq.kontraktor.Actors.*;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -191,8 +188,8 @@ public class TClient {
         }
 
         public void $dumpTables() {
-            schema.getTable("SysTable").stream().each(
-                (change) -> System.out.println(change.getRecord()));
+            schema.getTable("SysTable").stream().forEach(
+                    (change) -> System.out.println(change.getRecord()));
             delayed(3000, () -> self().$dumpTables() );
         }
 
@@ -203,8 +200,8 @@ public class TClient {
         schema = new RLImpl();
         schema.createTable( "mkt", TCRecord.class );
 
-        schema.getTable("SysTable").stream().each(
-            (change) -> System.out.println(change.getRecord())
+        schema.getTable("SysTable").stream().forEach(
+                (change) -> System.out.println(change.getRecord())
         );
 
         RLTable<TCRecord> table = schema.getTable("mkt");

@@ -30,7 +30,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     @Override
-    public void each(@InThread ChangeBroadcastReceiver<T> resultReceiver) {
+    public void forEach(@InThread ChangeBroadcastReceiver<T> resultReceiver) {
         filterUntil(null,null,resultReceiver);
     }
 

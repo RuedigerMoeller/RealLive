@@ -88,7 +88,7 @@ public class TableTest {
 
             forUpdate.$apply(0).then( (key1,e1) -> {
                 System.out.println("org " + k0 + " applied " + key1);
-                stream.each( (change) -> {
+                stream.forEach((change) -> {
                     if (change.isSnapshotDone()) {
                         testLatch.countDown();
                     } else if (change.isError()) {

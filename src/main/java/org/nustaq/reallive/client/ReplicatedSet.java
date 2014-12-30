@@ -191,7 +191,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
     }
 
     @Override
-    public void each(ChangeBroadcastReceiver<T> resultReceiver) {
+    public void forEach(ChangeBroadcastReceiver<T> resultReceiver) {
         map.values().forEach((record) -> {
             resultReceiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId, record, 0));
         });

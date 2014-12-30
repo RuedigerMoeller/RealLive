@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class RLImpl extends RealLive {
 
     public static int CHANGE_Q_SIZE = 50000;
-    public static int FILTER_Q_SIZE = 30000;
+    public static int FILTER_Q_SIZE = 100000;
 
     ConcurrentHashMap<String, RLTable> tables = new ConcurrentHashMap<>();
     Metadata model;

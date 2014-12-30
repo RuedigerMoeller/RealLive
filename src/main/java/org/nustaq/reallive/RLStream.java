@@ -10,7 +10,7 @@ import java.util.function.Predicate;
  */
 public interface RLStream<T extends Record> {
 
-    public void each(ChangeBroadcastReceiver<T> resultReceiver);
+    public void forEach(ChangeBroadcastReceiver<T> resultReceiver);
     public void filter(Predicate<T> matches, ChangeBroadcastReceiver<T> resultReceiver);
 
     /**
