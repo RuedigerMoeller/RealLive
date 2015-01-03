@@ -49,6 +49,7 @@ public class Metadata implements Serializable {
         }
         return metadata;
     }
+
     public void overrideWith(SchemaConfig conf) {
         tables.keySet().forEach( (tableId) -> {
             TableConfig table = conf.getTable(tableId);
@@ -59,6 +60,11 @@ public class Metadata implements Serializable {
                     final ColumnConfig globalCol = conf.getGlobals().get(columnId);
                     applyOverride(columnId, globalCol, tableMeta);
                     applyOverride(columnId, config, tableMeta);
+                });
+            } else {
+                tables.get(tableId).getColumns().keySet().forEach( columnId -> {
+                    final ColumnConfig globalCol = conf.getGlobals().get(columnId);
+                    applyOverride(columnId, globalCol, tables.get(tableId));
                 });
             }
         });
