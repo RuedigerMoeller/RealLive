@@ -53,6 +53,10 @@ public interface RLTable<T extends Record> {
      */
     public void $put(String key, T object, int originator);
 
+    public void $putIfAbsent(String key, T object, int originator);
+
+    public Future<T> $putIfAbsentWithResult(String key, T object, int originator);
+
     /**
      * create a new unique record key and return a future to it
      * @return

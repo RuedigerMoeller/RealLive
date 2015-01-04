@@ -207,6 +207,23 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         }
     }
 
+    @Override
+    public void $putIfAbsent(String key, T object, int originator) {
+        if ( storage.get(key) == null ) {
+            $put(key, object, originator);
+        }
+    }
+
+    @Override
+    public Future<T> $putIfAbsentWithResult(String key, T object, int originator) {
+        T record = (T) storage.get(key);
+        if ( record == null ) {
+            $put(key,object,originator);
+            return new Promise<>(null);
+        }
+        return new Promise<>(record);
+    }
+
     private FSTClazzInfo getClazzInfo(Record record) {
         return getRealLive().getConf().getClazzInfo(record.getClass());
     }
