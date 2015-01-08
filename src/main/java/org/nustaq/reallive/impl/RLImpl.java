@@ -16,7 +16,11 @@ import org.nustaq.reallive.sys.metadata.TableMeta;
 import org.nustaq.reallive.sys.tables.SysTable;
 import org.nustaq.serialization.FSTClazzInfo;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -87,6 +91,25 @@ public class RLImpl extends RealLive {
         }
     }
 
+    // specialized to also include transient fields for virtual recs
+    final List<Field> getTransientFields(Class c, List<Field> res) {
+        if (res == null) {
+            res = new ArrayList<Field>();
+        }
+        if (c == null) {
+            return res;
+        }
+        List<Field> c1 = Arrays.asList(c.getDeclaredFields());
+        Collections.reverse(c1);
+        for (int i = 0; i < c1.size(); i++) {
+            Field field = c1.get(i);
+            if ( Modifier.isTransient(field.getModifiers()) && !Modifier.isStatic(field.getModifiers()) ) {
+                res.add(field);
+            }
+        }
+        return getTransientFields(c.getSuperclass(), res);
+    }
+
     private void addToSysTable(String name, Class rowClass) {
         TableMeta tableMeta = new TableMeta();
         tableMeta.setName(name);
@@ -108,64 +131,18 @@ public class RLImpl extends RealLive {
         for (int i = 0; i < fieldInfo.length; i++) {
             FSTClazzInfo.FSTFieldInfo fi = fieldInfo[i];
             ColumnMeta cm = new ColumnMeta();
-            cm.setName(fi.getField().getName());
-            cm.setFieldId(i);
-
-            desc = fi.getField().getAnnotation(Description.class);
-            if ( desc != null ) {
-                cm.setDescription(desc.value());
-            }
-
-            ds = fi.getField().getAnnotation(DisplayName.class);
-            if ( ds != null ) {
-                cm.setDisplayName(ds.value());
-            } else {
-                cm.setDisplayName(decamel(cm.getName()));
-            }
-
-            ColOrder ord = (ColOrder) fi.getField().getAnnotation(ColOrder.class);
-            if ( ord != null ) {
-                cm.setOrder(ord.value());
-            } else {
-                cm.setOrder(cm.getName().hashCode()&0xff+0xffff00);
-            }
-
-            Align al = fi.getField().getAnnotation(Align.class);
-            if ( al != null ) {
-                cm.setAlign(al.value());
-            }
-
-            BGColor bg = fi.getField().getAnnotation(BGColor.class);
-            if ( bg != null ) {
-                cm.setBgColor(bg.value());
-            }
-
-            TextColor tc = fi.getField().getAnnotation(TextColor.class);
-            if ( tc != null ) {
-                cm.setTextColor(tc.value());
-            }
-
-            DisplayWidth dw = fi.getField().getAnnotation(DisplayWidth.class);
-            if ( dw != null ) {
-                cm.setDisplayWidth(dw.value());
-            }
-
-            RenderStyle rs = fi.getField().getAnnotation(RenderStyle.class);
-            if ( rs != null ) {
-                cm.setRenderStyle(rs.value());
-            }
-
-            Hidden hid = fi.getField().getAnnotation(Hidden.class);
-            if ( hid != null ) {
-                cm.setHidden(true);
-            } else {
-                cm.setHidden(false);
-            }
-
-            cm.setJavaType(fi.getType().getSimpleName());
-
+            Field field = fi.getField();
+            processFieldAnnotations(i, cm, field);
             tableMeta.putColumn(cm.getName(),cm);
         }
+        List<Field> transientFields = getTransientFields(classInfo.getClazz(), null);
+        for (int i = 0; i < transientFields.size(); i++) {
+            Field field = transientFields.get(i);
+            ColumnMeta cm = new ColumnMeta();
+            processFieldAnnotations(i, cm, field);
+            tableMeta.putColumn(cm.getName(),cm);
+        }
+
         model.putTable(name,tableMeta);
 
         RLTable<SysTable> sysTables = getTable("SysTable");
@@ -175,6 +152,66 @@ public class RLImpl extends RealLive {
         sysTab.setMeta(tableMeta);
         sysTab._setRecordKey(name);
         sysTab.$apply(0);
+    }
+
+    private void processFieldAnnotations(int i, ColumnMeta cm, Field field) {
+        Description desc;
+        DisplayName ds;
+        cm.setName(field.getName());
+        cm.setFieldId(i);
+
+        desc = field.getAnnotation(Description.class);
+        if ( desc != null ) {
+            cm.setDescription(desc.value());
+        }
+
+        ds = field.getAnnotation(DisplayName.class);
+        if ( ds != null ) {
+            cm.setDisplayName(ds.value());
+        } else {
+            cm.setDisplayName(decamel(cm.getName()));
+        }
+
+        ColOrder ord = (ColOrder) field.getAnnotation(ColOrder.class);
+        if ( ord != null ) {
+            cm.setOrder(ord.value());
+        } else {
+            cm.setOrder(cm.getName().hashCode()&0xff+0xffff00);
+        }
+
+        Align al = field.getAnnotation(Align.class);
+        if ( al != null ) {
+            cm.setAlign(al.value());
+        }
+
+        BGColor bg = field.getAnnotation(BGColor.class);
+        if ( bg != null ) {
+            cm.setBgColor(bg.value());
+        }
+
+        TextColor tc = field.getAnnotation(TextColor.class);
+        if ( tc != null ) {
+            cm.setTextColor(tc.value());
+        }
+
+        DisplayWidth dw = field.getAnnotation(DisplayWidth.class);
+        if ( dw != null ) {
+            cm.setDisplayWidth(dw.value());
+        }
+
+        RenderStyle rs = field.getAnnotation(RenderStyle.class);
+        if ( rs != null ) {
+            cm.setRenderStyle(rs.value());
+        }
+
+        Hidden hid = field.getAnnotation(Hidden.class);
+        if ( hid != null ) {
+            cm.setHidden(true);
+        } else {
+            cm.setHidden(false);
+        }
+
+        cm.setJavaType(field.getType().getSimpleName());
     }
 
     private String decamel(String name) {
