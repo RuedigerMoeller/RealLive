@@ -145,7 +145,7 @@ public class TClient {
             recids = new ArrayList();
 
             ReplicatedSet<TCRecord> set = new ReplicatedSet<>();
-            table.stream().filterUntil(null, (r) -> set.getSize() > 50000, set );
+            table.stream().filterUntil(null, (r,i) -> set.getSize() > 50000, set );
             set.onFinished( ()-> System.out.println("** Set size: "+set.getSize()) );
 
             for ( int i = 0; i < 500; i++) {

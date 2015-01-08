@@ -11,6 +11,7 @@ import org.nustaq.kontraktor.annotations.InThread;
 import org.nustaq.reallive.*;
 
 import java.util.ArrayList;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 /**
@@ -40,12 +41,14 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     @Override
-    public void filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
-        tableActor.$filter(matches,terminateQuery, (r,e) -> {
+    public void filterUntil(Predicate<T> matches, BiPredicate<T,Integer> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
+        int count[] = {0};
+        tableActor.$filter(matches,(rec) -> terminateQuery.test(rec,count[0]), (r,e) -> {
             checkThread();
             if ( e == RLTable.END ) {
                 resultReceiver.onChangeReceived( ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0));
             } else if ( e == null ) {
+                count[0]++;
                 resultReceiver.onChangeReceived( ChangeBroadcast.NewAdd(tableActor.getTableId(),r,0));
             } else {
                 resultReceiver.onChangeReceived( ChangeBroadcast.NewError(tableActor.getTableId(), e,0));

@@ -149,10 +149,9 @@ public class TableTest {
         long tim = System.currentTimeMillis();
         int MAX = 100000;
 //        int MAX = 1000;
-        int count[] = {0};
         table.stream().filterUntil(
             (rec) -> true,
-            (rec) -> count[0]++ >= MAX,
+            (rec,i) -> i >= MAX,
             (r) -> {
                 if (r.isSnapshotDone()) {
                     latch.countDown();
@@ -169,7 +168,7 @@ public class TableTest {
                                      );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
-        System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
+        System.out.println("need "+ dur +" for "+MAX+" recs. "+(MAX/dur)+" per ms ");
     }
 
     @Test
@@ -188,22 +187,21 @@ public class TableTest {
         long tim = System.currentTimeMillis();
 //        int MAX = 1*1000000;
         int MAX = 100000;
-        int count[] = {0};
         test.stream().filterUntil(
             (rec) -> true,
-            (rec) -> count[0]++ >= MAX,
+            (rec,i) -> i >= MAX,
             (r) -> {
                 if (r.isSnapshotDone())
                     latch.countDown();
                 if (r.isError()) {
                     System.out.println("ERROR");
-                    System.out.println("count " + count[0]);
+                    System.out.println("count " + MAX);
                 }
             }
                                     );
         latch.await();
         long dur = System.currentTimeMillis() - tim;
-        System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
+        System.out.println("need "+ dur +" for "+MAX+" recs. "+(MAX/dur)+" per ms ");
     }
 
     @Test
@@ -258,7 +256,7 @@ public class TableTest {
         int count[] = {0};
         test.stream().filterUntil(
             (rec) -> false,
-            (rec) -> count[0]++ >= MAX,
+            (rec,i) -> i >= MAX,
             (r) -> {
                 if (r.isSnapshotDone())
                     latch.countDown();

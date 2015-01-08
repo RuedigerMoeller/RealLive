@@ -8,6 +8,7 @@ import org.nustaq.reallive.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 /**
@@ -208,11 +209,14 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
     }
 
     @Override
-    public void filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver) {
+    public void filterUntil(Predicate<T> matches, BiPredicate<T,Integer> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver) {
+        int count[] = {0};
         map.values().forEach((record) -> {
-            boolean terminate = terminateQuery.test(record);
-            if ( matches.test(record) && !terminate)
-                resultReceiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId,record,0));
+            boolean terminate = terminateQuery.test(record, count[0]);
+            if ( matches.test(record) && !terminate) {
+                count[0]++;
+                resultReceiver.onChangeReceived(ChangeBroadcast.NewAdd(tableId, record, 0));
+            }
         });
         resultReceiver.onChangeReceived(ChangeBroadcast.NewSnapFin(tableId, 0));
     }

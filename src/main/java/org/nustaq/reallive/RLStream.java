@@ -3,6 +3,7 @@ package org.nustaq.reallive;
 import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Callback;
 
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 /**
@@ -19,7 +20,7 @@ public interface RLStream<T extends Record> {
      * @param terminateQuery
      * @param resultReceiver
      */
-    public void filterUntil(Predicate<T> matches, Predicate<T> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver);
+    public void filterUntil(Predicate<T> matches, BiPredicate<T,Integer> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver);
     public void filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback<ByteSource> resultReceiver);
 
     public Subscription<T> subscribeKey(String key, ChangeBroadcastReceiver<T> resultReceiver);
