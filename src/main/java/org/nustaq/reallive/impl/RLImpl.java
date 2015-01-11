@@ -93,6 +93,8 @@ public class RLImpl extends RealLive {
 
     // specialized to also include transient fields for virtual recs
     final List<Field> getTransientFields(Class c, List<Field> res) {
+        if ( c == Record.class )
+            return res;
         if (res == null) {
             res = new ArrayList<Field>();
         }
@@ -136,10 +138,11 @@ public class RLImpl extends RealLive {
             tableMeta.putColumn(cm.getName(),cm);
         }
         List<Field> transientFields = getTransientFields(classInfo.getClazz(), null);
+        int fieldOffset = fieldInfo.length;
         for (int i = 0; i < transientFields.size(); i++) {
             Field field = transientFields.get(i);
             ColumnMeta cm = new ColumnMeta();
-            processFieldAnnotations(i, cm, field);
+            processFieldAnnotations(i+fieldOffset, cm, field);
             tableMeta.putColumn(cm.getName(),cm);
         }
 
