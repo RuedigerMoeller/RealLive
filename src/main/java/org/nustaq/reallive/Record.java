@@ -155,7 +155,7 @@ public class Record implements Serializable {
      * persist an add or update of a record. The id given is added to a resulting change broadcast, so a
      * process is capable to identify changes caused by itself.
      */
-    public Future<String> $apply(int mutatorId) {
+    public Future<String> $applyForced(int mutatorId, String ... fieldNames) {
         if ( table == null ) {
             throw new RuntimeException("no table reference. use createForXX/prepareXX methods at RLTable to get valid instances.");
         }
@@ -167,7 +167,7 @@ public class Record implements Serializable {
                 throw new RuntimeException("original record must not be null for update");
             if ( recordKey == null )
                 throw new RuntimeException("recordKey must not be null on update");
-            RecordChange recordChange = computeDiff();
+            RecordChange recordChange = computeDiff( fieldNames );
             if ( recordChange.getChangedFields().length > 0 || mode == Mode.UPDATE_OR_ADD ) {
                 recordChange.setOriginator(mutatorId);
                 table.$update(recordChange, mode == Mode.UPDATE_OR_ADD);
@@ -176,6 +176,17 @@ public class Record implements Serializable {
             return new Promise<>(recordKey);
         } else
             throw new RuntimeException("wrong mode. Use table.create* and table.prepare* methods.");
+    }
+
+    /**
+     * Important: this method works only if the record was prepared/created by the
+     * createXX/prepareXX methods of a RLTable.
+     *
+     * persist an add or update of a record. The id given is added to a resulting change broadcast, so a
+     * process is capable to identify changes caused by itself.
+     */
+    public Future<String> $apply(int mutatorId) {
+        return $applyForced(mutatorId);
     }
 
     public ChangeBroadcast computeBcast(String tableId, int originator) {
@@ -197,18 +208,18 @@ public class Record implements Serializable {
             throw new RuntimeException("wrong mode");
     }
 
-    public RecordChange computeDiff() {
-        return computeDiff(false);
+    public RecordChange computeDiff(String... forced) {
+        return computeDiff(false, forced);
     }
 
-    public RecordChange computeDiff(boolean withOld) {
-        return computeDiff(originalRecord,withOld);
+    public RecordChange computeDiff(boolean withOld, String ... forced) {
+        return computeDiff(originalRecord,withOld, forced);
     }
 
     /**
      * @return a record change containing newFieldValues and changed fields
      */
-    public RecordChange computeDiff(Record oldRecord, boolean withOld) {
+    public RecordChange computeDiff(Record oldRecord, boolean withOld, String ... forced) {
         FSTClazzInfo classInfo = getClassInfo();
         FSTClazzInfo.FSTFieldInfo[] fieldInfo = classInfo.getFieldInfo();
 
@@ -250,6 +261,14 @@ public class Record implements Serializable {
                     }
                 } else {
                     changed = fi.getObjectValue(oldRecord) != fi.getObjectValue(this);
+                }
+                if ( forced != null && ! changed ) {
+                    for (int j = 0; j < forced.length; j++) {
+                        if (fi.getField().getName().equals(forced[j])) {
+                            changed = true;
+                            break;
+                        }
+                    }
                 }
                 if ( changed ) {
                     changedFields.add(fi);
@@ -295,6 +314,10 @@ public class Record implements Serializable {
             }
             return res + " ]";
         }
+    }
+
+    public int getFieldId(String fieldName) {
+        return getClassInfo().getFieldInfo(fieldName,null).getIndexId();
     }
 
     public String[] toFieldNames(int fieldIndex[]) {
