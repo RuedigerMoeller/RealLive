@@ -244,6 +244,14 @@ public class RLImpl extends RealLive {
         SingleNodeStream stream = Actors.AsActor(SingleNodeStream.class, FILTER_Q_SIZE);
         stream.$init(name,table);
         table.$init(name, this, clazz, stream);
+        // fixme: make async
+        CountDownLatch latch = new CountDownLatch(1);
+        table.$sync().onResult( res -> latch.countDown() );
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         tables.put( name, table );
     }
 
