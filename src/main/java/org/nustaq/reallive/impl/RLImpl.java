@@ -2,6 +2,7 @@ package org.nustaq.reallive.impl;
 
 import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.Promise;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.reallive.RLStream;
@@ -26,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by ruedi on 21.06.14.
@@ -40,32 +42,44 @@ public class RLImpl extends RealLive {
 
     public RLImpl() {
         model = new Metadata();
-        // configure conf
-        initSystemTables();
+    }
+
+    public RLImpl initSync() {
+        CountDownLatch latch = new CountDownLatch(1);
+        $init().onResult( r -> latch.countDown() );
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return this;
+    }
+
+    @Override
+    public Future $init() {
+        return initSystemTables();
     }
 
     public RLImpl(String dataDir) {
         model = new Metadata();
         dataDirectory = dataDir;
-        // configure conf
-        initSystemTables();
     }
 
-    protected void initSystemTables() {
-        Arrays.stream(new Class[]{SysTable.class}).forEach(
-            (clz) -> createTable(clz.getSimpleName(), clz)
-        );
+    protected Future initSystemTables() {
+        Object futs = Arrays.stream(new Class[]{SysTable.class}).map(
+                (clz) -> createTable(clz.getSimpleName(), clz)
+        ).collect(Collectors.toList());
+        return Actors.yield((List<Future>) futs);
     }
 
-    public RealLive createTable(String name, Class<? extends Record> clazz) {
+    public Future createTable(String name, Class<? extends Record> clazz) {
         if (tables.get(name) != null ) {
             throw new RuntimeException("table already created");
         }
         if ( clazz.getAnnotation(Virtual.class) == null ) {
-            pureCreateTable(name, clazz);
+            return Actors.yield(pureCreateTable(name, clazz), addToSysTable(name, clazz));
         }
-        addToSysTable(name, clazz);
-        return this;
+        return addToSysTable(name, clazz);
     }
 
     @Override
@@ -112,7 +126,7 @@ public class RLImpl extends RealLive {
         return getTransientFields(c.getSuperclass(), res);
     }
 
-    private void addToSysTable(String name, Class rowClass) {
+    private Future addToSysTable(String name, Class rowClass) {
         TableMeta tableMeta = new TableMeta();
         tableMeta.setName(name);
         final FSTClazzInfo classInfo = conf.getClassInfo(rowClass);
@@ -154,7 +168,7 @@ public class RLImpl extends RealLive {
         sysTab.setDescription(model.getTable(name).getDescription());
         sysTab.setMeta(tableMeta);
         sysTab._setRecordKey(name);
-        sysTab.$apply(0);
+        return sysTab.$apply(0);
     }
 
     private void processFieldAnnotations(int i, ColumnMeta cm, Field field) {
@@ -239,20 +253,15 @@ public class RLImpl extends RealLive {
         return res;
     }
 
-    protected void pureCreateTable(String name, Class<? extends Record> clazz) {
+    protected Future pureCreateTable(String name, Class<? extends Record> clazz) {
+        Promise p = new Promise();
         RLTableImpl table = Actors.AsActor( RLTableImpl.class, CHANGE_Q_SIZE );
         SingleNodeStream stream = Actors.AsActor(SingleNodeStream.class, FILTER_Q_SIZE);
         stream.$init(name,table);
         table.$init(name, this, clazz, stream);
-        // fixme: make async
-        CountDownLatch latch = new CountDownLatch(1);
-        table.$sync().onResult( res -> latch.countDown() );
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        table.$sync().then( p );
         tables.put( name, table );
+        return p;
     }
 
     public RLTable getTable(String tableId) {

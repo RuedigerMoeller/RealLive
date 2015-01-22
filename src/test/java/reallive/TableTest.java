@@ -26,7 +26,7 @@ public class TableTest {
 
     @Test
     public void machVollSync() throws InterruptedException {
-        RLImpl schema = new RLImpl();
+        RLImpl schema = new RLImpl().initSync();;
         RLTableImpl<TestRec> test = new RLTableImpl<>();
         test.$init("test",schema, TestRec.class, null);
         TestRec newRec = new TestRec(null, test);
@@ -48,7 +48,7 @@ public class TableTest {
     public void addExpandQuery() throws InterruptedException {
         CountDownLatch testLatch = new CountDownLatch(1);
         new File("/tmp/reallive/test1.mmf").delete();
-        RLImpl schema = new RLImpl();
+        RLImpl schema = new RLImpl().initSync();
         schema.createTable( "test1", TestRec.class );
         RLTable<TestRec> table = schema.getTable("test1");
         RLStream<TestRec> stream = table.stream();
@@ -103,7 +103,7 @@ public class TableTest {
 
     @Test
     public void machVoll() throws InterruptedException {
-        RLImpl schema = new RLImpl();
+        RLImpl schema = new RLImpl().initSync();;
         schema.createTable( "test", TestRec.class );
         RLTable<TestRec> table = schema.getTable("test");
         CountDownLatch latch = new CountDownLatch(1);
@@ -137,7 +137,7 @@ public class TableTest {
 
     @Test
     public void update() throws InterruptedException {
-        RLImpl schema = new RLImpl();
+        RLImpl schema = new RLImpl().initSync();
         schema.createTable( "test", TestRec.class );
         RLTable<TestRec> test = schema.getTable("test");
         while( true )
@@ -173,7 +173,7 @@ public class TableTest {
 
     @Test
     public void query() throws InterruptedException {
-        RLImpl schema = new RLImpl();
+        RLImpl schema = new RLImpl().initSync();
         schema.createTable( "test", TestRec.class );
         RLTable<TestRec> test = schema.getTable("test");
 
@@ -206,7 +206,7 @@ public class TableTest {
 
     @Test
     public void queryBinary() throws InterruptedException {
-        RLImpl schema = new RLImpl();
+        RLImpl schema = new RLImpl().initSync();
         schema.createTable( "test", TestRec.class );
         RLTable<TestRec> test = schema.getTable("test");
 
@@ -242,7 +242,7 @@ public class TableTest {
 
     @Test
     public void queryNoMatch() throws InterruptedException {
-        RLImpl schema = new RLImpl();
+        RLImpl schema = new RLImpl().initSync();
         schema.createTable( "test", TestRec.class );
         RLTable<TestRec> test = schema.getTable("test");
 
@@ -270,7 +270,7 @@ public class TableTest {
 
     @Test
     public void testBasics() throws InterruptedException {
-        RLImpl schema = new RLImpl();
+        RLImpl schema = new RLImpl().initSync();
         schema.createTable( "test", TestRec.class );
         RLTable<TestRec> test = schema.getTable("test");
         TestRec newRec = new TestRec(null, test);
@@ -294,7 +294,7 @@ public class TableTest {
 
     @Test
     public void testRepeatedRead() throws InterruptedException {
-        RLImpl schema = new RLImpl();
+        RLImpl schema = new RLImpl().initSync();
         schema.createTable( "test", TestRec.class );
         RLTable<TestRec> test = schema.getTable("test");
         CountDownLatch latch = new CountDownLatch(1);

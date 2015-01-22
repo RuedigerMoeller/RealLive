@@ -197,7 +197,7 @@ public class TClient {
 
     static RLImpl schema;
     public static void main( String arg[] ) {
-        schema = new RLImpl();
+        schema = new RLImpl().initSync();
         schema.createTable( "mkt", TCRecord.class );
 
         schema.getTable("SysTable").stream().forEach(

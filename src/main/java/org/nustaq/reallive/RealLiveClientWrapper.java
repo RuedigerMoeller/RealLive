@@ -1,5 +1,6 @@
 package org.nustaq.reallive;
 
+import org.nustaq.kontraktor.Future;
 import org.nustaq.reallive.client.ReplicatedSet;
 import org.nustaq.reallive.sys.metadata.Metadata;
 
@@ -21,6 +22,11 @@ public class RealLiveClientWrapper extends RealLive {
     }
 
     @Override
+    public Future $init() {
+        return realRealLive.$init();
+    }
+
+    @Override
     public RLTable getTable(String tableId) {
         return realRealLive.getTable(tableId);
     }
@@ -39,9 +45,8 @@ public class RealLiveClientWrapper extends RealLive {
     }
 
     @Override
-    public RealLive createTable(String name, Class<? extends Record> recordClass) {
-        realRealLive.createTable(name,recordClass);
-        return this;
+    public Future createTable(String name, Class<? extends Record> recordClass) {
+        return realRealLive.createTable(name,recordClass);
     }
 
     @Override
