@@ -77,7 +77,13 @@ public class RLImpl extends RealLive {
             throw new RuntimeException("table already created");
         }
         if ( clazz.getAnnotation(Virtual.class) == null ) {
-            return Actors.yield(pureCreateTable(name, clazz), addToSysTable(name, clazz));
+            Promise p = new Promise();
+            Actors.async(
+                () -> pureCreateTable(name, clazz),
+                () -> addToSysTable(name, clazz),
+                () -> { p.signal(); return new Promise<>(); }
+            );
+            return p;
         }
         return addToSysTable(name, clazz);
     }
