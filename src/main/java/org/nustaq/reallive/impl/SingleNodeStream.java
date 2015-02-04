@@ -1,5 +1,7 @@
 package org.nustaq.reallive.impl;
 
+import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.Promise;
 import org.nustaq.kontraktor.annotations.AsCallback;
 import org.nustaq.kontraktor.impl.StoppedActorTargetedException;
 import org.nustaq.kontraktor.util.Log;
@@ -41,19 +43,30 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     @Override
-    public void filterUntil(Predicate<T> matches, BiPredicate<T,Integer> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
+    public Future filterUntil(Predicate<T> matches, BiPredicate<T, Integer> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
+        Promise p = new Promise();
         int count[] = {0};
-        tableActor.$filter(matches,(rec) -> terminateQuery.test(rec,count[0]), (r,e) -> {
-            checkThread();
-            if ( e == RLTable.END ) {
-                resultReceiver.onChangeReceived( ChangeBroadcast.NewSnapFin(tableActor.getTableId(),0));
-            } else if ( e == null ) {
-                count[0]++;
-                resultReceiver.onChangeReceived( ChangeBroadcast.NewAdd(tableActor.getTableId(),r,0));
-            } else {
-                resultReceiver.onChangeReceived( ChangeBroadcast.NewError(tableActor.getTableId(), e,0));
-            }
-        });
+        tableActor.$filter(
+            matches,
+            new Predicate<T>() {
+                @Override
+                public boolean test(T rec) {
+                    return terminateQuery.test(rec, count[0]);
+                }
+            },
+            (r, e) -> {
+                checkThread();
+                if (e == RLTable.END) {
+                    resultReceiver.onChangeReceived(ChangeBroadcast.NewSnapFin(tableActor.getTableId(), 0));
+                    p.signal();
+                } else if (e == null) {
+                    count[0]++;
+                    resultReceiver.onChangeReceived(ChangeBroadcast.NewAdd(tableActor.getTableId(), r, 0));
+                } else {
+                    resultReceiver.onChangeReceived(ChangeBroadcast.NewError(tableActor.getTableId(), e, 0));
+                }
+            });
+        return p;
     }
 
     @Override
