@@ -1,6 +1,6 @@
 package org.nustaq.reallive;
 
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 import org.nustaq.reallive.client.ReplicatedSet;
 import org.nustaq.reallive.sys.metadata.Metadata;
 import org.nustaq.serialization.FSTConfiguration;
@@ -23,13 +23,13 @@ public abstract class RealLive {
         return dataDirectory;
     }
 
-    public abstract Future $init();
+    public abstract IPromise $init();
 
     public abstract RLTable getTable(String tableId);
     public abstract RLStream stream(String tableId);
     public abstract Metadata getMetadata();
 
-    public abstract Future createTable(String name, Class<? extends Record> recordClass);
+    public abstract IPromise createTable(String name, Class<? extends Record> recordClass);
     public abstract RealLive createTable(Class<? extends Record> recordClass);
     public abstract void createVirtualStream(String name, ReplicatedSet set);
 

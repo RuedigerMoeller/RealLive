@@ -1,7 +1,7 @@
 package org.nustaq.reallive.impl;
 
 import org.nustaq.kontraktor.Actors;
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.kontraktor.impl.ElasticScheduler;
@@ -56,7 +56,7 @@ public class RLImpl extends RealLive {
     }
 
     @Override
-    public Future $init() {
+    public IPromise $init() {
         return initSystemTables();
     }
 
@@ -65,25 +65,21 @@ public class RLImpl extends RealLive {
         dataDirectory = dataDir;
     }
 
-    protected Future initSystemTables() {
+    protected IPromise initSystemTables() {
         Object futs = Arrays.stream(new Class[]{SysTable.class}).map(
                 (clz) -> createTable(clz.getSimpleName(), clz)
         ).collect(Collectors.toList());
-        return Actors.yield((List<Future>) futs);
+        return Actors.all((List<IPromise<Object>>) futs);
     }
 
-    public Future createTable(String name, Class<? extends Record> clazz) {
+    public IPromise createTable(String name, Class<? extends Record> clazz) {
         if (tables.get(name) != null ) {
             throw new RuntimeException("table already created");
         }
         if ( clazz.getAnnotation(Virtual.class) == null ) {
-            Promise p = new Promise();
-            Actors.async(
-                () -> pureCreateTable(name, clazz),
-                () -> addToSysTable(name, clazz),
-                () -> { p.signal(); return new Promise<>(); }
-            );
-            return p;
+            pureCreateTable(name, clazz).await();
+            addToSysTable(name, clazz).await();
+            return new Promise("done");
         }
         return addToSysTable(name, clazz);
     }
@@ -101,9 +97,14 @@ public class RLImpl extends RealLive {
 
     @Override
     public void shutDown() {
-        final List<Future> futs = tables.values().stream().map((rlTab) -> rlTab.$shutDown()).collect(Collectors.toList());
+        List<IPromise<Object>> futs = new ArrayList<>();
+        tables.values().stream().map( rlTab -> {
+            IPromise iPromise = rlTab.$shutDown();
+            futs.add(iPromise);
+            return iPromise;
+        });
         CountDownLatch latch = new CountDownLatch(futs.size());
-        Actors.yield(futs).then( (r,e) -> latch.countDown() );
+        Actors.all(futs).then((r, e) -> latch.countDown());
         try {
             latch.await(6000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -132,7 +133,7 @@ public class RLImpl extends RealLive {
         return getTransientFields(c.getSuperclass(), res);
     }
 
-    private Future addToSysTable(String name, Class rowClass) {
+    private IPromise addToSysTable(String name, Class rowClass) {
         TableMeta tableMeta = new TableMeta();
         tableMeta.setName(name);
         final FSTClazzInfo classInfo = conf.getClassInfo(rowClass);
@@ -195,7 +196,7 @@ public class RLImpl extends RealLive {
             cm.setDisplayName(decamel(cm.getName()));
         }
 
-        ColOrder ord = (ColOrder) field.getAnnotation(ColOrder.class);
+        ColOrder ord = field.getAnnotation(ColOrder.class);
         if ( ord != null ) {
             cm.setOrder(ord.value());
         } else {
@@ -259,7 +260,7 @@ public class RLImpl extends RealLive {
         return res;
     }
 
-    protected Future pureCreateTable(String name, Class<? extends Record> clazz) {
+    protected IPromise pureCreateTable(String name, Class<? extends Record> clazz) {
         Promise p = new Promise();
         RLTableImpl table = Actors.AsActor( RLTableImpl.class, CHANGE_Q_SIZE );
         SingleNodeStream stream = Actors.AsActor(SingleNodeStream.class, FILTER_Q_SIZE);

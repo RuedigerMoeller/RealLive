@@ -1,6 +1,6 @@
 package org.nustaq.reallive.client;
 
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Callback;
 import org.nustaq.kontraktor.Promise;
@@ -57,7 +57,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
                 break;
             case ChangeBroadcast.SNAPSHOT_DONE:
                 snaphotFinished = true;
-                snapFin.receive("void", null);
+                snapFin.complete("void", null);
                 break;
             case ChangeBroadcast.ERROR:
             default:
@@ -210,7 +210,7 @@ public class ReplicatedSet<T extends Record> implements ChangeBroadcastReceiver<
     }
 
     @Override
-    public Future filterUntil(Predicate<T> matches, BiPredicate<T, Integer> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver) {
+    public IPromise filterUntil(Predicate<T> matches, BiPredicate<T, Integer> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver) {
         int count[] = {0};
         map.values().forEach((record) -> {
             boolean terminate = terminateQuery.test(record, count[0]);

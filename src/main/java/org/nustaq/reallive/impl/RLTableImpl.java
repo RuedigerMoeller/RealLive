@@ -4,7 +4,7 @@ import org.nustaq.kontraktor.annotations.AsCallback;
 import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Actor;
 import org.nustaq.kontraktor.Callback;
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;
 import org.nustaq.reallive.*;
@@ -159,7 +159,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     //
 
     @Override
-    public Future<String> $addGetId(T object, int originator) {
+    public IPromise<String> $addGetId(T object, int originator) {
         if (isShutDown)
             return null;
         checkThread();
@@ -215,7 +215,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override
-    public Future<T> $putIfAbsentWithResult(String key, T object, int originator) {
+    public IPromise<T> $putIfAbsentWithResult(String key, T object, int originator) {
         T record = (T) storage.get(key);
         if ( record == null ) {
             $put(key,object,originator);
@@ -248,7 +248,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
     }
 
     @Override
-    public Future<Boolean> $updateCAS(RecordChange<String, T> change, Predicate<T> condition) {
+    public IPromise<Boolean> $updateCAS(RecordChange<String, T> change, Predicate<T> condition) {
         if (isShutDown)
             return null;
         T t = get(change.getId());
@@ -310,30 +310,30 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
 
 
     @Override
-    public Future<String> $nextKey() {
+    public IPromise<String> $nextKey() {
         return new Promise<>(idgen.nextid());
     }
 
     @Override
-    public Future<T> $get(String key) {
+    public IPromise<T> $get(String key) {
         return new Promise<>(get(key));
     }
 
 
     @Override
-    public Future $sync() {
+    public IPromise $sync() {
         return new Promise("void");
     }
 
     @Override
-    public Future $shutDown() {
+    public IPromise $shutDown() {
         isShutDown = true;
         storage.close();
         return new Promise("void");
     }
 
     @Override
-    public Future<Integer> $getKeyLen() {
+    public IPromise<Integer> $getKeyLen() {
         return new Promise<>(storage.getKeyLen());
     }
 
@@ -348,15 +348,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
                 T t = (T) vals.next();
                 t._setTable(self());
                 if (doProcess == null || doProcess.test(t)) {
-                    resultReceiver.receive(t, null);
+                    resultReceiver.complete(t, null);
                 }
                 if (terminate != null && terminate.test(t))
                     break;
             } catch (Exception e ) {
-                resultReceiver.receive(null, e);
+                resultReceiver.complete(null, e);
             }
         }
-        resultReceiver.receive(null, END);
+        resultReceiver.complete(null, END);
     }
 
     public void $filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback resultReceiver) {
@@ -368,15 +368,15 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
             try {
                 ByteSource t = entries.next();
                 if (doProcess == null || doProcess.test(t)) {
-                    resultReceiver.receive(t, null);
+                    resultReceiver.complete(t, null);
                 }
                 if (terminate != null && terminate.test(t))
                     break;
             } catch (Exception e ) {
-                resultReceiver.receive(null, e);
+                resultReceiver.complete(null, e);
             }
         }
-        resultReceiver.receive(null, END);
+        resultReceiver.complete(null, END);
     }
 
     private T get(String key) {

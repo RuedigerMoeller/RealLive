@@ -1,6 +1,6 @@
 package org.nustaq.reallive;
 
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.reallive.sys.annotations.ColOrder;
 import org.nustaq.serialization.FSTClazzInfo;
@@ -133,7 +133,7 @@ public class Record implements Serializable {
         }
     }
 
-    public Future<Boolean> $applyCAS(Predicate condition, int mutatorId) {
+    public IPromise<Boolean> $applyCAS(Predicate condition, int mutatorId) {
         if ( mode == Mode.UPDATE ) {
             if ( originalRecord == null )
                 throw new RuntimeException("original record must not be null for update");
@@ -141,7 +141,7 @@ public class Record implements Serializable {
                 throw new RuntimeException("recordKey must not be null on update");
             RecordChange recordChange = computeDiff();
             recordChange.setOriginator(mutatorId);
-            Future result = table.$updateCAS(recordChange, condition);
+            IPromise result = table.$updateCAS(recordChange, condition);
             copyTo(originalRecord); // nil all diffs. Once prepared, record can be reused for updateing
             return result;
         } else
@@ -155,7 +155,7 @@ public class Record implements Serializable {
      * persist an add or update of a record. The id given is added to a resulting change broadcast, so a
      * process is capable to identify changes caused by itself.
      */
-    public Future<String> $applyForced(int mutatorId, String ... fieldNames) {
+    public IPromise<String> $applyForced(int mutatorId, String ... fieldNames) {
         if ( table == null ) {
             throw new RuntimeException("no table reference. use createForXX/prepareXX methods at RLTable to get valid instances.");
         }
@@ -185,7 +185,7 @@ public class Record implements Serializable {
      * persist an add or update of a record. The id given is added to a resulting change broadcast, so a
      * process is capable to identify changes caused by itself.
      */
-    public Future<String> $apply(int mutatorId) {
+    public IPromise<String> $apply(int mutatorId) {
         return $applyForced(mutatorId);
     }
 

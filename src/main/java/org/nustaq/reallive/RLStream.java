@@ -1,6 +1,6 @@
 package org.nustaq.reallive;
 
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 import org.nustaq.offheap.bytez.ByteSource;
 import org.nustaq.kontraktor.Callback;
 
@@ -21,7 +21,7 @@ public interface RLStream<T extends Record> {
      * @param terminateQuery
      * @param resultReceiver
      */
-    public Future filterUntil(Predicate<T> matches, BiPredicate<T, Integer> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver);
+    public IPromise filterUntil(Predicate<T> matches, BiPredicate<T, Integer> terminateQuery, ChangeBroadcastReceiver<T> resultReceiver);
     public void filterBinary(Predicate<ByteSource> doProcess, Predicate<ByteSource> terminate, Callback<ByteSource> resultReceiver);
 
     public Subscription<T> subscribeKey(String key, ChangeBroadcastReceiver<T> resultReceiver);

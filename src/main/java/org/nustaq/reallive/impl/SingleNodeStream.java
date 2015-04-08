@@ -1,6 +1,6 @@
 package org.nustaq.reallive.impl;
 
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.kontraktor.annotations.AsCallback;
 import org.nustaq.kontraktor.impl.StoppedActorTargetedException;
@@ -43,7 +43,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
     }
 
     @Override
-    public Future filterUntil(Predicate<T> matches, BiPredicate<T, Integer> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
+    public IPromise filterUntil(Predicate<T> matches, BiPredicate<T, Integer> terminateQuery, @InThread ChangeBroadcastReceiver<T> resultReceiver) {
         Promise p = new Promise();
         int count[] = {0};
         tableActor.$filter(
@@ -58,7 +58,7 @@ public class SingleNodeStream<T extends Record> extends Actor<SingleNodeStream<T
                 checkThread();
                 if (e == RLTable.END) {
                     resultReceiver.onChangeReceived(ChangeBroadcast.NewSnapFin(tableActor.getTableId(), 0));
-                    p.signal();
+                    p.complete();
                 } else if (e == null) {
                     count[0]++;
                     resultReceiver.onChangeReceived(ChangeBroadcast.NewAdd(tableActor.getTableId(), r, 0));

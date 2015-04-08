@@ -1,6 +1,6 @@
 package org.nustaq.reallive;
 
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 
 import java.util.function.Predicate;
 
@@ -34,7 +34,7 @@ public interface RLTable<T extends Record> {
      * @param object
      * @return
      */
-    public Future<String> $addGetId(T object, int originator);
+    public IPromise<String> $addGetId(T object, int originator);
 
     /**
      * add the given record and assign it a new unique key. The new key is not returned.
@@ -55,13 +55,13 @@ public interface RLTable<T extends Record> {
 
     public void $putIfAbsent(String key, T object, int originator);
 
-    public Future<T> $putIfAbsentWithResult(String key, T object, int originator);
+    public IPromise<T> $putIfAbsentWithResult(String key, T object, int originator);
 
     /**
      * create a new unique record key and return a future to it
      * @return
      */
-    public Future<String> $nextKey();
+    public IPromise<String> $nextKey();
 
     /**
      * remove the record associated with given key
@@ -74,7 +74,7 @@ public interface RLTable<T extends Record> {
      * @param key
      * @return
      */
-    public Future<T> $get(String key);
+    public IPromise<T> $get(String key);
 
     /**
      * update a given record. Usually done calling record.apply().
@@ -87,7 +87,7 @@ public interface RLTable<T extends Record> {
      * update a given record. Usually done calling record.apply().
      * @param change
      */
-    public Future<Boolean> $updateCAS(RecordChange<String,T> change, Predicate<T> condition);
+    public IPromise<Boolean> $updateCAS(RecordChange<String,T> change, Predicate<T> condition);
 
     /**
      * when the resulting future is triggered, all operations that have been sent before are guaranteed to
@@ -95,9 +95,9 @@ public interface RLTable<T extends Record> {
      *
      * @return
      */
-    public Future $sync();
+    public IPromise $sync();
 
-    public Future $shutDown();
+    public IPromise $shutDown();
 
-    public Future<Integer> $getKeyLen();
+    public IPromise<Integer> $getKeyLen();
 }

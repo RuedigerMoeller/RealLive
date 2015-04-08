@@ -1,10 +1,11 @@
 package reallive;
 
 import org.junit.Test;
+import org.nustaq.kontraktor.Actor;
 import org.nustaq.reallive.impl.RLImpl;
 import org.nustaq.reallive.impl.RLTableImpl;
 import org.nustaq.kontraktor.Actors;
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 import org.nustaq.reallive.RLStream;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.serialization.FSTConfiguration;
@@ -27,7 +28,7 @@ public class TableTest {
     @Test
     public void machVollSync() throws InterruptedException {
         RLImpl schema = new RLImpl().initSync();;
-        RLTableImpl<TestRec> test = new RLTableImpl<>();
+        RLTableImpl<TestRec> test = Actor.AsActor(RLTableImpl.class);
         test.$init("test",schema, TestRec.class, null);
         TestRec newRec = new TestRec(null, test);
         long tim = System.currentTimeMillis();
@@ -40,6 +41,7 @@ public class TableTest {
                 System.out.println("adding .. "+finalI );
             }
         }
+        test.$ping().await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+MAX+" recs. "+(MAX/dur)+" per ms ");
     }
@@ -56,12 +58,12 @@ public class TableTest {
         TestRec add0 = table.createForAdd();
         TestRec add1 = table.createForAdd();
 
-        Future<String> k1 = table.$addGetId(add1,0);
-        Future<String> k0 = table.$addGetId(add0,0);
+        IPromise<String> k1 = table.$addGetId(add1,0);
+        IPromise<String> k0 = table.$addGetId(add0,0);
 
-        Actors.yield(k0, k1).then( (_r,e) -> {
+        Actors.all(k0, k1).then( (_r,e) -> {
 
-            TestRec forUpdate1 = table.createForUpdate(k1.getResult(), false);
+            TestRec forUpdate1 = table.createForUpdate(k1.get(), false);
             forUpdate1.setAnother("sodi");
             forUpdate1.$apply(0);
 
@@ -74,7 +76,7 @@ public class TableTest {
             forUpdate1.setAnother("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab");
             forUpdate1.$apply(0);
 
-            TestRec forUpdate = table.createForUpdate(k0.getResult(), false);
+            TestRec forUpdate = table.createForUpdate(k0.get(), false);
             forUpdate.setAnother("sodifjsodifjsodifjsodifjsodifjsodijfsodifjsoidfjsoidfjsoidfjsofijdsodijfsodfijsoijfd");
             forUpdate.$apply(0);
 
@@ -140,7 +142,7 @@ public class TableTest {
         RLImpl schema = new RLImpl().initSync();
         schema.createTable( "test", TestRec.class );
         RLTable<TestRec> test = schema.getTable("test");
-        while( true )
+//        while( true )
             mutateOnce(test);
     }
 
@@ -167,7 +169,7 @@ public class TableTest {
             }
                                      );
         latch.await();
-        long dur = System.currentTimeMillis() - tim;
+        long dur = System.currentTimeMillis() - tim + 1;
         System.out.println("need "+ dur +" for "+MAX+" recs. "+(MAX/dur)+" per ms ");
     }
 
@@ -265,7 +267,7 @@ public class TableTest {
         latch.await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+count[0]+" recs. "+(count[0]/dur)+" per ms ");
-        Thread.sleep(100000);
+        Thread.sleep(5000);
     }
 
     @Test
@@ -274,16 +276,16 @@ public class TableTest {
         schema.createTable( "test", TestRec.class );
         RLTable<TestRec> test = schema.getTable("test");
         TestRec newRec = new TestRec(null, test);
-        Future<String> res[] = new Future[10];
+        IPromise<String> res[] = new IPromise[10];
         CountDownLatch latch = new CountDownLatch(1);
         for ( int i = 0; i < 10; i++ ) {
             newRec.setX(i);
             res[i] = test.$addGetId(newRec,0);
         }
-        Actors.yield(res).then( (r, e) -> {
+        Actors.all(res).then( (r, e) -> {
             for (int i = 0; i < r.length; i++) {
-                Future future = r[i];
-                System.out.println("key: '" + future.getResult() + "'");
+                IPromise future = r[i];
+                System.out.println("key: '" + future.get() + "'");
             }
         }).then((r,e) ->
             test.$get("test:a").then( (r1,e1) -> System.out.println(r1) ).then( (r2,e2)-> latch.countDown() )

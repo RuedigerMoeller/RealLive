@@ -1,10 +1,11 @@
 package reallive.testclient;
 
+import org.nustaq.kontraktor.Actors;
 import org.nustaq.reallive.Subscription;
 import org.nustaq.reallive.client.ReplicatedSet;
 import org.nustaq.reallive.impl.RLImpl;
 import org.nustaq.kontraktor.Actor;
-import org.nustaq.kontraktor.Future;
+import org.nustaq.kontraktor.IPromise;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.Record;
@@ -87,7 +88,7 @@ public class TClient {
         ReplicatedSet<TCRecord> replica = new ReplicatedSet<>();
         Subscription<TCRecord> subscription;
 
-        public Future $run(RLTable<TCRecord> table ) {
+        public IPromise $run(RLTable<TCRecord> table ) {
             Thread.currentThread().setName("TCClient");
             Promise p = new Promise();
             replica.reset();
@@ -96,13 +97,13 @@ public class TClient {
                 replica.onChangeReceived(change);
                 if ( change.isSnapshotDone() ) {
                     System.out.println("query duration "+(System.currentTimeMillis()-tim)+" result size:"+replica.getSize());
-                    p.signal();
+                    p.complete();
                 }
             });
             return p;
         }
 
-        public Future $checkCorrectness(RLTable<TCRecord> table) {
+        public IPromise $checkCorrectness(RLTable<TCRecord> table) {
             Promise p = new Promise();
             ArrayList res = new ArrayList();
             table.stream().filter((r) -> r.getAskPrc() > FILTER_PRC, (change) -> {
@@ -111,25 +112,25 @@ public class TClient {
                 }
                 if (change.isSnapshotDone()) {
                     if (replica.getSize() != res.size())
-                        p.receive(null, "Different size: " + replica.getSize() + " " + res.size());
+                        p.complete(null, "Different size: " + replica.getSize() + " " + res.size());
                     else {
                         for (int i = 0; i < res.size(); i++) {
                             TCRecord rec = (TCRecord) res.get(i);
                             TCRecord tcRecord = replica.get(rec.getRecordKey());
                             if (!rec.equals(tcRecord)) {
-                                p.receive(null, "diff: " + tcRecord + " \n    " + rec);
+                                p.complete(null, "diff: " + tcRecord + " \n    " + rec);
                                 return;
                             }
                         }
                         System.out.println("comparision successfull");
-                        p.receive(null, null);
+                        p.complete(null, null);
                     }
                 }
             });
             return p;
         }
 
-        public Future $unsubscribe(RLTable<TCRecord> table) {
+        public IPromise $unsubscribe(RLTable<TCRecord> table) {
             table.stream().unsubscribe(subscription);
             return new Promise<>("void");
         }
@@ -138,9 +139,9 @@ public class TClient {
     static volatile int updateCount = 0;
 
     public static class TCMutator extends Actor<TCMutator> {
-        ArrayList<Future<String>> recids;
+        ArrayList<IPromise<String>> recids;
 
-        public Future $init(RLTable<TCRecord> table ) {
+        public IPromise $init(RLTable<TCRecord> table ) {
             Thread.currentThread().setName("TCMutator");
             recids = new ArrayList();
 
@@ -158,20 +159,20 @@ public class TClient {
                 recids.add(recordForAdd.$apply(0));
             }
             Promise res = new Promise();
-            yieldList((List)recids).then((r, e) -> {
-                res.receive("void", null);
+            Actors.all((List) recids).then((r, e) -> {
+                res.complete("void", null);
             });
             return res;
         }
 
-        public Future $run(RLTable<TCRecord> table, int times, Future p) {
+        public IPromise $run(RLTable<TCRecord> table, int times, IPromise p) {
             if ( p == null )
                 p = new Promise();
             for (int i = 0; i < recids.size(); i++) {
                 if ( ((Actor) table).isMailboxPressured() )
                     break;
-                Future<String> stringFuture = recids.get(i);
-                TCRecord recordForUpdate = table.createForUpdate(stringFuture.getResult(), false);
+                IPromise<String> stringFuture = recids.get(i);
+                TCRecord recordForUpdate = table.createForUpdate(stringFuture.get(), false);
                 recordForUpdate.setAskPrc(1+Math.random());
                 recordForUpdate.setBidPrc(0+Math.random());
                 recordForUpdate.$apply(0);
@@ -179,10 +180,10 @@ public class TClient {
             }
 
             if ( times > 0 ) {
-                final Future finalP = p;
+                final IPromise finalP = p;
                 delayed(1, () -> $run(table, times - 1, finalP));
             } else {
-                p.signal();
+                p.complete();
             }
             return p;
         }
@@ -214,26 +215,18 @@ public class TClient {
     }
 
     private static void testRun(RLTable<TCRecord> table, TCMutator mutator, ClientActor client) {
-        async(
-             () -> mutator.$init(table),
-             () -> {
-                 client.$run(table);
-                 return mutator.$run(table, 1000, null);
-             },
-             () -> table.$sync(),
-             () -> client.$unsubscribe(table),
-             () -> client.$checkCorrectness(table)
-        ).then( (res, err) -> {
-            if (err == null) {
-                System.out.println("updated: "+updateCount+" NEXT RUN ..");
-                updateCount = 0;
-                table.$sync();
-                testRun(table, mutator, client);
-            } else {
-                System.out.println(err);
-                System.exit(1);
-            }
-        });
+        mutator.$init(table).await();
+
+        client.$run(table);
+        mutator.$run(table, 1000, null).await();
+
+        table.$sync().await();
+        client.$unsubscribe(table).await();
+        client.$checkCorrectness(table).await();
+        System.out.println("updated: "+updateCount+" NEXT RUN ..");
+        updateCount = 0;
+        table.$sync();
+        testRun(table, mutator, client);
 // same with chained futures
 //        mutator.$init(table).then(() -> {
 //            client.$run(table);
