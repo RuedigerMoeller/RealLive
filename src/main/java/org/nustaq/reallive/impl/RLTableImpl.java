@@ -48,7 +48,7 @@ public class RLTableImpl<T extends Record> extends Actor<RLTableImpl<T>> impleme
         this.tableId = tableId;
         this.realLive = realLive;
         new File(realLive.getDataDirectory()).mkdirs();
-        idgen = new StringIdGen(tableId.substring(0,2)+":");
+        idgen = new StringIdGen("");
         this.streamActor = streamActor;
         this.receiver = streamActor;
         try {
