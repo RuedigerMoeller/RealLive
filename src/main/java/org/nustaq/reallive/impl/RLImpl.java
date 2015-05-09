@@ -4,7 +4,6 @@ import org.nustaq.kontraktor.Actors;
 import org.nustaq.kontraktor.IPromise;
 import org.nustaq.kontraktor.Promise;
 import org.nustaq.kontraktor.annotations.CallerSideMethod;
-import org.nustaq.kontraktor.impl.ElasticScheduler;
 import org.nustaq.reallive.RLStream;
 import org.nustaq.reallive.RLTable;
 import org.nustaq.reallive.Record;
