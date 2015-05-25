@@ -80,7 +80,7 @@ public class Record implements Serializable {
         try {
             record = (T) getClass().newInstance();
         } catch (Exception e) {
-            throw FSTUtil.rethrow(e);
+            FSTUtil.rethrow(e);
         }
         copyTo(record);
         return record;
@@ -368,7 +368,7 @@ public class Record implements Serializable {
             copyTo(record);
             _setOriginalRecord(record);
         } catch (Exception e) {
-            throw FSTUtil.rethrow(e);
+            FSTUtil.rethrow(e);
         }
     }
 }
