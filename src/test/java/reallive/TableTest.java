@@ -41,7 +41,7 @@ public class TableTest {
                 System.out.println("adding .. "+finalI );
             }
         }
-        test.$ping().await();
+        test.ping().await();
         long dur = System.currentTimeMillis() - tim;
         System.out.println("need "+ dur +" for "+MAX+" recs. "+(MAX/dur)+" per ms ");
     }
